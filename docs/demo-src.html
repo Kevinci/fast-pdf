@@ -181,11 +181,19 @@
   <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>Schnellstart</h2>
   <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>快速开始</h2>
 
-  <p data-lang="en">A document is a <code>PDFDocument</code>. Content flows top to bottom and
-     page breaks happen automatically. All coordinates are <b>top-left based, in points</b> (1&nbsp;pt = 1/72″).</p>
-  <p data-lang="de" hidden>Ein Dokument ist ein <code>PDFDocument</code>. Inhalte fließen von oben nach unten,
-     Seitenumbrüche passieren automatisch. Alle Koordinaten sind <b>oben-links-basiert, in Punkt</b> (1&nbsp;pt = 1/72″).</p>
-  <p data-lang="zh" hidden>一个文档就是一个 <code>PDFDocument</code>。内容自上而下排布，分页自动完成。所有坐标均<b>以左上角为原点，单位为点</b>（1&nbsp;pt = 1/72 英寸）。</p>
+  <p data-lang="en">Create a <code>PDFDocument</code>, add content with calls like <code>text()</code>,
+     <code>table()</code> and <code>image()</code>, then save — that’s the whole workflow.
+     Content flows down the page like in a word processor, and a new page starts
+     automatically when space runs out. Positions are measured <b>from the top-left corner,
+     in points</b> (1&nbsp;pt = 1/72″).</p>
+  <p data-lang="de" hidden>Du erstellst ein <code>PDFDocument</code>, fügst Inhalte mit Aufrufen wie <code>text()</code>,
+     <code>table()</code> und <code>image()</code> hinzu und speicherst — das ist der ganze Workflow.
+     Inhalte laufen wie in einer Textverarbeitung von oben nach unten über die Seite;
+     ist kein Platz mehr, beginnt automatisch eine neue Seite. Positioniert wird
+     <b>ab der linken oberen Ecke, in Punkt</b> (1&nbsp;pt = 1/72″).</p>
+  <p data-lang="zh" hidden>创建一个 <code>PDFDocument</code>，用 <code>text()</code>、<code>table()</code>、<code>image()</code>
+     等调用添加内容，最后保存——整个流程就是这么简单。内容像在文字处理器中一样自上而下排布，
+     空间不够时会自动开始新的一页。定位<b>从页面左上角算起，单位为点</b>（1&nbsp;pt = 1/72 英寸）。</p>
 
 <pre data-lang="en" class="code-block"><code>import { PDFDocument } from "fast-pdf";
 
