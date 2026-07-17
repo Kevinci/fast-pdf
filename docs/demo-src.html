@@ -1,0 +1,382 @@
+<title>fast-pdf – Demo &amp; Feature-Guide</title>
+<style>
+  /* Design-Tokens: Farben laufen über CSS-Variablen, damit der Theme-Toggle
+     (data-theme) und die OS-Einstellung (prefers-color-scheme) beide greifen.
+     Alles andere (Layout, Abstände, Typo) kommt aus Tailwind-Utilities. */
+  :root {
+    --ground: #f6f7f9;
+    --surface: #ffffff;
+    --ink: #171e29;
+    --muted: #5b6472;
+    --accent: #2e5ce6;
+    --accent-soft: #e8edfc;
+    --hairline: #e3e6ec;
+    --code-bg: #10151f;
+    --code-ink: #d7dee9;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --ground: #0f1218; --surface: #161b24; --ink: #e7eaf0; --muted: #9aa3b2;
+      --accent: #84a3ff; --accent-soft: #1d2740; --hairline: #262d3a;
+    }
+  }
+  :root[data-theme="dark"] {
+    --ground: #0f1218; --surface: #161b24; --ink: #e7eaf0; --muted: #9aa3b2;
+    --accent: #84a3ff; --accent-soft: #1d2740; --hairline: #262d3a;
+  }
+  :root[data-theme="light"] {
+    --ground: #f6f7f9; --surface: #ffffff; --ink: #171e29; --muted: #5b6472;
+    --accent: #2e5ce6; --accent-soft: #e8edfc; --hairline: #e3e6ec;
+  }
+
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+  body { background: var(--ground); color: var(--ink); }
+
+  /* Prosa-Maß & Inline-Code — als Elementregeln statt hundertfacher Utilities. */
+  section p, section li { max-width: 68ch; }
+  p code, li code, td code, figcaption code {
+    background: var(--accent-soft); color: var(--ink);
+    border-radius: 4px; padding: 1px 5px; font-size: 0.88em;
+  }
+  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* Syntax-Token des Mini-Highlighters */
+  .tok-k { color: #82aaff; }
+  .tok-s { color: #a8d08d; }
+  .tok-c { color: #6b7488; font-style: italic; }
+  .tok-n { color: #f2b46d; }
+
+  /* API-Tabellen */
+  table.api { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 14px 0; }
+  table.api th, table.api td {
+    text-align: left; padding: 8px 12px;
+    border-bottom: 1px solid var(--hairline); vertical-align: top;
+  }
+  table.api th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--muted); font-weight: 600;
+  }
+  table.api td:first-child {
+    white-space: nowrap; font-size: 12.5px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+</style>
+<style>__TW_CSS__</style>
+
+<div class="mx-auto grid max-w-[1080px] grid-cols-1 gap-0 px-5 pb-24 font-sans text-[16px] leading-[1.65] md:grid-cols-[200px_minmax(0,1fr)] md:gap-12">
+
+<nav aria-label="Inhalt" class="pt-7 md:sticky md:top-0 md:max-h-screen md:self-start md:overflow-y-auto md:pb-6">
+  <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">fast-<span class="text-(--accent)">pdf</span></div>
+  <div class="mb-4 font-mono text-xs text-(--muted)">v0.2.0 · Demo &amp; Guide</div>
+  <ul class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
+    <li><a class="nav-link" href="#schnellstart">Schnellstart</a></li>
+    <li><a class="nav-link" href="#ausgabe">Ausgabeformate</a></li>
+    <li><a class="nav-link" href="#seiten">Seiten &amp; Umbrüche<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: pageBreak()"></span></a></li>
+    <li><a class="nav-link" href="#text">Text &amp; Typografie</a></li>
+    <li><a class="nav-link" href="#fonts">Eigene Schriften</a></li>
+    <li><a class="nav-link" href="#layout">Layout-Engine</a></li>
+    <li><a class="nav-link" href="#tabellen">Tabellen</a></li>
+    <li><a class="nav-link" href="#bilder">Bilder</a></li>
+    <li><a class="nav-link" href="#formen">Formen</a></li>
+    <li><a class="nav-link" href="#features">Dokumentfeatures</a></li>
+    <li><a class="nav-link" href="#fehler">Fehlerbehandlung</a></li>
+    <li><a class="nav-link" href="#performance">Performance</a></li>
+    <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
+  </ul>
+</nav>
+
+<main class="min-w-0 pt-7">
+<header class="mb-10">
+  <p class="mb-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-(--accent)">TypeScript · 0 Dependencies · ESM</p>
+  <h1 class="mb-3.5 text-balance font-mono text-[clamp(28px,5vw,40px)] leading-[1.15] font-bold tracking-[-0.03em]">PDFs direkt erzeugen.<br>Ohne Chromium, ohne Umwege.</h1>
+  <p class="mb-6 max-w-[62ch] text-[17px] text-(--muted)">
+    <strong class="font-semibold text-(--ink)">fast-pdf</strong> schreibt PDF-Syntax selbst — kein HTML-Rendering, kein
+    Headless-Browser, keine nativen Binaries. Läuft unverändert auf
+    <strong class="font-semibold text-(--ink)">Node&nbsp;≥&nbsp;18, Bun, Deno, im Browser und auf Edge-Runtimes</strong>.
+    Diese Seite erklärt jedes Feature mit Code, der genau so funktioniert.
+  </p>
+  <ul class="m-0 flex list-none flex-wrap gap-2.5 p-0">
+    <li class="stat"><b>0</b>Runtime-Dependencies</li>
+    <li class="stat"><b>~1,6&nbsp;ms</b>3-Seiten-Dokument</li>
+    <li class="stat"><b>113</b>Tests · 95&nbsp;% Coverage</li>
+    <li class="stat"><b>~94&nbsp;KB</b>ESM, tree-shakeable</li>
+  </ul>
+</header>
+
+<section id="schnellstart" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>Schnellstart</h2>
+  <p>Ein Dokument ist ein <code>PDFDocument</code>. Inhalte fließen von oben nach unten,
+     Seitenumbrüche passieren automatisch. Alle Koordinaten sind <b>oben-links-basiert, in Punkt</b> (1&nbsp;pt = 1/72″).</p>
+<pre class="code-block"><code>import { PDFDocument } from "fast-pdf";
+
+const pdf = new PDFDocument({
+  format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
+  margins: 50,
+  font: "helvetica",       // Standard-14: helvetica | times | courier
+  metadata: { title: "Demo", author: "Awesome Software" },
+});
+
+pdf.text("Hallo Welt", { size: 24, bold: true });
+pdf.table([["Produkt", "Preis"], ["Laptop", "999 €"]]);
+
+await pdf.save("demo.pdf");</code></pre>
+</section>
+
+<section id="ausgabe" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">02</span>Ausgabeformate</h2>
+  <p>Für jede Plattform die passende Ausgabe — der Kern bleibt überall identisch:</p>
+<pre class="code-block"><code>const bytes  = await pdf.render();     // Uint8Array — funktioniert überall
+await pdf.save("rechnung.pdf");        // Node/Bun/Deno: Datei · Browser: Download
+const buffer = await pdf.toBuffer();   // Node-Buffer (sonst Uint8Array)
+const blob   = await pdf.toBlob();     // Blob für FormData, Object-URLs, …
+const stream = pdf.toStream();         // ReadableStream, 64-KiB-Chunks
+
+// API-Route (Next.js, Hono, Workers, …):
+return new Response(pdf.toStream(), {
+  headers: { "Content-Type": "application/pdf" },
+});</code></pre>
+</section>
+
+<section id="seiten" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Seiten &amp; Umbrüche<span class="chip">Neu: pageBreak()</span></h2>
+  <p>Text und Tabellen brechen Seiten automatisch. Was bei vielen Bibliotheken fehlt:
+     <b>selbst bestimmen, wo die nächste Seite anfängt.</b> Genau dafür gibt es
+     <code>pageBreak()</code> — expliziter Umbruch an exakt der Stelle, an der du ihn willst,
+     optional mit eigener Startposition und eigenem Seiten-Setup:</p>
+<pre class="code-block"><code>pdf.text("Kapitel 1 …");
+
+pdf.pageBreak();                       // neue Seite, Cursor am oberen Rand
+pdf.pageBreak({ y: 200 });             // neue Seite, Inhalt startet bei y = 200 pt
+pdf.pageBreak({ landscape: true });    // neue Seite im Querformat
+pdf.pageBreak({ format: "A5", margins: 30, y: 120 });   // alles kombinierbar</code></pre>
+  <p>Daneben gibt es die manuelle Cursor-Steuerung:</p>
+<pre class="code-block"><code>pdf.addPage();          // wie pageBreak() ohne Optionen
+pdf.moveDown(2);        // zwei Zeilenhöhen nach unten
+pdf.y = 300;            // Cursor direkt setzen
+console.log(pdf.y);     // … oder auslesen</code></pre>
+  <div class="hint"><b class="text-(--accent)">Gut zu wissen:</b> Innerhalb von <code>container()</code>, <code>columns()</code>
+    und <code>grid()</code> ist <code>pageBreak()</code> bewusst verboten — diese Blöcke garantieren,
+    dass ihr Inhalt zusammen auf einer Seite bleibt. Der Aufruf wirft dort einen
+    <code>FastPDFError</code> statt das Layout zu zerreißen.</div>
+</section>
+
+<section id="text" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">04</span>Text &amp; Typografie</h2>
+  <p>Zeilenumbruch mit echten Font-Metriken, Blocksatz, Dekorationen und Laufweite:</p>
+<pre class="code-block"><code>pdf.text("Automatisch umbrochen — äöüß € „Anführungszeichen“ – Gedankenstriche.", {
+  size: 12, bold: true,
+  color: "#334155",              // "#rgb" | "#rrggbb" | { r, g, b }
+  align: "justify",              // left | center | right | justify
+  underline: true,               // auch: strikethrough
+  letterSpacing: 0.5,            // pt zwischen Zeichen
+  lineHeight: 1.4,
+  width: 300,                    // Umbruchbreite (Default: Inhaltsbreite)
+  spacingAfter: 8,
+});
+
+pdf.text("Kopfzeile", { y: 20, align: "right" });   // absolut: kein Flow, kein Umbruch
+pdf.widthOfText("Wie breit bin ich?", { size: 12 }); // Messen ohne Zeichnen</code></pre>
+  <h3 class="doc-h3">Silbentrennung</h3>
+  <p>Weiche Trennstellen markierst du mit dem Soft Hyphen (U+00AD). Gebrochen wird nur dort,
+     wo es nötig ist — dann mit sichtbarem Trennstrich:</p>
+<pre class="code-block"><code>pdf.text("Donau­dampf­schiff­fahrts­gesellschaft", { width: 100 });
+// → "Donaudampf-" ⏎ "schifffahrts-" ⏎ "gesellschaft"</code></pre>
+</section>
+
+<section id="fonts" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">05</span>Eigene Schriften</h2>
+  <p>TrueType-Fonts werden als Type0/Identity-H eingebettet — mit <b>Subsetting</b>
+     (nur benutzte Glyphen landen im PDF) und ToUnicode-CMap (Kopieren &amp; Suchen funktioniert).
+     Damit steht der volle Unicode-Umfang der Schrift zur Verfügung:</p>
+<pre class="code-block"><code>const inter = await fetch("/fonts/Inter.ttf").then(r =&gt; r.arrayBuffer());
+
+pdf.registerFont(inter,     { family: "inter" });
+pdf.registerFont(interBold, { family: "inter", bold: true });
+
+pdf.text("Volles Unicode — Ελληνικά, кириллица, 中文", { font: "inter" });
+pdf.text("Fett gesetzt", { font: "inter", bold: true });</code></pre>
+  <div class="hint"><b class="text-(--accent)">Fallback-Regel:</b> Fehlt eine Variante (z.&nbsp;B. kursiv), fällt fast-pdf
+    auf den regulären Schnitt zurück. Die Standard-14-Fonts (Helvetica, Times, Courier)
+    brauchen kein Embedding — null zusätzliche Bytes im PDF.</div>
+</section>
+
+<section id="layout" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">06</span>Layout-Engine</h2>
+  <p>Boxen, Spalten und Raster mit Padding, Rahmen und relativen Breiten —
+     die Höhe wächst mit dem Inhalt:</p>
+<pre class="code-block"><code>pdf.container(
+  {
+    width: "80%", align: "center",        // Punkt oder "%" der verfügbaren Breite
+    padding: 12, margin: { top: 8 },
+    background: "#eef4ff",
+    border: { color: "#4a7dff", width: 1 },
+    radius: 8, minHeight: 60,
+  },
+  (d) =&gt; d.text("Eine Box, die mit ihrem Inhalt wächst."),
+);
+
+pdf.columns(
+  [(d) =&gt; d.text("Linke Spalte"), (d) =&gt; d.text("Rechte Spalte")],
+  { widths: ["35%", "65%"], gap: 16 },
+);
+
+pdf.grid(
+  karten.map((k) =&gt; (d) =&gt; d.text(k.titel)),
+  { columns: 3, gap: 10 },     // Umbrüche zwischen Zeilen, nie in Zellen
+);</code></pre>
+  <p>Nach <code>columns()</code> steht der Cursor unter der <b>höchsten</b> Spalte.
+     Container und Spalten sind beliebig schachtelbar.</p>
+</section>
+
+<section id="tabellen" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">07</span>Tabellen</h2>
+  <p>Header wiederholt sich auf jeder Seite, der Footer wird einmal am Ende gezeichnet.
+     Zellen können Spalten <em>und</em> Zeilen überspannen — Span-Gruppen brechen nie
+     über Seitengrenzen:</p>
+<pre class="code-block"><code>pdf.table(
+  [
+    [{ text: "Rechnung Q3", colSpan: 3, align: "center" }],
+    ["Position", "Menge", "Preis"],
+    [{ text: "Beratung", rowSpan: 2 }, "8 h", "960,00 €"],
+    ["4 h", "480,00 €"],
+    [{ text: "Summe", colSpan: 2, bold: true }, "1.440,00 €"],
+  ],
+  {
+    widths: [220, 90, 110],
+    aligns: ["left", "right", "right"],
+    header: true,                  // erste Zeile: wiederholt sich je Seite
+    footer: true,                  // letzte Zeile: gestylt, nie wiederholt
+    zebraFill: "#f8fafc",
+    headerFill: "#0f172a", headerColor: "#ffffff",
+    padding: 6, borderWidth: 0.5,
+  },
+);</code></pre>
+  <p>Einzelne Zellen stylst du inline:
+     <code>{ text, bold, italic, color, fill, align, colSpan, rowSpan }</code>.</p>
+</section>
+
+<section id="bilder" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Bilder</h2>
+<pre class="code-block"><code>pdf.image(bytes, { width: 200 });                        // Flow, Seitenverhältnis bleibt
+pdf.image(logo,  { x: 400, y: 30, width: 120 });         // absolute Position
+pdf.image(foto,  { width: 200, height: 200, fit: "cover" });  // fill | contain | cover
+pdf.image(foto,  { width: 100, crop: { x: 50, y: 50, width: 400, height: 400 } });
+pdf.image(stempel, { width: 80, rotate: -15, align: "center" });</code></pre>
+  <div class="overflow-x-auto"><table class="api">
+    <tr><th>Format</th><th>Verhalten</th></tr>
+    <tr><td>JPEG</td><td>1:1 eingebettet (DCTDecode), kein Re-Encoding — Graustufen, RGB, CMYK</td></tr>
+    <tr><td>PNG</td><td>Grau/RGB/indiziert ohne Re-Encoding; Alphakanal wird zur echten SMask (Transparenz)</td></tr>
+    <tr><td>Cache</td><td>Identische Bild-Bytes werden nur einmal eingebettet, egal auf wie vielen Seiten</td></tr>
+  </table></div>
+</section>
+
+<section id="formen" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">09</span>Formen</h2>
+<pre class="code-block"><code>pdf.line(50, 100, 545, 100, { color: "#e2e8f0", width: 0.5 });
+pdf.rect(50, 120, 100, 40, { fill: "#3b82f6", radius: 8 });      // abgerundet
+pdf.circle(100, 300, 40, { fill: "#ffd166", stroke: "#c79000" });
+pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
+  <p>Kreise und Ellipsen sind exakte Bézier-Approximationen; <code>fill</code> und
+     <code>stroke</code> lassen sich frei kombinieren.</p>
+</section>
+
+<section id="features" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Dokumentfeatures</h2>
+  <p>Wiederkehrende Elemente werden zur Renderzeit auf jede Seite gezeichnet —
+     sie kennen also die <b>endgültige</b> Seitenzahl und -anzahl:</p>
+<pre class="code-block"><code>pdf.header("Geschäftsbericht 2026", { align: "right" });
+pdf.footer("© 2026 Awesome Software");
+pdf.pageNumbers({ format: (n, t) =&gt; `Seite ${n} von ${t}`, startAt: 2 });
+pdf.watermark("ENTWURF", { opacity: 0.1 });   // diagonal, transparent</code></pre>
+  <h3 class="doc-h3">Lesezeichen, Links &amp; Inhaltsverzeichnis</h3>
+<pre class="code-block"><code>pdf.outline("Kapitel 1");                    // PDF-Lesezeichen (Sidebar im Viewer)
+pdf.outline("Abschnitt 1.1", { level: 1 });  // verschachtelt
+
+pdf.anchor("details");                                   // benanntes Sprungziel
+pdf.text("Mehr dazu …", { link: "#details" });           // interner Link
+pdf.text("Website", { link: "https://example.com" });    // externer Link
+
+pdf.toc({ title: "Inhalt" });   // zum Schluss aufrufen: baut verlinkte
+                                // TOC-Seiten und fügt sie vorne ein —
+                                // Seitenzahlen werden korrekt verschoben</code></pre>
+</section>
+
+<section id="fehler" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Fehlerbehandlung</h2>
+  <p>Alle nutzerseitigen Fehler werfen <code>FastPDFError</code> mit einem stabilen,
+     maschinenlesbaren <code>code</code> — Meldungstexte können sich ändern, Codes nicht:</p>
+<pre class="code-block"><code>import { FastPDFError } from "fast-pdf";
+
+try {
+  pdf.text("Hallo", { font: "gibtEsNicht" });
+} catch (e) {
+  if (e instanceof FastPDFError &amp;&amp; e.code === "UNKNOWN_FONT") {
+    // "UNKNOWN_FONT" | "INVALID_COLOR" | "UNSUPPORTED_IMAGE"
+    // "UNKNOWN_PAGE_FORMAT" | "INVALID_ARGUMENT" | …
+  }
+}</code></pre>
+</section>
+
+<section id="performance" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Performance</h2>
+  <p>Direkte PDF-Synthese statt Browser-Umweg. Kompression läuft über die native
+     <code>CompressionStream</code>-API (zlib) — null Bundle-Bytes dafür.
+     Gemessen mit <code>npm run bench</code> (Apple Silicon, Node 22):</p>
+  <div class="overflow-x-auto"><table class="api tabular-nums">
+    <tr><th>Dokument</th><th>Zeit</th><th>Durchsatz</th><th>Größe</th></tr>
+    <tr><td>Text, ~3 Seiten</td><td>1,6 ms</td><td>621 Docs/s</td><td>1,9 KB</td></tr>
+    <tr><td>Text, ~30 Seiten</td><td>12,6 ms</td><td>79 Docs/s</td><td>13,0 KB</td></tr>
+    <tr><td>Tabelle, 500 Zeilen (~17 S.)</td><td>26,4 ms</td><td>38 Docs/s</td><td>55,4 KB</td></tr>
+    <tr><td>Tabelle, 5000 Zeilen (~170 S.)</td><td>232 ms</td><td>4 Docs/s</td><td>549 KB</td></tr>
+    <tr><td>Gemischt (Text/Tabellen/Vektor)</td><td>0,9 ms</td><td>1071 Docs/s</td><td>2,8 KB</td></tr>
+  </table></div>
+</section>
+
+<section id="ergebnis" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>So sieht’s aus</h2>
+  <p>Beide Seiten stammen aus <code>examples/showcase.ts</code> (<code>npm run showcase</code>)
+     und wurden mit macOS Quartz gerendert — ein unabhängiger Beleg, dass echte
+     PDF-Viewer die Ausgabe korrekt verstehen:</p>
+  <div class="mt-4 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
+    <figure class="m-0">
+      <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) bg-white shadow-[0_8px_28px_rgba(15,20,32,0.10)]"
+           src="data:image/png;base64,__TOC_B64__"
+           alt="Seite 1: generiertes, verlinktes Inhaltsverzeichnis mit Wasserzeichen ENTWURF, Kopf- und Fußzeile" loading="lazy">
+      <figcaption class="mt-2 text-[12.5px] text-(--muted)">Generiertes Inhaltsverzeichnis (<code>toc()</code>) — verlinkt, mit Wasserzeichen, Header &amp; Footer. Seitenzahlen automatisch verschoben.</figcaption>
+    </figure>
+    <figure class="m-0">
+      <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) bg-white shadow-[0_8px_28px_rgba(15,20,32,0.10)]"
+           src="data:image/png;base64,__PAGE2_B64__"
+           alt="Inhaltsseite: Typografie mit Unterstreichung und Blocksatz, Container, Spalten, Formen und Tabelle mit Spans" loading="lazy">
+      <figcaption class="mt-2 text-[12.5px] text-(--muted)">Typografie, Container, Spalten, Formen und eine Tabelle mit <code>colSpan</code>/<code>rowSpan</code>, Footer und Zebra-Streifen.</figcaption>
+    </figure>
+  </div>
+</section>
+
+<footer class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
+  fast-pdf v0.2.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
+  Details in <span class="font-mono">docs/ARCHITECTURE.md</span> und <span class="font-mono">docs/ROADMAP.md</span>
+</footer>
+</main>
+</div>
+
+<script>
+  // Minimaler TS-Highlighter: ein Pass, Alternativen in Prioritätsreihenfolge
+  // (Kommentar > String > Keyword > Zahl) — keine Platzhalter-Kollisionen.
+  const RX = new RegExp(
+    [
+      "(\\/\\/[^\\n]*)",
+      "(\"(?:\\\\.|[^\"\\\\\\n])*\"|'(?:\\\\.|[^'\\\\\\n])*'|`(?:\\\\.|[^`\\\\])*`)",
+      "\\b(import|from|const|let|new|await|async|return|if|try|catch|instanceof|true|false)\\b",
+      "(\\b\\d+(?:[.,]\\d+)?\\b)",
+    ].join("|"),
+    "g",
+  );
+  document.querySelectorAll("pre code").forEach((block) => {
+    block.innerHTML = block.innerHTML.replace(RX, (m, com, str, kw) => {
+      const cls = com ? "tok-c" : str ? "tok-s" : kw ? "tok-k" : "tok-n";
+      return '<span class="' + cls + '">' + m + "</span>";
+    });
+  });
+</script>

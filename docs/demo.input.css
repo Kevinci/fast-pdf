@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@source "./demo-src.html";
+
+/* Wiederkehrende Komponenten der Demoseite — via @apply aus Tailwind-Utilities
+   komponiert, damit das Markup lesbar bleibt. Farben kommen aus den Tokens
+   in demo-src.html (Light/Dark über prefers-color-scheme + data-theme). */
+
+.nav-link {
+  @apply block border-l-2 border-(--hairline) px-2.5 py-1 font-mono text-[12.5px] text-(--muted) no-underline hover:border-(--muted) hover:text-(--ink) max-md:rounded-full max-md:border max-md:px-2.5;
+}
+
+.stat {
+  @apply rounded-md border border-(--hairline) bg-(--surface) px-3.5 py-2.5 text-[12.5px] text-(--muted);
+}
+.stat b {
+  @apply block font-mono text-base tracking-[-0.02em] text-(--ink) tabular-nums;
+}
+
+.chip {
+  @apply ml-2 inline-block rounded-full bg-(--accent-soft) px-2 py-0.5 align-[3px] font-mono text-[10.5px] font-semibold uppercase tracking-[0.1em] text-(--accent);
+}
+
+.doc-section {
+  @apply mt-10 scroll-mt-4 border-t border-(--hairline) pt-8;
+}
+.doc-h2 {
+  @apply mb-1 font-mono text-xl font-bold tracking-[-0.02em];
+}
+.doc-h3 {
+  @apply mt-6 mb-1.5 font-mono text-[14.5px] font-semibold tracking-[-0.01em];
+}
+
+.hint {
+  @apply my-4 max-w-[68ch] rounded-r-lg border-l-[3px] border-(--accent) bg-(--surface) px-4 py-3 text-sm;
+}
+
+.code-block {
+  @apply my-3.5 overflow-x-auto rounded-lg bg-(--code-bg) px-[18px] py-4 font-mono text-[13px] leading-[1.6] text-(--code-ink);
+}
