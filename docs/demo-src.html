@@ -1,4 +1,4 @@
-<title>fast-pdf – Demo &amp; Feature-Guide</title>
+<title>fast-pdf – Demo &amp; Feature Guide</title>
 <style>
   /* Design-Tokens: Farben laufen über CSS-Variablen, damit der Theme-Toggle
      (data-theme) und die OS-Einstellung (prefers-color-scheme) beide greifen.
@@ -39,7 +39,10 @@
     background: var(--accent-soft); color: var(--ink);
     border-radius: 4px; padding: 1px 5px; font-size: 0.88em;
   }
-  a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+  a:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 2px; }
+
+  /* Sprachumschaltung: inaktive Sprachen tragen das hidden-Attribut. */
+  [hidden] { display: none !important; }
 
   /* Syntax-Token des Mini-Highlighters */
   .tok-k { color: #82aaff; }
@@ -66,10 +69,36 @@
 
 <div class="mx-auto grid max-w-[1080px] grid-cols-1 gap-0 px-5 pb-24 font-sans text-[16px] leading-[1.65] md:grid-cols-[200px_minmax(0,1fr)] md:gap-12">
 
-<nav aria-label="Inhalt" class="pt-7 md:sticky md:top-0 md:max-h-screen md:self-start md:overflow-y-auto md:pb-6">
+<nav aria-label="Contents" class="pt-7 md:sticky md:top-0 md:max-h-screen md:self-start md:overflow-y-auto md:pb-6">
   <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">fast-<span class="text-(--accent)">pdf</span></div>
-  <div class="mb-4 font-mono text-xs text-(--muted)">v0.2.0 · Demo &amp; Guide</div>
-  <ul class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
+  <div class="mb-3 font-mono text-xs text-(--muted)">v0.2.0 · Demo &amp; Guide</div>
+
+  <label class="mb-4 block">
+    <span class="sr-only">Language / Sprache / 语言</span>
+    <select id="lang-select"
+            class="w-full cursor-pointer rounded-md border border-(--hairline) bg-(--surface) px-2 py-1.5 font-mono text-xs text-(--ink) max-md:w-auto">
+      <option value="en">English</option>
+      <option value="de">Deutsch</option>
+      <option value="zh">中文</option>
+    </select>
+  </label>
+
+  <ul data-lang="en" class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
+    <li><a class="nav-link" href="#schnellstart">Quick start</a></li>
+    <li><a class="nav-link" href="#ausgabe">Output formats</a></li>
+    <li><a class="nav-link" href="#seiten">Pages &amp; breaks<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: pageBreak()"></span></a></li>
+    <li><a class="nav-link" href="#text">Text &amp; typography</a></li>
+    <li><a class="nav-link" href="#fonts">Custom fonts</a></li>
+    <li><a class="nav-link" href="#layout">Layout engine</a></li>
+    <li><a class="nav-link" href="#tabellen">Tables</a></li>
+    <li><a class="nav-link" href="#bilder">Images</a></li>
+    <li><a class="nav-link" href="#formen">Shapes</a></li>
+    <li><a class="nav-link" href="#features">Document features</a></li>
+    <li><a class="nav-link" href="#fehler">Error handling</a></li>
+    <li><a class="nav-link" href="#performance">Performance</a></li>
+    <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
+  </ul>
+  <ul data-lang="de" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">Schnellstart</a></li>
     <li><a class="nav-link" href="#ausgabe">Ausgabeformate</a></li>
     <li><a class="nav-link" href="#seiten">Seiten &amp; Umbrüche<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: pageBreak()"></span></a></li>
@@ -84,31 +113,94 @@
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
   </ul>
+  <ul data-lang="zh" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
+    <li><a class="nav-link" href="#schnellstart">快速开始</a></li>
+    <li><a class="nav-link" href="#ausgabe">输出格式</a></li>
+    <li><a class="nav-link" href="#seiten">页面与分页<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：pageBreak()"></span></a></li>
+    <li><a class="nav-link" href="#text">文本与排版</a></li>
+    <li><a class="nav-link" href="#fonts">自定义字体</a></li>
+    <li><a class="nav-link" href="#layout">布局引擎</a></li>
+    <li><a class="nav-link" href="#tabellen">表格</a></li>
+    <li><a class="nav-link" href="#bilder">图片</a></li>
+    <li><a class="nav-link" href="#formen">图形</a></li>
+    <li><a class="nav-link" href="#features">文档功能</a></li>
+    <li><a class="nav-link" href="#fehler">错误处理</a></li>
+    <li><a class="nav-link" href="#performance">性能</a></li>
+    <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
+  </ul>
 </nav>
 
 <main class="min-w-0 pt-7">
 <header class="mb-10">
   <p class="mb-2.5 font-mono text-[11px] uppercase tracking-[0.14em] text-(--accent)">TypeScript · 0 Dependencies · ESM</p>
-  <h1 class="mb-3.5 text-balance font-mono text-[clamp(28px,5vw,40px)] leading-[1.15] font-bold tracking-[-0.03em]">PDFs direkt erzeugen.<br>Ohne Chromium, ohne Umwege.</h1>
-  <p class="mb-6 max-w-[62ch] text-[17px] text-(--muted)">
+
+  <h1 data-lang="en" class="mb-3.5 text-balance font-mono text-[clamp(28px,5vw,40px)] leading-[1.15] font-bold tracking-[-0.03em]">Generate PDFs directly.<br>No Chromium, no detours.</h1>
+  <h1 data-lang="de" hidden class="mb-3.5 text-balance font-mono text-[clamp(28px,5vw,40px)] leading-[1.15] font-bold tracking-[-0.03em]">PDFs direkt erzeugen.<br>Ohne Chromium, ohne Umwege.</h1>
+  <h1 data-lang="zh" hidden class="mb-3.5 text-balance font-mono text-[clamp(28px,5vw,40px)] leading-[1.15] font-bold tracking-[-0.03em]">直接生成 PDF。<br>无需 Chromium，不绕弯路。</h1>
+
+  <p data-lang="en" class="mb-6 max-w-[62ch] text-[17px] text-(--muted)">
+    <strong class="font-semibold text-(--ink)">fast-pdf</strong> writes PDF syntax itself — no HTML rendering, no
+    headless browser, no native binaries. Runs unchanged on
+    <strong class="font-semibold text-(--ink)">Node&nbsp;≥&nbsp;18, Bun, Deno, in the browser and on edge runtimes</strong>.
+    This page explains every feature with code that works exactly as shown.
+  </p>
+  <p data-lang="de" hidden class="mb-6 max-w-[62ch] text-[17px] text-(--muted)">
     <strong class="font-semibold text-(--ink)">fast-pdf</strong> schreibt PDF-Syntax selbst — kein HTML-Rendering, kein
     Headless-Browser, keine nativen Binaries. Läuft unverändert auf
     <strong class="font-semibold text-(--ink)">Node&nbsp;≥&nbsp;18, Bun, Deno, im Browser und auf Edge-Runtimes</strong>.
     Diese Seite erklärt jedes Feature mit Code, der genau so funktioniert.
   </p>
-  <ul class="m-0 flex list-none flex-wrap gap-2.5 p-0">
+  <p data-lang="zh" hidden class="mb-6 max-w-[62ch] text-[17px] text-(--muted)">
+    <strong class="font-semibold text-(--ink)">fast-pdf</strong> 直接书写 PDF 语法——没有 HTML 渲染、没有无头浏览器、没有原生二进制依赖。可在
+    <strong class="font-semibold text-(--ink)">Node&nbsp;≥&nbsp;18、Bun、Deno、浏览器以及边缘运行时</strong>
+    中原样运行。本页用可直接运行的代码讲解每一个功能。
+  </p>
+
+  <ul data-lang="en" class="m-0 flex list-none flex-wrap gap-2.5 p-0">
+    <li class="stat"><b>0</b>runtime dependencies</li>
+    <li class="stat"><b>~1.6&nbsp;ms</b>3-page document</li>
+    <li class="stat"><b>113</b>tests · 95&nbsp;% coverage</li>
+    <li class="stat"><b>~94&nbsp;KB</b>ESM, tree-shakeable</li>
+  </ul>
+  <ul data-lang="de" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
     <li class="stat"><b>0</b>Runtime-Dependencies</li>
     <li class="stat"><b>~1,6&nbsp;ms</b>3-Seiten-Dokument</li>
     <li class="stat"><b>113</b>Tests · 95&nbsp;% Coverage</li>
     <li class="stat"><b>~94&nbsp;KB</b>ESM, tree-shakeable</li>
   </ul>
+  <ul data-lang="zh" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
+    <li class="stat"><b>0</b>运行时依赖</li>
+    <li class="stat"><b>~1.6&nbsp;ms</b>3 页文档</li>
+    <li class="stat"><b>113</b>项测试 · 95&nbsp;% 覆盖率</li>
+    <li class="stat"><b>~94&nbsp;KB</b>ESM，支持 Tree-Shaking</li>
+  </ul>
 </header>
 
 <section id="schnellstart" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>Schnellstart</h2>
-  <p>Ein Dokument ist ein <code>PDFDocument</code>. Inhalte fließen von oben nach unten,
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>Quick start</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>Schnellstart</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">01</span>快速开始</h2>
+
+  <p data-lang="en">A document is a <code>PDFDocument</code>. Content flows top to bottom and
+     page breaks happen automatically. All coordinates are <b>top-left based, in points</b> (1&nbsp;pt = 1/72″).</p>
+  <p data-lang="de" hidden>Ein Dokument ist ein <code>PDFDocument</code>. Inhalte fließen von oben nach unten,
      Seitenumbrüche passieren automatisch. Alle Koordinaten sind <b>oben-links-basiert, in Punkt</b> (1&nbsp;pt = 1/72″).</p>
-<pre class="code-block"><code>import { PDFDocument } from "fast-pdf";
+  <p data-lang="zh" hidden>一个文档就是一个 <code>PDFDocument</code>。内容自上而下排布，分页自动完成。所有坐标均<b>以左上角为原点，单位为点</b>（1&nbsp;pt = 1/72 英寸）。</p>
+
+<pre data-lang="en" class="code-block"><code>import { PDFDocument } from "fast-pdf";
+
+const pdf = new PDFDocument({
+  format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
+  margins: 50,
+  font: "helvetica",       // standard 14: helvetica | times | courier
+  metadata: { title: "Demo", author: "Awesome Software" },
+});
+
+pdf.text("Hello world", { size: 24, bold: true });
+pdf.table([["Product", "Price"], ["Laptop", "999 €"]]);
+
+await pdf.save("demo.pdf");</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
 
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
@@ -121,12 +213,41 @@ pdf.text("Hallo Welt", { size: 24, bold: true });
 pdf.table([["Produkt", "Preis"], ["Laptop", "999 €"]]);
 
 await pdf.save("demo.pdf");</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+
+const pdf = new PDFDocument({
+  format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
+  margins: 50,
+  font: "helvetica",       // 标准 14 字体：helvetica | times | courier
+  metadata: { title: "Demo", author: "Awesome Software" },
+});
+
+pdf.text("你好，世界", { size: 24, bold: true });
+pdf.table([["产品", "价格"], ["笔记本电脑", "999 €"]]);
+
+await pdf.save("demo.pdf");</code></pre>
 </section>
 
 <section id="ausgabe" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">02</span>Ausgabeformate</h2>
-  <p>Für jede Plattform die passende Ausgabe — der Kern bleibt überall identisch:</p>
-<pre class="code-block"><code>const bytes  = await pdf.render();     // Uint8Array — funktioniert überall
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">02</span>Output formats</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">02</span>Ausgabeformate</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">02</span>输出格式</h2>
+
+  <p data-lang="en">The right output for every platform — the core stays identical everywhere:</p>
+  <p data-lang="de" hidden>Für jede Plattform die passende Ausgabe — der Kern bleibt überall identisch:</p>
+  <p data-lang="zh" hidden>为每个平台提供合适的输出方式——核心在任何环境都完全一致：</p>
+
+<pre data-lang="en" class="code-block"><code>const bytes  = await pdf.render();     // Uint8Array — works everywhere
+await pdf.save("invoice.pdf");         // Node/Bun/Deno: file · browser: download
+const buffer = await pdf.toBuffer();   // Node Buffer (Uint8Array elsewhere)
+const blob   = await pdf.toBlob();     // Blob for FormData, object URLs, …
+const stream = pdf.toStream();         // ReadableStream, 64 KiB chunks
+
+// API route (Next.js, Hono, Workers, …):
+return new Response(pdf.toStream(), {
+  headers: { "Content-Type": "application/pdf" },
+});</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>const bytes  = await pdf.render();     // Uint8Array — funktioniert überall
 await pdf.save("rechnung.pdf");        // Node/Bun/Deno: Datei · Browser: Download
 const buffer = await pdf.toBuffer();   // Node-Buffer (sonst Uint8Array)
 const blob   = await pdf.toBlob();     // Blob für FormData, Object-URLs, …
@@ -136,35 +257,106 @@ const stream = pdf.toStream();         // ReadableStream, 64-KiB-Chunks
 return new Response(pdf.toStream(), {
   headers: { "Content-Type": "application/pdf" },
 });</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>const bytes  = await pdf.render();     // Uint8Array —— 任何环境都可用
+await pdf.save("invoice.pdf");         // Node/Bun/Deno：写文件 · 浏览器：下载
+const buffer = await pdf.toBuffer();   // Node Buffer（其他环境为 Uint8Array）
+const blob   = await pdf.toBlob();     // Blob：用于 FormData、Object URL 等
+const stream = pdf.toStream();         // ReadableStream，64 KiB 分块
+
+// API 路由（Next.js、Hono、Workers 等）：
+return new Response(pdf.toStream(), {
+  headers: { "Content-Type": "application/pdf" },
+});</code></pre>
 </section>
 
 <section id="seiten" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Seiten &amp; Umbrüche<span class="chip">Neu: pageBreak()</span></h2>
-  <p>Text und Tabellen brechen Seiten automatisch. Was bei vielen Bibliotheken fehlt:
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Pages &amp; breaks<span class="chip">New: pageBreak()</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Seiten &amp; Umbrüche<span class="chip">Neu: pageBreak()</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>页面与分页<span class="chip">新增：pageBreak()</span></h2>
+
+  <p data-lang="en">Text and tables break pages automatically. What most libraries are missing:
+     <b>deciding yourself where the next page starts.</b> That’s exactly what
+     <code>pageBreak()</code> is for — an explicit break at precisely the spot you choose,
+     optionally with a custom start position and per-page setup:</p>
+  <p data-lang="de" hidden>Text und Tabellen brechen Seiten automatisch. Was bei vielen Bibliotheken fehlt:
      <b>selbst bestimmen, wo die nächste Seite anfängt.</b> Genau dafür gibt es
      <code>pageBreak()</code> — expliziter Umbruch an exakt der Stelle, an der du ihn willst,
      optional mit eigener Startposition und eigenem Seiten-Setup:</p>
-<pre class="code-block"><code>pdf.text("Kapitel 1 …");
+  <p data-lang="zh" hidden>文本和表格会自动分页。而大多数库缺少的是：<b>由你自己决定下一页从哪里开始。</b>
+     <code>pageBreak()</code> 正是为此而生——在你指定的位置显式分页，还可以自定义起始位置和页面设置：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.text("Chapter 1 …");
+
+pdf.pageBreak();                       // new page, cursor at the top margin
+pdf.pageBreak({ y: 200 });             // new page, content starts at y = 200 pt
+pdf.pageBreak({ landscape: true });    // new page in landscape
+pdf.pageBreak({ format: "A5", margins: 30, y: 120 });   // all combinable</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.text("Kapitel 1 …");
 
 pdf.pageBreak();                       // neue Seite, Cursor am oberen Rand
 pdf.pageBreak({ y: 200 });             // neue Seite, Inhalt startet bei y = 200 pt
 pdf.pageBreak({ landscape: true });    // neue Seite im Querformat
 pdf.pageBreak({ format: "A5", margins: 30, y: 120 });   // alles kombinierbar</code></pre>
-  <p>Daneben gibt es die manuelle Cursor-Steuerung:</p>
-<pre class="code-block"><code>pdf.addPage();          // wie pageBreak() ohne Optionen
+<pre data-lang="zh" hidden class="code-block"><code>pdf.text("第一章 …");
+
+pdf.pageBreak();                       // 新页面，光标位于上边距
+pdf.pageBreak({ y: 200 });             // 新页面，内容从 y = 200 pt 开始
+pdf.pageBreak({ landscape: true });    // 新页面，横向
+pdf.pageBreak({ format: "A5", margins: 30, y: 120 });   // 可任意组合</code></pre>
+
+  <p data-lang="en">There’s manual cursor control as well:</p>
+  <p data-lang="de" hidden>Daneben gibt es die manuelle Cursor-Steuerung:</p>
+  <p data-lang="zh" hidden>此外还有手动光标控制：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.addPage();          // like pageBreak() without options
+pdf.moveDown(2);        // move down two line heights
+pdf.y = 300;            // set the cursor directly
+console.log(pdf.y);     // … or read it</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.addPage();          // wie pageBreak() ohne Optionen
 pdf.moveDown(2);        // zwei Zeilenhöhen nach unten
 pdf.y = 300;            // Cursor direkt setzen
 console.log(pdf.y);     // … oder auslesen</code></pre>
-  <div class="hint"><b class="text-(--accent)">Gut zu wissen:</b> Innerhalb von <code>container()</code>, <code>columns()</code>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.addPage();          // 等同于不带参数的 pageBreak()
+pdf.moveDown(2);        // 向下移动两个行高
+pdf.y = 300;            // 直接设置光标
+console.log(pdf.y);     // …… 或读取光标位置</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Good to know:</b> Inside <code>container()</code>, <code>columns()</code>
+    and <code>grid()</code>, <code>pageBreak()</code> is deliberately forbidden — those blocks guarantee
+    their content stays on one page. The call throws a <code>FastPDFError</code> there instead of
+    tearing the layout apart.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Gut zu wissen:</b> Innerhalb von <code>container()</code>, <code>columns()</code>
     und <code>grid()</code> ist <code>pageBreak()</code> bewusst verboten — diese Blöcke garantieren,
     dass ihr Inhalt zusammen auf einer Seite bleibt. Der Aufruf wirft dort einen
     <code>FastPDFError</code> statt das Layout zu zerreißen.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">值得注意：</b>在 <code>container()</code>、<code>columns()</code>
+    和 <code>grid()</code> 内部，<code>pageBreak()</code> 被有意禁用——这些块保证其内容保持在同一页上。
+    在其中调用会抛出 <code>FastPDFError</code>，而不是撕裂布局。</div>
 </section>
 
 <section id="text" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">04</span>Text &amp; Typografie</h2>
-  <p>Zeilenumbruch mit echten Font-Metriken, Blocksatz, Dekorationen und Laufweite:</p>
-<pre class="code-block"><code>pdf.text("Automatisch umbrochen — äöüß € „Anführungszeichen“ – Gedankenstriche.", {
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">04</span>Text &amp; typography</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">04</span>Text &amp; Typografie</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">04</span>文本与排版</h2>
+
+  <p data-lang="en">Line wrapping against real font metrics, justified text, decorations and letter spacing:</p>
+  <p data-lang="de" hidden>Zeilenumbruch mit echten Font-Metriken, Blocksatz, Dekorationen und Laufweite:</p>
+  <p data-lang="zh" hidden>基于真实字体度量的自动换行、两端对齐、文字装饰与字距：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.text("Wrapped automatically — äöüß € “curly quotes” – dashes.", {
+  size: 12, bold: true,
+  color: "#334155",              // "#rgb" | "#rrggbb" | { r, g, b }
+  align: "justify",              // left | center | right | justify
+  underline: true,               // also: strikethrough
+  letterSpacing: 0.5,            // pt between characters
+  lineHeight: 1.4,
+  width: 300,                    // wrap width (default: content width)
+  spacingAfter: 8,
+});
+
+pdf.text("Header", { y: 20, align: "right" });      // absolute: no flow, no break
+pdf.widthOfText("How wide am I?", { size: 12 });    // measure without drawing</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.text("Automatisch umbrochen — äöüß € „Anführungszeichen“ – Gedankenstriche.", {
   size: 12, bold: true,
   color: "#334155",              // "#rgb" | "#rrggbb" | { r, g, b }
   align: "justify",              // left | center | right | justify
@@ -177,35 +369,116 @@ console.log(pdf.y);     // … oder auslesen</code></pre>
 
 pdf.text("Kopfzeile", { y: 20, align: "right" });   // absolut: kein Flow, kein Umbruch
 pdf.widthOfText("Wie breit bin ich?", { size: 12 }); // Messen ohne Zeichnen</code></pre>
-  <h3 class="doc-h3">Silbentrennung</h3>
-  <p>Weiche Trennstellen markierst du mit dem Soft Hyphen (U+00AD). Gebrochen wird nur dort,
+<pre data-lang="zh" hidden class="code-block"><code>pdf.text("自动换行 — äöüß € “弯引号” – 破折号。", {
+  size: 12, bold: true,
+  color: "#334155",              // "#rgb" | "#rrggbb" | { r, g, b }
+  align: "justify",              // left | center | right | justify
+  underline: true,               // 还有 strikethrough（删除线）
+  letterSpacing: 0.5,            // 字符间距（pt）
+  lineHeight: 1.4,
+  width: 300,                    // 换行宽度（默认：内容区宽度）
+  spacingAfter: 8,
+});
+
+pdf.text("页眉", { y: 20, align: "right" });         // 绝对定位：不参与排版流，不分页
+pdf.widthOfText("我有多宽？", { size: 12 });          // 只测量，不绘制</code></pre>
+
+  <h3 data-lang="en" class="doc-h3">Hyphenation</h3>
+  <h3 data-lang="de" hidden class="doc-h3">Silbentrennung</h3>
+  <h3 data-lang="zh" hidden class="doc-h3">断词连字</h3>
+
+  <p data-lang="en">Mark preferred break points with a soft hyphen (U+00AD). Words break only
+     where needed — with a visible hyphen at the break:</p>
+  <p data-lang="de" hidden>Weiche Trennstellen markierst du mit dem Soft Hyphen (U+00AD). Gebrochen wird nur dort,
      wo es nötig ist — dann mit sichtbarem Trennstrich:</p>
-<pre class="code-block"><code>pdf.text("Donau­dampf­schiff­fahrts­gesellschaft", { width: 100 });
+  <p data-lang="zh" hidden>用软连字符（U+00AD）标记可断词的位置。只有在必要时才会断开——断开处会显示连字符：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.text("Donau­dampf­schiff­fahrts­gesellschaft", { width: 100 });
+// → "Donaudampf-" ⏎ "schifffahrts-" ⏎ "gesellschaft"</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.text("Donau­dampf­schiff­fahrts­gesellschaft", { width: 100 });
+// → "Donaudampf-" ⏎ "schifffahrts-" ⏎ "gesellschaft"</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.text("Donau­dampf­schiff­fahrts­gesellschaft", { width: 100 });
 // → "Donaudampf-" ⏎ "schifffahrts-" ⏎ "gesellschaft"</code></pre>
 </section>
 
 <section id="fonts" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">05</span>Eigene Schriften</h2>
-  <p>TrueType-Fonts werden als Type0/Identity-H eingebettet — mit <b>Subsetting</b>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">05</span>Custom fonts</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">05</span>Eigene Schriften</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">05</span>自定义字体</h2>
+
+  <p data-lang="en">TrueType fonts are embedded as Type0/Identity-H — with <b>subsetting</b>
+     (only the glyphs you use end up in the PDF) and a ToUnicode CMap (copy &amp; search keep working).
+     That makes the font’s full Unicode range available:</p>
+  <p data-lang="de" hidden>TrueType-Fonts werden als Type0/Identity-H eingebettet — mit <b>Subsetting</b>
      (nur benutzte Glyphen landen im PDF) und ToUnicode-CMap (Kopieren &amp; Suchen funktioniert).
      Damit steht der volle Unicode-Umfang der Schrift zur Verfügung:</p>
-<pre class="code-block"><code>const inter = await fetch("/fonts/Inter.ttf").then(r =&gt; r.arrayBuffer());
+  <p data-lang="zh" hidden>TrueType 字体以 Type0/Identity-H 形式嵌入——支持<b>子集化</b>（只有用到的字形会进入 PDF）
+     和 ToUnicode CMap（复制和搜索照常可用）。这样即可使用字体的完整 Unicode 范围：</p>
+
+<pre data-lang="en" class="code-block"><code>const inter = await fetch("/fonts/Inter.ttf").then(r =&gt; r.arrayBuffer());
+
+pdf.registerFont(inter,     { family: "inter" });
+pdf.registerFont(interBold, { family: "inter", bold: true });
+
+pdf.text("Full Unicode — Ελληνικά, кириллица, 中文", { font: "inter" });
+pdf.text("Set in bold", { font: "inter", bold: true });</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>const inter = await fetch("/fonts/Inter.ttf").then(r =&gt; r.arrayBuffer());
 
 pdf.registerFont(inter,     { family: "inter" });
 pdf.registerFont(interBold, { family: "inter", bold: true });
 
 pdf.text("Volles Unicode — Ελληνικά, кириллица, 中文", { font: "inter" });
 pdf.text("Fett gesetzt", { font: "inter", bold: true });</code></pre>
-  <div class="hint"><b class="text-(--accent)">Fallback-Regel:</b> Fehlt eine Variante (z.&nbsp;B. kursiv), fällt fast-pdf
+<pre data-lang="zh" hidden class="code-block"><code>const inter = await fetch("/fonts/NotoSansSC.ttf").then(r =&gt; r.arrayBuffer());
+
+pdf.registerFont(inter,     { family: "noto" });
+pdf.registerFont(interBold, { family: "noto", bold: true });
+
+pdf.text("完整 Unicode — Ελληνικά, кириллица, 中文", { font: "noto" });
+pdf.text("粗体文字", { font: "noto", bold: true });</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Fallback rule:</b> If a variant is missing (e.g. italic), fast-pdf
+    falls back to the regular cut. The standard 14 fonts (Helvetica, Times, Courier)
+    need no embedding — zero extra bytes in the PDF.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Fallback-Regel:</b> Fehlt eine Variante (z.&nbsp;B. kursiv), fällt fast-pdf
     auf den regulären Schnitt zurück. Die Standard-14-Fonts (Helvetica, Times, Courier)
     brauchen kein Embedding — null zusätzliche Bytes im PDF.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">回退规则：</b>缺少某个变体（如斜体）时，fast-pdf 会回退到常规字重。
+    标准 14 字体（Helvetica、Times、Courier）无需嵌入——PDF 中零额外字节。</div>
 </section>
 
 <section id="layout" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">06</span>Layout-Engine</h2>
-  <p>Boxen, Spalten und Raster mit Padding, Rahmen und relativen Breiten —
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">06</span>Layout engine</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">06</span>Layout-Engine</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">06</span>布局引擎</h2>
+
+  <p data-lang="en">Boxes, columns and grids with padding, borders and relative widths —
+     height grows with the content:</p>
+  <p data-lang="de" hidden>Boxen, Spalten und Raster mit Padding, Rahmen und relativen Breiten —
      die Höhe wächst mit dem Inhalt:</p>
-<pre class="code-block"><code>pdf.container(
+  <p data-lang="zh" hidden>盒子、分栏和网格，支持内边距、边框和相对宽度——高度随内容增长：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.container(
+  {
+    width: "80%", align: "center",        // points or "%" of the available width
+    padding: 12, margin: { top: 8 },
+    background: "#eef4ff",
+    border: { color: "#4a7dff", width: 1 },
+    radius: 8, minHeight: 60,
+  },
+  (d) =&gt; d.text("A box that grows with its content."),
+);
+
+pdf.columns(
+  [(d) =&gt; d.text("Left column"), (d) =&gt; d.text("Right column")],
+  { widths: ["35%", "65%"], gap: 16 },
+);
+
+pdf.grid(
+  cards.map((c) =&gt; (d) =&gt; d.text(c.title)),
+  { columns: 3, gap: 10 },     // breaks between rows, never inside cells
+);</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.container(
   {
     width: "80%", align: "center",        // Punkt oder "%" der verfügbaren Breite
     padding: 12, margin: { top: 8 },
@@ -225,16 +498,65 @@ pdf.grid(
   karten.map((k) =&gt; (d) =&gt; d.text(k.titel)),
   { columns: 3, gap: 10 },     // Umbrüche zwischen Zeilen, nie in Zellen
 );</code></pre>
-  <p>Nach <code>columns()</code> steht der Cursor unter der <b>höchsten</b> Spalte.
+<pre data-lang="zh" hidden class="code-block"><code>pdf.container(
+  {
+    width: "80%", align: "center",        // 点数或可用宽度的百分比
+    padding: 12, margin: { top: 8 },
+    background: "#eef4ff",
+    border: { color: "#4a7dff", width: 1 },
+    radius: 8, minHeight: 60,
+  },
+  (d) =&gt; d.text("随内容增长的盒子。"),
+);
+
+pdf.columns(
+  [(d) =&gt; d.text("左栏"), (d) =&gt; d.text("右栏")],
+  { widths: ["35%", "65%"], gap: 16 },
+);
+
+pdf.grid(
+  cards.map((c) =&gt; (d) =&gt; d.text(c.title)),
+  { columns: 3, gap: 10 },     // 只在行之间分页，绝不拆开单元格
+);</code></pre>
+
+  <p data-lang="en">After <code>columns()</code> the cursor sits below the <b>tallest</b> column.
+     Containers and columns nest freely.</p>
+  <p data-lang="de" hidden>Nach <code>columns()</code> steht der Cursor unter der <b>höchsten</b> Spalte.
      Container und Spalten sind beliebig schachtelbar.</p>
+  <p data-lang="zh" hidden><code>columns()</code> 之后，光标位于<b>最高</b>一栏的下方。容器与分栏可以任意嵌套。</p>
 </section>
 
 <section id="tabellen" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">07</span>Tabellen</h2>
-  <p>Header wiederholt sich auf jeder Seite, der Footer wird einmal am Ende gezeichnet.
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">07</span>Tables</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">07</span>Tabellen</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">07</span>表格</h2>
+
+  <p data-lang="en">The header repeats on every page, the footer is drawn once at the end.
+     Cells can span columns <em>and</em> rows — span groups never straddle page breaks:</p>
+  <p data-lang="de" hidden>Header wiederholt sich auf jeder Seite, der Footer wird einmal am Ende gezeichnet.
      Zellen können Spalten <em>und</em> Zeilen überspannen — Span-Gruppen brechen nie
      über Seitengrenzen:</p>
-<pre class="code-block"><code>pdf.table(
+  <p data-lang="zh" hidden>表头在每页重复，表尾只在末尾绘制一次。单元格可以跨列<em>和</em>跨行——跨行组绝不会被分页拆开：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.table(
+  [
+    [{ text: "Invoice Q3", colSpan: 3, align: "center" }],
+    ["Item", "Qty", "Price"],
+    [{ text: "Consulting", rowSpan: 2 }, "8 h", "960.00 €"],
+    ["4 h", "480.00 €"],
+    [{ text: "Total", colSpan: 2, bold: true }, "1,440.00 €"],
+  ],
+  {
+    widths: [220, 90, 110],
+    aligns: ["left", "right", "right"],
+    header: true,                  // first row: repeats on every page
+    footer: true,                  // last row: styled, never repeated
+    zebraFill: "#f8fafc",
+    headerFill: "#0f172a", headerColor: "#ffffff",
+    padding: 6, borderWidth: 0.5,
+  },
+);</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.table(
   [
     [{ text: "Rechnung Q3", colSpan: 3, align: "center" }],
     ["Position", "Menge", "Preis"],
@@ -252,45 +574,138 @@ pdf.grid(
     padding: 6, borderWidth: 0.5,
   },
 );</code></pre>
-  <p>Einzelne Zellen stylst du inline:
+<pre data-lang="zh" hidden class="code-block"><code>pdf.table(
+  [
+    [{ text: "第三季度账单", colSpan: 3, align: "center" }],
+    ["项目", "数量", "金额"],
+    [{ text: "咨询服务", rowSpan: 2 }, "8 小时", "960.00 €"],
+    ["4 小时", "480.00 €"],
+    [{ text: "合计", colSpan: 2, bold: true }, "1,440.00 €"],
+  ],
+  {
+    widths: [220, 90, 110],
+    aligns: ["left", "right", "right"],
+    header: true,                  // 首行：每页重复
+    footer: true,                  // 末行：带样式，绝不重复
+    zebraFill: "#f8fafc",
+    headerFill: "#0f172a", headerColor: "#ffffff",
+    padding: 6, borderWidth: 0.5,
+  },
+);</code></pre>
+
+  <p data-lang="en">Style individual cells inline:
      <code>{ text, bold, italic, color, fill, align, colSpan, rowSpan }</code>.</p>
+  <p data-lang="de" hidden>Einzelne Zellen stylst du inline:
+     <code>{ text, bold, italic, color, fill, align, colSpan, rowSpan }</code>.</p>
+  <p data-lang="zh" hidden>单元格可以内联设置样式：
+     <code>{ text, bold, italic, color, fill, align, colSpan, rowSpan }</code>。</p>
 </section>
 
 <section id="bilder" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Bilder</h2>
-<pre class="code-block"><code>pdf.image(bytes, { width: 200 });                        // Flow, Seitenverhältnis bleibt
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Images</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Bilder</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>图片</h2>
+
+<pre data-lang="en" class="code-block"><code>pdf.image(bytes, { width: 200 });                        // flows, keeps aspect ratio
+pdf.image(logo,  { x: 400, y: 30, width: 120 });         // absolute position
+pdf.image(photo, { width: 200, height: 200, fit: "cover" });  // fill | contain | cover
+pdf.image(photo, { width: 100, crop: { x: 50, y: 50, width: 400, height: 400 } });
+pdf.image(stamp, { width: 80, rotate: -15, align: "center" });</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.image(bytes, { width: 200 });                        // Flow, Seitenverhältnis bleibt
 pdf.image(logo,  { x: 400, y: 30, width: 120 });         // absolute Position
 pdf.image(foto,  { width: 200, height: 200, fit: "cover" });  // fill | contain | cover
 pdf.image(foto,  { width: 100, crop: { x: 50, y: 50, width: 400, height: 400 } });
 pdf.image(stempel, { width: 80, rotate: -15, align: "center" });</code></pre>
-  <div class="overflow-x-auto"><table class="api">
+<pre data-lang="zh" hidden class="code-block"><code>pdf.image(bytes, { width: 200 });                        // 排版流内，保持宽高比
+pdf.image(logo,  { x: 400, y: 30, width: 120 });         // 绝对定位
+pdf.image(photo, { width: 200, height: 200, fit: "cover" });  // fill | contain | cover
+pdf.image(photo, { width: 100, crop: { x: 50, y: 50, width: 400, height: 400 } });
+pdf.image(stamp, { width: 80, rotate: -15, align: "center" });</code></pre>
+
+  <div data-lang="en" class="overflow-x-auto"><table class="api">
+    <tr><th>Format</th><th>Behavior</th></tr>
+    <tr><td>JPEG</td><td>Embedded as-is (DCTDecode), no re-encoding — grayscale, RGB, CMYK</td></tr>
+    <tr><td>PNG</td><td>Gray/RGB/indexed without re-encoding; the alpha channel becomes a real SMask (transparency)</td></tr>
+    <tr><td>Cache</td><td>Identical image bytes are embedded once, no matter how many pages use them</td></tr>
+  </table></div>
+  <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
     <tr><th>Format</th><th>Verhalten</th></tr>
     <tr><td>JPEG</td><td>1:1 eingebettet (DCTDecode), kein Re-Encoding — Graustufen, RGB, CMYK</td></tr>
     <tr><td>PNG</td><td>Grau/RGB/indiziert ohne Re-Encoding; Alphakanal wird zur echten SMask (Transparenz)</td></tr>
     <tr><td>Cache</td><td>Identische Bild-Bytes werden nur einmal eingebettet, egal auf wie vielen Seiten</td></tr>
   </table></div>
+  <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
+    <tr><th>格式</th><th>行为</th></tr>
+    <tr><td>JPEG</td><td>原样嵌入（DCTDecode），不重新编码——支持灰度、RGB、CMYK</td></tr>
+    <tr><td>PNG</td><td>灰度/RGB/索引色不重新编码；Alpha 通道转换为真正的 SMask（透明度）</td></tr>
+    <tr><td>缓存</td><td>相同的图片字节只嵌入一次，无论多少页引用它</td></tr>
+  </table></div>
 </section>
 
 <section id="formen" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">09</span>Formen</h2>
-<pre class="code-block"><code>pdf.line(50, 100, 545, 100, { color: "#e2e8f0", width: 0.5 });
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">09</span>Shapes</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">09</span>Formen</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">09</span>图形</h2>
+
+<pre data-lang="en" class="code-block"><code>pdf.line(50, 100, 545, 100, { color: "#e2e8f0", width: 0.5 });
+pdf.rect(50, 120, 100, 40, { fill: "#3b82f6", radius: 8 });      // rounded
+pdf.circle(100, 300, 40, { fill: "#ffd166", stroke: "#c79000" });
+pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.line(50, 100, 545, 100, { color: "#e2e8f0", width: 0.5 });
 pdf.rect(50, 120, 100, 40, { fill: "#3b82f6", radius: 8 });      // abgerundet
 pdf.circle(100, 300, 40, { fill: "#ffd166", stroke: "#c79000" });
 pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
-  <p>Kreise und Ellipsen sind exakte Bézier-Approximationen; <code>fill</code> und
+<pre data-lang="zh" hidden class="code-block"><code>pdf.line(50, 100, 545, 100, { color: "#e2e8f0", width: 0.5 });
+pdf.rect(50, 120, 100, 40, { fill: "#3b82f6", radius: 8 });      // 圆角
+pdf.circle(100, 300, 40, { fill: "#ffd166", stroke: "#c79000" });
+pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
+
+  <p data-lang="en">Circles and ellipses are exact Bézier approximations; <code>fill</code> and
+     <code>stroke</code> combine freely.</p>
+  <p data-lang="de" hidden>Kreise und Ellipsen sind exakte Bézier-Approximationen; <code>fill</code> und
      <code>stroke</code> lassen sich frei kombinieren.</p>
+  <p data-lang="zh" hidden>圆和椭圆采用精确的贝塞尔曲线近似；<code>fill</code> 与 <code>stroke</code> 可自由组合。</p>
 </section>
 
 <section id="features" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Dokumentfeatures</h2>
-  <p>Wiederkehrende Elemente werden zur Renderzeit auf jede Seite gezeichnet —
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Document features</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Dokumentfeatures</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>文档功能</h2>
+
+  <p data-lang="en">Recurring elements are drawn onto every page at render time —
+     so they know the <b>final</b> page number and count:</p>
+  <p data-lang="de" hidden>Wiederkehrende Elemente werden zur Renderzeit auf jede Seite gezeichnet —
      sie kennen also die <b>endgültige</b> Seitenzahl und -anzahl:</p>
-<pre class="code-block"><code>pdf.header("Geschäftsbericht 2026", { align: "right" });
+  <p data-lang="zh" hidden>重复元素在渲染阶段绘制到每一页上——因此它们知道<b>最终的</b>页码和总页数：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.header("Annual Report 2026", { align: "right" });
+pdf.footer("© 2026 Awesome Software");
+pdf.pageNumbers({ format: (n, t) =&gt; `Page ${n} of ${t}`, startAt: 2 });
+pdf.watermark("DRAFT", { opacity: 0.1 });     // diagonal, transparent</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.header("Geschäftsbericht 2026", { align: "right" });
 pdf.footer("© 2026 Awesome Software");
 pdf.pageNumbers({ format: (n, t) =&gt; `Seite ${n} von ${t}`, startAt: 2 });
 pdf.watermark("ENTWURF", { opacity: 0.1 });   // diagonal, transparent</code></pre>
-  <h3 class="doc-h3">Lesezeichen, Links &amp; Inhaltsverzeichnis</h3>
-<pre class="code-block"><code>pdf.outline("Kapitel 1");                    // PDF-Lesezeichen (Sidebar im Viewer)
+<pre data-lang="zh" hidden class="code-block"><code>pdf.header("2026 年度报告", { align: "right" });
+pdf.footer("© 2026 Awesome Software");
+pdf.pageNumbers({ format: (n, t) =&gt; `第 ${n} 页，共 ${t} 页`, startAt: 2 });
+pdf.watermark("草稿", { opacity: 0.1 });       // 对角线方向，半透明</code></pre>
+
+  <h3 data-lang="en" class="doc-h3">Bookmarks, links &amp; table of contents</h3>
+  <h3 data-lang="de" hidden class="doc-h3">Lesezeichen, Links &amp; Inhaltsverzeichnis</h3>
+  <h3 data-lang="zh" hidden class="doc-h3">书签、链接与目录</h3>
+
+<pre data-lang="en" class="code-block"><code>pdf.outline("Chapter 1");                    // PDF bookmark (viewer sidebar)
+pdf.outline("Section 1.1", { level: 1 });    // nested
+
+pdf.anchor("details");                                   // named jump target
+pdf.text("Read more …", { link: "#details" });           // internal link
+pdf.text("Website", { link: "https://example.com" });    // external link
+
+pdf.toc({ title: "Contents" });   // call last: builds linked TOC pages
+                                  // and inserts them at the front —
+                                  // page numbers shift correctly</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.outline("Kapitel 1");                    // PDF-Lesezeichen (Sidebar im Viewer)
 pdf.outline("Abschnitt 1.1", { level: 1 });  // verschachtelt
 
 pdf.anchor("details");                                   // benanntes Sprungziel
@@ -300,13 +715,41 @@ pdf.text("Website", { link: "https://example.com" });    // externer Link
 pdf.toc({ title: "Inhalt" });   // zum Schluss aufrufen: baut verlinkte
                                 // TOC-Seiten und fügt sie vorne ein —
                                 // Seitenzahlen werden korrekt verschoben</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.outline("第一章");                        // PDF 书签（阅读器侧边栏）
+pdf.outline("1.1 节", { level: 1 });          // 支持嵌套
+
+pdf.anchor("details");                                   // 命名跳转目标
+pdf.text("查看详情 …", { link: "#details" });             // 内部链接
+pdf.text("官网", { link: "https://example.com" });        // 外部链接
+
+pdf.toc({ title: "目录" });      // 最后调用：生成带链接的目录页
+                                 // 并插入到文档最前面——
+                                 // 页码会自动正确偏移</code></pre>
 </section>
 
 <section id="fehler" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Fehlerbehandlung</h2>
-  <p>Alle nutzerseitigen Fehler werfen <code>FastPDFError</code> mit einem stabilen,
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Error handling</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Fehlerbehandlung</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>错误处理</h2>
+
+  <p data-lang="en">All user-facing failures throw <code>FastPDFError</code> with a stable,
+     machine-readable <code>code</code> — messages may be reworded, codes never change:</p>
+  <p data-lang="de" hidden>Alle nutzerseitigen Fehler werfen <code>FastPDFError</code> mit einem stabilen,
      maschinenlesbaren <code>code</code> — Meldungstexte können sich ändern, Codes nicht:</p>
-<pre class="code-block"><code>import { FastPDFError } from "fast-pdf";
+  <p data-lang="zh" hidden>所有面向使用者的错误都会抛出带有稳定、机器可读 <code>code</code> 的
+     <code>FastPDFError</code>——错误文案可能调整，错误码永不改变：</p>
+
+<pre data-lang="en" class="code-block"><code>import { FastPDFError } from "fast-pdf";
+
+try {
+  pdf.text("Hello", { font: "doesNotExist" });
+} catch (e) {
+  if (e instanceof FastPDFError &amp;&amp; e.code === "UNKNOWN_FONT") {
+    // "UNKNOWN_FONT" | "INVALID_COLOR" | "UNSUPPORTED_IMAGE"
+    // "UNKNOWN_PAGE_FORMAT" | "INVALID_ARGUMENT" | …
+  }
+}</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>import { FastPDFError } from "fast-pdf";
 
 try {
   pdf.text("Hallo", { font: "gibtEsNicht" });
@@ -316,14 +759,41 @@ try {
     // "UNKNOWN_PAGE_FORMAT" | "INVALID_ARGUMENT" | …
   }
 }</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>import { FastPDFError } from "fast-pdf";
+
+try {
+  pdf.text("你好", { font: "不存在的字体" });
+} catch (e) {
+  if (e instanceof FastPDFError &amp;&amp; e.code === "UNKNOWN_FONT") {
+    // "UNKNOWN_FONT" | "INVALID_COLOR" | "UNSUPPORTED_IMAGE"
+    // "UNKNOWN_PAGE_FORMAT" | "INVALID_ARGUMENT" | …
+  }
+}</code></pre>
 </section>
 
 <section id="performance" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Performance</h2>
-  <p>Direkte PDF-Synthese statt Browser-Umweg. Kompression läuft über die native
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Performance</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Performance</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>性能</h2>
+
+  <p data-lang="en">Direct PDF synthesis instead of a browser detour. Compression uses the native
+     <code>CompressionStream</code> API (zlib) — zero bundle bytes for it.
+     Measured with <code>npm run bench</code> (Apple Silicon, Node 22):</p>
+  <p data-lang="de" hidden>Direkte PDF-Synthese statt Browser-Umweg. Kompression läuft über die native
      <code>CompressionStream</code>-API (zlib) — null Bundle-Bytes dafür.
      Gemessen mit <code>npm run bench</code> (Apple Silicon, Node 22):</p>
-  <div class="overflow-x-auto"><table class="api tabular-nums">
+  <p data-lang="zh" hidden>直接合成 PDF，无需绕道浏览器。压缩使用原生 <code>CompressionStream</code> API（zlib）——不占任何打包体积。
+     以下数据由 <code>npm run bench</code> 测得（Apple Silicon，Node 22）：</p>
+
+  <div data-lang="en" class="overflow-x-auto"><table class="api tabular-nums">
+    <tr><th>Document</th><th>Time</th><th>Throughput</th><th>Size</th></tr>
+    <tr><td>Text, ~3 pages</td><td>1.6 ms</td><td>621 docs/s</td><td>1.9 KB</td></tr>
+    <tr><td>Text, ~30 pages</td><td>12.6 ms</td><td>79 docs/s</td><td>13.0 KB</td></tr>
+    <tr><td>Table, 500 rows (~17 p.)</td><td>26.4 ms</td><td>38 docs/s</td><td>55.4 KB</td></tr>
+    <tr><td>Table, 5000 rows (~170 p.)</td><td>232 ms</td><td>4 docs/s</td><td>549 KB</td></tr>
+    <tr><td>Mixed (text/tables/vector)</td><td>0.9 ms</td><td>1071 docs/s</td><td>2.8 KB</td></tr>
+  </table></div>
+  <div data-lang="de" hidden class="overflow-x-auto"><table class="api tabular-nums">
     <tr><th>Dokument</th><th>Zeit</th><th>Durchsatz</th><th>Größe</th></tr>
     <tr><td>Text, ~3 Seiten</td><td>1,6 ms</td><td>621 Docs/s</td><td>1,9 KB</td></tr>
     <tr><td>Text, ~30 Seiten</td><td>12,6 ms</td><td>79 Docs/s</td><td>13,0 KB</td></tr>
@@ -331,37 +801,92 @@ try {
     <tr><td>Tabelle, 5000 Zeilen (~170 S.)</td><td>232 ms</td><td>4 Docs/s</td><td>549 KB</td></tr>
     <tr><td>Gemischt (Text/Tabellen/Vektor)</td><td>0,9 ms</td><td>1071 Docs/s</td><td>2,8 KB</td></tr>
   </table></div>
+  <div data-lang="zh" hidden class="overflow-x-auto"><table class="api tabular-nums">
+    <tr><th>文档</th><th>耗时</th><th>吞吐</th><th>大小</th></tr>
+    <tr><td>文本，约 3 页</td><td>1.6 ms</td><td>621 份/秒</td><td>1.9 KB</td></tr>
+    <tr><td>文本，约 30 页</td><td>12.6 ms</td><td>79 份/秒</td><td>13.0 KB</td></tr>
+    <tr><td>表格，500 行（约 17 页）</td><td>26.4 ms</td><td>38 份/秒</td><td>55.4 KB</td></tr>
+    <tr><td>表格，5000 行（约 170 页）</td><td>232 ms</td><td>4 份/秒</td><td>549 KB</td></tr>
+    <tr><td>混合（文本/表格/矢量）</td><td>0.9 ms</td><td>1071 份/秒</td><td>2.8 KB</td></tr>
+  </table></div>
 </section>
 
 <section id="ergebnis" class="doc-section">
-  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>So sieht’s aus</h2>
-  <p>Beide Seiten stammen aus <code>examples/showcase.ts</code> (<code>npm run showcase</code>)
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>See it rendered</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>So sieht’s aus</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>效果展示</h2>
+
+  <p data-lang="en">Both pages come from <code>examples/showcase.ts</code> (<code>npm run showcase</code>)
+     and were rendered with macOS Quartz — independent proof that real
+     PDF viewers understand the output:</p>
+  <p data-lang="de" hidden>Beide Seiten stammen aus <code>examples/showcase.ts</code> (<code>npm run showcase</code>)
      und wurden mit macOS Quartz gerendert — ein unabhängiger Beleg, dass echte
      PDF-Viewer die Ausgabe korrekt verstehen:</p>
+  <p data-lang="zh" hidden>以下两页来自 <code>examples/showcase.ts</code>（<code>npm run showcase</code>），由 macOS Quartz 渲染——独立证明真实的 PDF 阅读器能正确解析输出：</p>
+
   <div class="mt-4 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
     <figure class="m-0">
       <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) bg-white shadow-[0_8px_28px_rgba(15,20,32,0.10)]"
            src="data:image/png;base64,__TOC_B64__"
-           alt="Seite 1: generiertes, verlinktes Inhaltsverzeichnis mit Wasserzeichen ENTWURF, Kopf- und Fußzeile" loading="lazy">
-      <figcaption class="mt-2 text-[12.5px] text-(--muted)">Generiertes Inhaltsverzeichnis (<code>toc()</code>) — verlinkt, mit Wasserzeichen, Header &amp; Footer. Seitenzahlen automatisch verschoben.</figcaption>
+           alt="Page 1: generated, linked table of contents with DRAFT watermark, header and footer" loading="lazy">
+      <figcaption data-lang="en" class="mt-2 text-[12.5px] text-(--muted)">Generated table of contents (<code>toc()</code>) — linked, with watermark, header &amp; footer. Page numbers shifted automatically.</figcaption>
+      <figcaption data-lang="de" hidden class="mt-2 text-[12.5px] text-(--muted)">Generiertes Inhaltsverzeichnis (<code>toc()</code>) — verlinkt, mit Wasserzeichen, Header &amp; Footer. Seitenzahlen automatisch verschoben.</figcaption>
+      <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">自动生成的目录（<code>toc()</code>）——带链接、水印、页眉和页脚。页码自动偏移。</figcaption>
     </figure>
     <figure class="m-0">
       <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) bg-white shadow-[0_8px_28px_rgba(15,20,32,0.10)]"
            src="data:image/png;base64,__PAGE2_B64__"
-           alt="Inhaltsseite: Typografie mit Unterstreichung und Blocksatz, Container, Spalten, Formen und Tabelle mit Spans" loading="lazy">
-      <figcaption class="mt-2 text-[12.5px] text-(--muted)">Typografie, Container, Spalten, Formen und eine Tabelle mit <code>colSpan</code>/<code>rowSpan</code>, Footer und Zebra-Streifen.</figcaption>
+           alt="Content page: typography with underline and justified text, containers, columns, shapes and a table with spans" loading="lazy">
+      <figcaption data-lang="en" class="mt-2 text-[12.5px] text-(--muted)">Typography, containers, columns, shapes and a table with <code>colSpan</code>/<code>rowSpan</code>, footer and zebra stripes.</figcaption>
+      <figcaption data-lang="de" hidden class="mt-2 text-[12.5px] text-(--muted)">Typografie, Container, Spalten, Formen und eine Tabelle mit <code>colSpan</code>/<code>rowSpan</code>, Footer und Zebra-Streifen.</figcaption>
+      <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">排版、容器、分栏、图形，以及带 <code>colSpan</code>/<code>rowSpan</code>、表尾和斑马纹的表格。</figcaption>
     </figure>
   </div>
 </section>
 
 <footer class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
-  fast-pdf v0.2.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
-  Details in <span class="font-mono">docs/ARCHITECTURE.md</span> und <span class="font-mono">docs/ROADMAP.md</span>
+  <span data-lang="en">fast-pdf v0.2.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
+  details in <span class="font-mono">docs/ARCHITECTURE.md</span> and <span class="font-mono">docs/ROADMAP.md</span></span>
+  <span data-lang="de" hidden>fast-pdf v0.2.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
+  Details in <span class="font-mono">docs/ARCHITECTURE.md</span> und <span class="font-mono">docs/ROADMAP.md</span></span>
+  <span data-lang="zh" hidden>fast-pdf v0.2.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
+  详见 <span class="font-mono">docs/ARCHITECTURE.md</span> 与 <span class="font-mono">docs/ROADMAP.md</span></span>
 </footer>
 </main>
 </div>
 
 <script>
+  // Sprachumschaltung: en (Hauptsprache) / de / zh. Inaktive Sprachen tragen
+  // das hidden-Attribut — ohne JavaScript bleibt Englisch sichtbar.
+  (function () {
+    var TITLES = {
+      en: "fast-pdf – Demo & Feature Guide",
+      de: "fast-pdf – Demo & Feature-Guide",
+      zh: "fast-pdf – 演示与功能指南",
+    };
+    var select = document.getElementById("lang-select");
+
+    function setLang(lang) {
+      if (!TITLES[lang]) lang = "en";
+      var nodes = document.querySelectorAll("[data-lang]");
+      for (var i = 0; i < nodes.length; i++) {
+        nodes[i].hidden = nodes[i].getAttribute("data-lang") !== lang;
+      }
+      document.documentElement.lang = lang === "zh" ? "zh-CN" : lang;
+      document.title = TITLES[lang];
+      select.value = lang;
+      try { localStorage.setItem("fastpdf-demo-lang", lang); } catch (e) {}
+    }
+
+    // Priorität: ?lang=… in der URL > gemerkte Auswahl > Englisch.
+    var initial = "en";
+    try { initial = localStorage.getItem("fastpdf-demo-lang") || "en"; } catch (e) {}
+    var fromUrl = new URLSearchParams(location.search).get("lang");
+    if (fromUrl) initial = fromUrl;
+    if (initial !== "en") setLang(initial);
+    select.addEventListener("change", function () { setLang(select.value); });
+  })();
+
   // Minimaler TS-Highlighter: ein Pass, Alternativen in Prioritätsreihenfolge
   // (Kommentar > String > Keyword > Zahl) — keine Platzhalter-Kollisionen.
   const RX = new RegExp(
