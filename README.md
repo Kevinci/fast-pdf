@@ -4,6 +4,8 @@
 edge/serverless runtimes. Think *esbuild for PDFs*: no Chromium, no native binaries,
 no runtime dependencies, ~13 KB min+gzip.
 
+**📄 Demo & Feature-Guide (deutsch): <https://kevinci.github.io/fast-pdf/>**
+
 ```ts
 import { PDFDocument } from "fast-pdf";
 

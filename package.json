@@ -3,6 +3,14 @@
   "version": "0.2.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Kevinci/fast-pdf.git"
+  },
+  "homepage": "https://kevinci.github.io/fast-pdf/",
+  "bugs": {
+    "url": "https://github.com/Kevinci/fast-pdf/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "main": "./dist/index.js",
