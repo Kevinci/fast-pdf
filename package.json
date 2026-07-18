@@ -26,8 +26,6 @@
   },
   "files": [
     "dist",
-    "docs/ARCHITECTURE.md",
-    "docs/ROADMAP.md",
     "README.md",
     "LICENSE"
   ],

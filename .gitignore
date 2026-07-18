@@ -8,3 +8,5 @@ bench/output/
 .idea/
 *.iml
 docs/demo.tw.css
+docs/ARCHITECTURE.md
+docs/ROADMAP.md

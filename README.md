@@ -284,8 +284,7 @@ All user-facing failures throw `FastPDFError` with a stable machine-readable
 - **Platform-pure core** — no `fs`/`path`/`process`/`Buffer` outside the
   feature-detected `save()` adapter; bundles cleanly for browser and edge targets.
 - **Layered architecture** (API → layout → resources → PDF engine → output) with a
-  documented WASM migration path — see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-  and [`docs/ROADMAP.md`](docs/ROADMAP.md).
+  documented WASM migration path.
 
 ## Development
 
