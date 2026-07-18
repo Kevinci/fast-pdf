@@ -3,7 +3,7 @@
   "version": "0.3.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
-  "author": "Awesome Software <k.imig@awesome-software.de>",
+  "author": "Kevin Imig <kevinci.coding@gmail.com>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Kevinci/fast-pdf.git"
