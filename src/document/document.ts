@@ -156,6 +156,24 @@ export interface GridOptions {
   rowGap?: number;
 }
 
+/** One column of an objectTable(): which property to show, and how. */
+export interface ObjectTableColumn<T> {
+  /** Property to read from each record. */
+  key: keyof T & string;
+  /** Header label. Default: the key itself. */
+  header?: string;
+  /** Column width in points. Unspecified columns share the leftover space. */
+  width?: number;
+  align?: TextAlign;
+  /** Convert the raw value to cell text. Default: String(value), "" for null/undefined. */
+  format?: (value: unknown, record: T) => string;
+}
+
+export interface ObjectTableOptions<T> extends Omit<TableOptions, "widths" | "aligns" | "header"> {
+  /** Columns to show (keys or full specs). Default: all keys of the first record. */
+  columns?: (ObjectTableColumn<T> | (keyof T & string))[];
+}
+
 /** Info passed to page decorators (header/footer/watermark callbacks). */
 export interface PageInfo {
   /** 1-based page number in final page order. */
@@ -737,6 +755,59 @@ export class PDFDocument {
       i = end + 1;
     }
     return this;
+  }
+
+  /**
+   * Render an array of records (e.g. a JSON REST response) as a table.
+   * Columns default to the keys of the first record; pass `columns` to
+   * pick order, headers, widths, alignment and formatting.
+   *
+   * ```ts
+   * const orders = await fetch("/api/orders").then(r => r.json());
+   * pdf.objectTable(orders, {
+   *   columns: [
+   *     { key: "id", header: "Nr.", align: "right", width: 50 },
+   *     { key: "customer", header: "Kunde" },
+   *     { key: "total", header: "Betrag", align: "right", format: (v) => `${v} €` },
+   *   ],
+   * });
+   * ```
+   */
+  objectTable<T extends Record<string, unknown>>(
+    records: T[],
+    options: ObjectTableOptions<T> = {},
+  ): this {
+    if (records.length === 0) return this;
+    const specs: ObjectTableColumn<T>[] = (options.columns ?? (Object.keys(records[0]!) as (keyof T & string)[]))
+      .map((c) => (typeof c === "string" ? { key: c } : c));
+    if (specs.length === 0) return this;
+
+    // Mixed widths: explicit ones are kept, the rest share the leftover space.
+    let widths: number[] | undefined;
+    if (specs.some((s) => s.width !== undefined)) {
+      const fixed = specs.reduce((a, s) => a + (s.width ?? 0), 0);
+      const open = specs.filter((s) => s.width === undefined).length;
+      const share = open > 0 ? Math.max(20, (this.flowWidth - fixed) / open) : 0;
+      widths = specs.map((s) => s.width ?? share);
+    }
+
+    const { columns: _columns, ...tableOptions } = options;
+    const rows: CellValue[][] = [
+      specs.map((s) => s.header ?? s.key),
+      ...records.map((record) =>
+        specs.map((s) => {
+          const value = record[s.key];
+          if (s.format) return s.format(value, record);
+          return value === null || value === undefined ? "" : String(value);
+        }),
+      ),
+    ];
+    return this.table(rows, {
+      ...tableOptions,
+      header: true,
+      widths,
+      aligns: specs.map((s) => s.align ?? "left"),
+    });
   }
 
   // ── Images ───────────────────────────────────────────────────────────

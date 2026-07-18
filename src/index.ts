@@ -26,6 +26,8 @@ export type {
   WatermarkOptions,
   OutlineOptions,
   TOCOptions,
+  ObjectTableColumn,
+  ObjectTableOptions,
 } from "./document/document";
 
 export { FastPDFError, type FastPDFErrorCode } from "./errors";

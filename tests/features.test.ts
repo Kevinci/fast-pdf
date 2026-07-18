@@ -263,6 +263,84 @@ describe("tables (M4)", () => {
   });
 });
 
+describe("objectTable() — REST/JSON binding", () => {
+  const orders = [
+    { id: 1, customer: "Alice", total: 120, paid: true },
+    { id: 2, customer: "Bob", total: 80, paid: false },
+  ];
+
+  it("renders headers from the keys of the first record by default", async () => {
+    const pdf = raw();
+    pdf.objectTable(orders);
+    const text = await rendered(pdf);
+    expect(text).toContain("(id) Tj");
+    expect(text).toContain("(customer) Tj");
+    expect(text).toContain("(Alice) Tj");
+    expect(text).toContain("(Bob) Tj");
+  });
+
+  it("stringifies values and renders empty cells for null/undefined", async () => {
+    const pdf = raw();
+    pdf.objectTable([{ a: 1, b: null }, { a: 2, b: undefined as unknown as number }]);
+    const text = await rendered(pdf);
+    expect(text).toContain("(1) Tj");
+    expect(text).toContain("(2) Tj");
+  });
+
+  it("honors column order, custom headers and per-column formatting", async () => {
+    const pdf = raw();
+    pdf.objectTable(orders, {
+      columns: [
+        { key: "customer", header: "Kunde" },
+        { key: "total", header: "Betrag", align: "right", format: (v) => `${v},00 EUR` },
+      ],
+    });
+    const text = await rendered(pdf);
+    expect(text).toContain("(Kunde) Tj");
+    expect(text).toContain("(Betrag) Tj");
+    expect(text).toContain("(120,00 EUR) Tj");
+    expect(text).not.toContain("(id) Tj"); // id column omitted
+  });
+
+  it("accepts bare key strings as columns", async () => {
+    const pdf = raw();
+    pdf.objectTable(orders, { columns: ["customer", "id"] });
+    const text = await rendered(pdf);
+    expect(text).toContain("(customer) Tj");
+    expect(text).not.toContain("(total) Tj");
+  });
+
+  it("passes the whole record to format() (e.g. for computed cells)", async () => {
+    const pdf = raw();
+    pdf.objectTable(orders, {
+      columns: [{ key: "paid", header: "Status", format: (_v, r) => (r.paid ? "OK" : `offen: ${r.total}`) }],
+    });
+    const text = await rendered(pdf);
+    expect(text).toContain("(OK) Tj");
+    expect(text).toContain("(offen: 80) Tj");
+  });
+
+  it("mixes fixed and auto column widths", async () => {
+    const pdf = raw();
+    pdf.objectTable(orders, {
+      columns: [
+        { key: "id", width: 40 },
+        { key: "customer" },
+        { key: "total", width: 60 },
+      ],
+    });
+    // Just needs to render without throwing; widths add up within content width.
+    expect((await rendered(pdf)).includes("(Alice) Tj")).toBe(true);
+  });
+
+  it("is a no-op for an empty array", () => {
+    const pdf = raw();
+    const before = pdf.y;
+    pdf.objectTable([]);
+    expect(pdf.y).toBe(before);
+  });
+});
+
 describe("images (M5)", () => {
   // 2×1 opaque RGB PNG
   const pngPromise = makePng(2, 1, 2, [255, 0, 0]);

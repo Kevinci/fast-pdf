@@ -71,7 +71,7 @@
 
 <nav aria-label="Contents" class="pt-7 md:sticky md:top-0 md:max-h-screen md:self-start md:overflow-y-auto md:pb-6">
   <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">fast-<span class="text-(--accent)">pdf</span></div>
-  <div class="mb-3 font-mono text-xs text-(--muted)">v0.2.0 · Demo &amp; Guide</div>
+  <div class="mb-3 font-mono text-xs text-(--muted)">v0.3.0 · Demo &amp; Guide</div>
 
   <label class="mb-4 block">
     <span class="sr-only">Language / Sprache / 语言</span>
@@ -607,6 +607,86 @@ pdf.grid(
      <code>{ text, bold, italic, color, fill, align, colSpan, rowSpan }</code>.</p>
   <p data-lang="zh" hidden>单元格可以内联设置样式：
      <code>{ text, bold, italic, color, fill, align, colSpan, rowSpan }</code>。</p>
+
+  <h3 data-lang="en" class="doc-h3">Straight from a REST/JSON response</h3>
+  <h3 data-lang="de" hidden class="doc-h3">Direkt aus einer REST-/JSON-Antwort</h3>
+  <h3 data-lang="zh" hidden class="doc-h3">直接来自 REST/JSON 响应</h3>
+
+  <p data-lang="en">Got an array of records from your API? <code>objectTable()</code> turns it into a
+     table with no manual row mapping — columns default to the keys of the first record,
+     or you pick order, headers, widths and formatting:</p>
+  <p data-lang="de" hidden>Ein Array von Objekten aus deiner API? <code>objectTable()</code> macht daraus eine
+     Tabelle, ganz ohne manuelles Row-Mapping — Spalten sind standardmäßig die Keys des ersten
+     Objekts, oder du bestimmst Reihenfolge, Überschriften, Breiten und Formatierung:</p>
+  <p data-lang="zh" hidden>从 API 拿到一个对象数组？<code>objectTable()</code> 会直接把它变成表格，无需手动映射每一行——
+     列默认取第一条记录的键，你也可以指定顺序、表头、宽度和格式化：</p>
+
+<pre data-lang="en" class="code-block"><code>const orders = await fetch("/api/orders").then((r) =&gt; r.json());
+
+pdf.objectTable(orders);            // columns = keys of the first record
+
+pdf.objectTable(orders, {           // …or take full control
+  columns: [
+    { key: "id",       header: "No.",    align: "right", width: 60 },
+    { key: "customer", header: "Customer" },
+    { key: "total",    header: "Amount", align: "right",
+      format: (v) =&gt; `${v} €` },   // format(value, record) — computed cells too
+  ],
+  zebraFill: "#f8fafc",             // every table() option works here as well
+});</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>const orders = await fetch("/api/orders").then((r) =&gt; r.json());
+
+pdf.objectTable(orders);            // Spalten = Keys des ersten Objekts
+
+pdf.objectTable(orders, {           // …oder volle Kontrolle
+  columns: [
+    { key: "id",       header: "Nr.",    align: "right", width: 60 },
+    { key: "customer", header: "Kunde" },
+    { key: "total",    header: "Betrag", align: "right",
+      format: (v) =&gt; `${v} €` },   // format(value, record) — auch berechnete Zellen
+  ],
+  zebraFill: "#f8fafc",             // jede table()-Option funktioniert auch hier
+});</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>const orders = await fetch("/api/orders").then((r) =&gt; r.json());
+
+pdf.objectTable(orders);            // 列 = 第一条记录的键
+
+pdf.objectTable(orders, {           // …… 或完全自定义
+  columns: [
+    { key: "id",       header: "编号",   align: "right", width: 60 },
+    { key: "customer", header: "客户" },
+    { key: "total",    header: "金额",   align: "right",
+      format: (v) =&gt; `${v} €` },   // format(value, record) —— 也支持计算列
+  ],
+  zebraFill: "#f8fafc",             // 每个 table() 选项在这里同样可用
+});</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Download on button click:</b> wire it to a button and let the user
+    save the PDF — all client-side. <code>save()</code> triggers a browser download; on the
+    server it writes a file (same call).
+<pre class="code-block mt-3"><code>async function onClick() {
+  const rows = await fetch("/api/orders").then((r) =&gt; r.json());
+  const pdf = new PDFDocument();
+  pdf.objectTable(rows);
+  await pdf.save("orders.pdf");   // → browser download
+}</code></pre></div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Download per Button-Klick:</b> häng es an einen Button und lass den Nutzer
+    das PDF speichern — komplett clientseitig. <code>save()</code> löst im Browser einen Download aus,
+    auf dem Server schreibt es eine Datei (gleicher Aufruf).
+<pre class="code-block mt-3"><code>async function onClick() {
+  const rows = await fetch("/api/orders").then((r) =&gt; r.json());
+  const pdf = new PDFDocument();
+  pdf.objectTable(rows);
+  await pdf.save("orders.pdf");   // → Browser-Download
+}</code></pre></div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">点击按钮即下载：</b>把它绑定到一个按钮，让用户保存 PDF——完全在客户端完成。
+    <code>save()</code> 在浏览器中触发下载，在服务器上写入文件（同一个调用）。
+<pre class="code-block mt-3"><code>async function onClick() {
+  const rows = await fetch("/api/orders").then((r) =&gt; r.json());
+  const pdf = new PDFDocument();
+  pdf.objectTable(rows);
+  await pdf.save("orders.pdf");   // → 浏览器下载
+}</code></pre></div>
 </section>
 
 <section id="bilder" class="doc-section">
@@ -853,11 +933,11 @@ try {
 </section>
 
 <footer class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
-  <span data-lang="en">fast-pdf v0.2.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="en">fast-pdf v0.3.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
   details in <span class="font-mono">docs/ARCHITECTURE.md</span> and <span class="font-mono">docs/ROADMAP.md</span></span>
-  <span data-lang="de" hidden>fast-pdf v0.2.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="de" hidden>fast-pdf v0.3.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
   Details in <span class="font-mono">docs/ARCHITECTURE.md</span> und <span class="font-mono">docs/ROADMAP.md</span></span>
-  <span data-lang="zh" hidden>fast-pdf v0.2.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="zh" hidden>fast-pdf v0.3.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
   详见 <span class="font-mono">docs/ARCHITECTURE.md</span> 与 <span class="font-mono">docs/ROADMAP.md</span></span>
 </footer>
 </main>

@@ -38,11 +38,42 @@ in **~209 ms**, including Flate compression.
 ## Install
 
 ```sh
-npm install fast-pdf     # bun add / pnpm add / deno add also work
+npm install fast-pdf                    # once published to npm
+npm install github:Kevinci/fast-pdf     # today, straight from GitHub (auto-builds on install)
 ```
 
 Requirements: any runtime with Web APIs (`Uint8Array`, `CompressionStream`) —
 Node ≥ 18, Bun, Deno, modern browsers, Cloudflare Workers, Vercel/Netlify Edge.
+
+### Download-on-click in the browser
+
+Fetch your data, build the PDF, hand the user a download — all client-side:
+
+```ts
+import { PDFDocument } from "fast-pdf";
+
+async function downloadOrdersPdf() {
+  const orders = await fetch("/api/orders").then((r) => r.json());
+
+  const pdf = new PDFDocument({ metadata: { title: "Orders" } });
+  pdf.text("Order overview", { size: 20, bold: true, spacingAfter: 12 });
+  pdf.objectTable(orders, {
+    columns: [
+      { key: "id",       header: "No.",    align: "right", width: 60 },
+      { key: "customer", header: "Customer" },
+      { key: "total",    header: "Amount", align: "right", format: (v) => `${v} €` },
+    ],
+  });
+
+  await pdf.save("orders.pdf");   // triggers the browser download directly
+}
+
+document.querySelector("#pdf-btn")!.addEventListener("click", downloadOrdersPdf);
+```
+
+`save()` triggers a download in the browser and writes a file on Node/Bun/Deno —
+same call, no branching. Prefer a Blob URL (e.g. to preview in an `<iframe>`)?
+Use `await pdf.toBlob()` and `URL.createObjectURL(blob)`.
 
 ## Output — pick what fits your platform
 
@@ -175,6 +206,29 @@ pdf.table(
 Cells wrap, row height adapts, and long tables break across pages with the
 header re-drawn on every page. Rows chained by `rowSpan` never straddle a
 page break.
+
+**From a REST/JSON response** — `objectTable()` turns an array of records
+straight into a table, no manual row mapping:
+
+```ts
+const orders = await fetch("/api/orders").then((r) => r.json());
+
+pdf.objectTable(orders);            // columns = keys of the first record
+
+pdf.objectTable(orders, {           // …or pick order, headers, widths, formatting
+  columns: [
+    { key: "id",       header: "No.",    align: "right", width: 60 },
+    { key: "customer", header: "Customer" },
+    { key: "total",    header: "Amount", align: "right",
+      format: (v) => `${(v as number).toFixed(2)} €` },
+  ],
+  zebraFill: "#f8fafc",             // every option of table() works here too
+});
+```
+
+`format(value, record)` also receives the whole record, so you can build
+computed cells. All other `table()` options (header/footer, zebra, borders,
+padding) pass through.
 
 ### Images
 
