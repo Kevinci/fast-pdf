@@ -904,30 +904,32 @@ try {
   <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>So sieht’s aus</h2>
   <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>效果展示</h2>
 
-  <p data-lang="en">Both pages come from <code>examples/showcase.ts</code> (<code>npm run showcase</code>)
-     and were rendered with macOS Quartz — independent proof that real
-     PDF viewers understand the output:</p>
-  <p data-lang="de" hidden>Beide Seiten stammen aus <code>examples/showcase.ts</code> (<code>npm run showcase</code>)
-     und wurden mit macOS Quartz gerendert — ein unabhängiger Beleg, dass echte
-     PDF-Viewer die Ausgabe korrekt verstehen:</p>
-  <p data-lang="zh" hidden>以下两页来自 <code>examples/showcase.ts</code>（<code>npm run showcase</code>），由 macOS Quartz 渲染——独立证明真实的 PDF 阅读器能正确解析输出：</p>
+  <p data-lang="en">A design-forward report from <code>examples/report.ts</code> (<code>npx tsx examples/report.ts</code>),
+     rendered with macOS Quartz — full-bleed color, a vector bar chart and big type, all from
+     the same primitives shown above. Proof that "fast" doesn't mean "plain":</p>
+  <p data-lang="de" hidden>Ein designstarker Report aus <code>examples/report.ts</code> (<code>npx tsx examples/report.ts</code>),
+     gerendert mit macOS Quartz — vollflächige Farbe, ein Vektor-Balkendiagramm und große Typo, alles
+     aus denselben Primitiven von oben. Der Beweis, dass „schnell" nicht „schlicht" heißt:</p>
+  <p data-lang="zh" hidden>一份注重设计的报告，来自 <code>examples/report.ts</code>（<code>npx tsx examples/report.ts</code>），
+     由 macOS Quartz 渲染——满版配色、矢量柱状图和大字号，全部使用上文展示的同一批基础绘图能力。
+     证明「快」并不等于「简陋」：</p>
 
   <div class="mt-4 grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-5">
     <figure class="m-0">
-      <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) bg-white shadow-[0_8px_28px_rgba(15,20,32,0.10)]"
-           src="data:image/png;base64,__TOC_B64__"
-           alt="Page 1: generated, linked table of contents with DRAFT watermark, header and footer" loading="lazy">
-      <figcaption data-lang="en" class="mt-2 text-[12.5px] text-(--muted)">Generated table of contents (<code>toc()</code>) — linked, with watermark, header &amp; footer. Page numbers shifted automatically.</figcaption>
-      <figcaption data-lang="de" hidden class="mt-2 text-[12.5px] text-(--muted)">Generiertes Inhaltsverzeichnis (<code>toc()</code>) — verlinkt, mit Wasserzeichen, Header &amp; Footer. Seitenzahlen automatisch verschoben.</figcaption>
-      <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">自动生成的目录（<code>toc()</code>）——带链接、水印、页眉和页脚。页码自动偏移。</figcaption>
+      <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) shadow-[0_8px_28px_rgba(15,20,32,0.25)]"
+           src="data:image/png;base64,__COVER_B64__"
+           alt="Dark report cover with oversized Growth Report headline, coral and mint decorative rings" loading="lazy">
+      <figcaption data-lang="en" class="mt-2 text-[12.5px] text-(--muted)">Cover — full-bleed background, oversized type and decorative rings from <code>rect()</code> and <code>circle()</code>.</figcaption>
+      <figcaption data-lang="de" hidden class="mt-2 text-[12.5px] text-(--muted)">Cover — vollflächiger Hintergrund, riesige Typo und Deko-Ringe aus <code>rect()</code> und <code>circle()</code>.</figcaption>
+      <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">封面——满版背景、超大字号，以及用 <code>rect()</code> 和 <code>circle()</code> 绘制的装饰圆环。</figcaption>
     </figure>
     <figure class="m-0">
-      <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) bg-white shadow-[0_8px_28px_rgba(15,20,32,0.10)]"
-           src="data:image/png;base64,__PAGE2_B64__"
-           alt="Content page: typography with underline and justified text, containers, columns, shapes and a table with spans" loading="lazy">
-      <figcaption data-lang="en" class="mt-2 text-[12.5px] text-(--muted)">Typography, containers, columns, shapes and a table with <code>colSpan</code>/<code>rowSpan</code>, footer and zebra stripes.</figcaption>
-      <figcaption data-lang="de" hidden class="mt-2 text-[12.5px] text-(--muted)">Typografie, Container, Spalten, Formen und eine Tabelle mit <code>colSpan</code>/<code>rowSpan</code>, Footer und Zebra-Streifen.</figcaption>
-      <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">排版、容器、分栏、图形，以及带 <code>colSpan</code>/<code>rowSpan</code>、表尾和斑马纹的表格。</figcaption>
+      <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) shadow-[0_8px_28px_rgba(15,20,32,0.25)]"
+           src="data:image/png;base64,__DASHBOARD_B64__"
+           alt="Dark metrics dashboard with KPI cards, a gradient vector bar chart and a mint progress ring" loading="lazy">
+      <figcaption data-lang="en" class="mt-2 text-[12.5px] text-(--muted)">Dashboard — KPI cards, a bar chart built from rounded <code>rect()</code>s and a progress ring, no charting library.</figcaption>
+      <figcaption data-lang="de" hidden class="mt-2 text-[12.5px] text-(--muted)">Dashboard — KPI-Karten, ein Balkendiagramm aus abgerundeten <code>rect()</code>s und ein Fortschrittsring, ganz ohne Chart-Bibliothek.</figcaption>
+      <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">仪表盘——KPI 卡片、由圆角 <code>rect()</code> 构成的柱状图和进度环，无需任何图表库。</figcaption>
     </figure>
   </div>
 </section>

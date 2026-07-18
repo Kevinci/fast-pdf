@@ -12,6 +12,14 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
   REST response) straight into a table. Columns default to the keys of the first
   record, or you pick order, headers, widths, alignment and a per-column
   `format(value, record)` function.
+- `examples/report.ts` — a design-forward two-page report (full-bleed color,
+  a vector bar chart, big type) showing fast-pdf beyond invoices.
+
+### Fixed
+
+- Stroke-only shapes (`circle`/`ellipse`/`rect` with `stroke` but no `fill`)
+  were always drawn in black — the requested stroke color was reset to black
+  right before stroking. They now use the color you pass.
 - `pageBreak({ y?, format?, landscape?, margins? })` — explicit page break with a
   controllable start position and per-page setup. Throws inside
   `container()`/`columns()`/`grid()`, which keep their content on one page.

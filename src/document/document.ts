@@ -961,6 +961,7 @@ export class PDFDocument {
     if (stroke) c.strokeColor(stroke).lineWidth(options.lineWidth ?? 1);
     if (fill && stroke) c.fillAndStroke();
     else if (fill) c.fill();
+    else if (stroke) c.stroke(); // stroke color already set above — don't reset it
     else c.strokeColor(BLACK).lineWidth(options.lineWidth ?? 1).stroke();
     return this;
   }

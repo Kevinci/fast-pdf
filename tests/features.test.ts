@@ -20,6 +20,14 @@ describe("shapes (M1)", () => {
     expect(text).toContain("0 0 1 RG");
   });
 
+  it("strokes shapes in the requested color, not black (regression)", async () => {
+    const pdf = raw();
+    pdf.circle(100, 100, 30, { stroke: "#00ff00", lineWidth: 3 });
+    const text = await rendered(pdf);
+    expect(text).toContain("0 1 0 RG");   // green stroke is set
+    expect(text).not.toContain("0 0 0 RG"); // and NOT reset to black before stroking
+  });
+
   it("rejects non-positive ellipse radii with a typed error", () => {
     const pdf = raw();
     try {
