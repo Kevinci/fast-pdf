@@ -3,6 +3,7 @@
   "version": "0.3.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
+  "author": "Awesome Software <k.imig@awesome-software.de>",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Kevinci/fast-pdf.git"
@@ -27,7 +28,8 @@
     "dist",
     "docs/ARCHITECTURE.md",
     "docs/ROADMAP.md",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=18"
@@ -48,6 +50,7 @@
   "scripts": {
     "build": "tsup",
     "prepare": "tsup",
+    "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

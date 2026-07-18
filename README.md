@@ -38,8 +38,8 @@ in **~209 ms**, including Flate compression.
 ## Install
 
 ```sh
-npm install fast-pdf                    # once published to npm
-npm install github:Kevinci/fast-pdf     # today, straight from GitHub (auto-builds on install)
+npm install fast-pdf                    # bun add / pnpm add / deno add also work
+npm install github:Kevinci/fast-pdf     # or straight from GitHub (auto-builds on install)
 ```
 
 Requirements: any runtime with Web APIs (`Uint8Array`, `CompressionStream`) —
