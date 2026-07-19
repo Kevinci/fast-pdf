@@ -206,6 +206,16 @@
      等调用添加内容，最后保存——整个流程就是这么简单。内容像在文字处理器中一样自上而下排布，
      空间不够时会自动开始新的一页。定位<b>从页面左上角算起，单位为点</b>（1&nbsp;pt = 1/72 英寸）。</p>
 
+<pre data-lang="en" class="code-block"><code>npm install fast-pdf     // Node ≥ 18
+bun add fast-pdf         // Bun
+deno add npm:fast-pdf    // Deno ≥ 2 — or import directly from "npm:fast-pdf"</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>npm install fast-pdf     // Node ≥ 18
+bun add fast-pdf         // Bun
+deno add npm:fast-pdf    // Deno ≥ 2 — oder direkt aus "npm:fast-pdf" importieren</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>npm install fast-pdf     // Node ≥ 18
+bun add fast-pdf         // Bun
+deno add npm:fast-pdf    // Deno ≥ 2 —— 也可直接从 "npm:fast-pdf" 导入</code></pre>
+
 <pre data-lang="en" class="code-block"><code>import { PDFDocument } from "fast-pdf";
 
 const pdf = new PDFDocument({
