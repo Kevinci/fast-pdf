@@ -21,7 +21,7 @@ const pdf = new PDFDocument({
   margins: { top: 70, right: 60, bottom: 80, left: 60 },
   metadata: {
     title: "Dienstleistungsvertrag DV-2026-017",
-    author: "Awesome Software GmbH",
+    author: "Example Software GmbH",
     subject: "Vertrag zur elektronischen Signatur",
   },
 });
@@ -32,7 +32,7 @@ const page = pdf.pageSize;
 pdf.rect(0, 0, page.width, 6, { fill: ACCENT });
 pdf.circle(page.width - 70, 70, 26, { stroke: ACCENT, lineWidth: 1.25 });
 pdf.circle(page.width - 70, 70, 17, { stroke: FAINT, lineWidth: 1 });
-pdf.text("AS", { x: page.width - 81, y: 63, size: 13, bold: true, color: ACCENT });
+pdf.text("ES", { x: page.width - 81, y: 63, size: 13, bold: true, color: ACCENT });
 
 pdf.text("DIENSTLEISTUNGSVERTRAG", { y: 52, size: 11, bold: true, color: ACCENT, letterSpacing: 3 });
 pdf.text("Vertrag Nr. DV-2026-017", { y: 72, size: 26, bold: true, color: INK });
@@ -50,7 +50,7 @@ pdf.table(
     ],
     [
       { text: "Beispiel AG\nFrau Erika Mustermann\nHauptstraße 1\n10115 Berlin", fill: PANEL },
-      { text: "Awesome Software GmbH\nHerr Kevin Imig\nMusterstraße 12\n50667 Köln", fill: PANEL },
+      { text: "Example Software GmbH\nHerr Kevin Imig\nMusterstraße 12\n50667 Köln", fill: PANEL },
     ],
   ],
   {
@@ -118,7 +118,7 @@ pdf.text("Paraphe", { x: initX, y: initY + 40, size: 7.5, color: MUTED });
 // ── Footer ───────────────────────────────────────────────────────────────
 const footerY = page.height - 46;
 pdf.line(60, footerY - 10, page.width - 60, footerY - 10, { color: FAINT, width: 0.5 });
-pdf.text("Awesome Software GmbH · Dieses Dokument enthält digitale Signaturfelder (AcroForm)", {
+pdf.text("Example Software GmbH · Dieses Dokument enthält digitale Signaturfelder (AcroForm)", {
   y: footerY, size: 8, color: MUTED, align: "center",
 });
 

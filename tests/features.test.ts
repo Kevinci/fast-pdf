@@ -400,11 +400,11 @@ describe("images (M5)", () => {
 describe("document features (M8)", () => {
   it("draws headers, footers and page numbers on every page", async () => {
     const pdf = raw();
-    pdf.header("Bericht 2026").footer("© Awesome Software").pageNumbers();
+    pdf.header("Bericht 2026").footer("© Example Software").pageNumbers();
     pdf.text("Seite 1").addPage().text("Seite 2");
     const text = await rendered(pdf);
     expect(text.match(/\(Bericht 2026\) Tj/g)!.length).toBe(2);
-    expect(text.match(/\(© Awesome Software\) Tj/g)!.length).toBe(2);
+    expect(text.match(/\(© Example Software\) Tj/g)!.length).toBe(2);
     expect(text).toContain("(1 / 2) Tj");
     expect(text).toContain("(2 / 2) Tj");
   });

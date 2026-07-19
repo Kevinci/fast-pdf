@@ -19,7 +19,7 @@ const pdf = new PDFDocument({
 
 pdf
   .header("fast-pdf — Feature Showcase", { align: "right", color: "#888888" })
-  .footer("© 2026 Awesome Software", { align: "left", color: "#888888" })
+  .footer("© 2026 Example Software", { align: "left", color: "#888888" })
   .pageNumbers({ format: (n, t) => `Seite ${n} von ${t}`, startAt: 2 })
   .watermark("ENTWURF");
 

@@ -5,7 +5,7 @@ const pdf = new PDFDocument({
   margins: { top: 60, right: 50, bottom: 60, left: 50 },
   metadata: {
     title: "Rechnung R-2026-0042",
-    author: "Awesome Software GmbH",
+    author: "Example Software GmbH",
     subject: "Rechnung",
   },
 });
@@ -14,8 +14,8 @@ const page = pdf.pageSize;
 
 // Letterhead
 pdf.rect(0, 0, page.width, 8, { fill: "#0f172a" });
-pdf.text("Awesome Software GmbH", { y: 40, size: 20, bold: true, color: "#0f172a" });
-pdf.text("Musterstraße 12 · 50667 Köln · hello@awesome-software.de", {
+pdf.text("Example Software GmbH", { y: 40, size: 20, bold: true, color: "#0f172a" });
+pdf.text("Musterstraße 12 · 50667 Köln · hello@example-software.de", {
   y: 66, size: 9, color: "#64748b",
 });
 pdf.text("RECHNUNG", { y: 40, align: "right", size: 14, bold: true, color: "#64748b" });
@@ -85,7 +85,7 @@ pdf.text(
 // Footer
 const footerY = page.height - 40;
 pdf.line(50, footerY - 12, page.width - 50, footerY - 12, { color: "#e2e8f0", width: 0.5 });
-pdf.text("Awesome Software GmbH · IBAN DE12 3456 7890 1234 5678 90 · USt-IdNr. DE123456789", {
+pdf.text("Example Software GmbH · IBAN DE12 3456 7890 1234 5678 90 · USt-IdNr. DE123456789", {
   y: footerY, size: 8, color: "#94a3b8", align: "center",
 });
 

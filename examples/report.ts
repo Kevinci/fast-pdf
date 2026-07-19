@@ -59,7 +59,7 @@ pdf.text(
 );
 
 pdf.text("PREPARED BY", { x: 60, y: 740, size: 9, color: MUTED, letterSpacing: 3 });
-pdf.text("Awesome Software · Berlin", { x: 60, y: 756, size: 13, color: TEXT });
+pdf.text("Example Software · Berlin", { x: 60, y: 756, size: 13, color: TEXT });
 pdf.text("fast-pdf", { x: 60, y: 792, size: 13, bold: true, color: MINT });
 
 // ── Page 2 — Dashboard ─────────────────────────────────────────────────────

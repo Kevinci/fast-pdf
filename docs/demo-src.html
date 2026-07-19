@@ -214,7 +214,7 @@ const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
   margins: 50,
   font: "helvetica",       // standard 14: helvetica | times | courier
-  metadata: { title: "Demo", author: "Awesome Software" },
+  metadata: { title: "Demo", author: "Example Software" },
 });
 
 pdf.text("Hello world", { size: 24, bold: true });
@@ -227,7 +227,7 @@ const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
   margins: 50,
   font: "helvetica",       // Standard-14: helvetica | times | courier
-  metadata: { title: "Demo", author: "Awesome Software" },
+  metadata: { title: "Demo", author: "Example Software" },
 });
 
 pdf.text("Hallo Welt", { size: 24, bold: true });
@@ -240,7 +240,7 @@ const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
   margins: 50,
   font: "helvetica",       // 标准 14 字体：helvetica | times | courier
-  metadata: { title: "Demo", author: "Awesome Software" },
+  metadata: { title: "Demo", author: "Example Software" },
 });
 
 pdf.text("你好，世界", { size: 24, bold: true });
@@ -780,15 +780,15 @@ pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
   <p data-lang="zh" hidden>重复元素在渲染阶段绘制到每一页上——因此它们知道<b>最终的</b>页码和总页数：</p>
 
 <pre data-lang="en" class="code-block"><code>pdf.header("Annual Report 2026", { align: "right" });
-pdf.footer("© 2026 Awesome Software");
+pdf.footer("© 2026 Example Software");
 pdf.pageNumbers({ format: (n, t) =&gt; `Page ${n} of ${t}`, startAt: 2 });
 pdf.watermark("DRAFT", { opacity: 0.1 });     // diagonal, transparent</code></pre>
 <pre data-lang="de" hidden class="code-block"><code>pdf.header("Geschäftsbericht 2026", { align: "right" });
-pdf.footer("© 2026 Awesome Software");
+pdf.footer("© 2026 Example Software");
 pdf.pageNumbers({ format: (n, t) =&gt; `Seite ${n} von ${t}`, startAt: 2 });
 pdf.watermark("ENTWURF", { opacity: 0.1 });   // diagonal, transparent</code></pre>
 <pre data-lang="zh" hidden class="code-block"><code>pdf.header("2026 年度报告", { align: "right" });
-pdf.footer("© 2026 Awesome Software");
+pdf.footer("© 2026 Example Software");
 pdf.pageNumbers({ format: (n, t) =&gt; `第 ${n} 页，共 ${t} 页`, startAt: 2 });
 pdf.watermark("草稿", { opacity: 0.1 });       // 对角线方向，半透明</code></pre>
 
