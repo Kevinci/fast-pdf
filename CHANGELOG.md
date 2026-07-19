@@ -8,6 +8,13 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- The `fast-pdf-designer` Claude Code skill ships with the package: palettes,
+  layout recipes and a visual validation loop for building designed documents
+  with AI coding agents. Install into a project with `npx fast-pdf-skill`.
+- The example templates (`examples/*.ts`) are now part of the npm package
+  (`node_modules/fast-pdf/examples/`), and the README links them as
+  copy-and-adapt starting points.
+
 - `signature()` — empty AcroForm signature fields (`/FT /Sig`) for contracts:
   the recipient clicks the field in their PDF viewer, signs and sends the
   document back. Draws a signature line and optional label, participates in

@@ -24,8 +24,14 @@
     },
     "./package.json": "./package.json"
   },
+  "bin": {
+    "fast-pdf-skill": "scripts/install-skill.mjs"
+  },
   "files": [
     "dist",
+    "examples/*.ts",
+    "scripts/install-skill.mjs",
+    ".claude/skills",
     "README.md",
     "LICENSE"
   ],

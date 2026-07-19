@@ -328,6 +328,38 @@ npm run example         # renders examples/output/invoice.pdf
 npm run bench           # performance benchmark
 ```
 
+## Templates — start from a working example
+
+The fastest way to a good-looking document is not the API reference above —
+it's copying the closest example from [`examples/`](examples) and adapting
+it. Each one is a complete, designed document:
+
+| Template | What you get | Run |
+|---|---|---|
+| [`invoice.ts`](examples/invoice.ts) | Invoice with letterhead, item table, totals block, footer | `npx tsx examples/invoice.ts` |
+| [`report.ts`](examples/report.ts) | Design-forward report: full-bleed cover, KPI cards, vector bar chart | `npx tsx examples/report.ts` |
+| [`signature.ts`](examples/signature.ts) | Contract with clause sections and clickable AcroForm signature fields | `npx tsx examples/signature.ts` |
+| [`showcase.ts`](examples/showcase.ts) | Feature tour: TOC, outlines, watermark, cell spans, columns, links | `npx tsx examples/showcase.ts` |
+| [`basic.ts`](examples/basic.ts) | Minimal text + table starting point | `npx tsx examples/basic.ts` |
+
+The templates ship with the npm package (`node_modules/fast-pdf/examples/`).
+In your own project, change the import from `"../src/index"` to `"fast-pdf"` —
+everything else works as-is.
+
+### AI skill for coding agents
+
+**Using Claude Code (or another coding agent)?** fast-pdf ships with a
+[design skill](.claude/skills/fast-pdf-designer/SKILL.md) — curated palettes,
+layout recipes (letterhead, totals block, signature area) and a
+render-preview-iterate loop. Install it into your project with one command:
+
+```sh
+npx fast-pdf-skill    # copies the skill to ./.claude/skills/fast-pdf-designer/
+```
+
+Then ask for "an invoice with fast-pdf" — the agent picks up the design rules
+automatically.
+
 ## License
 
 MIT

@@ -105,6 +105,7 @@
     <li><a class="nav-link" href="#fehler">Error handling</a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
+    <li><a class="nav-link" href="#templates">Templates &amp; AI skill<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: npx fast-pdf-skill"></span></a></li>
   </ul>
   <ul data-lang="de" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">Schnellstart</a></li>
@@ -120,6 +121,7 @@
     <li><a class="nav-link" href="#fehler">Fehlerbehandlung</a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
+    <li><a class="nav-link" href="#templates">Templates &amp; AI-Skill<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: npx fast-pdf-skill"></span></a></li>
   </ul>
   <ul data-lang="zh" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">快速开始</a></li>
@@ -135,6 +137,7 @@
     <li><a class="nav-link" href="#fehler">错误处理</a></li>
     <li><a class="nav-link" href="#performance">性能</a></li>
     <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
+    <li><a class="nav-link" href="#templates">模板与 AI 技能<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：npx fast-pdf-skill"></span></a></li>
   </ul>
 </nav>
 
@@ -994,6 +997,75 @@ try {
       <figcaption data-lang="zh" hidden class="mt-2 text-[12.5px] text-(--muted)">仪表盘——KPI 卡片、由圆角 <code>rect()</code> 构成的柱状图和进度环，无需任何图表库。</figcaption>
     </figure>
   </div>
+</section>
+
+<section id="templates" class="doc-section">
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>Templates &amp; AI skill<span class="chip">New: npx fast-pdf-skill</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>Templates &amp; AI-Skill<span class="chip">Neu: npx fast-pdf-skill</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>模板与 AI 技能<span class="chip">新增：npx fast-pdf-skill</span></h2>
+
+  <p data-lang="en">The fastest way to a good-looking document is copying a finished one.
+     Five complete, designed templates ship with the npm package
+     (<code>node_modules/fast-pdf/examples/</code>) — copy one into your project and change
+     the import from <code>"../src/index"</code> to <code>"fast-pdf"</code>:</p>
+  <p data-lang="de" hidden>Der schnellste Weg zu einem gut aussehenden Dokument ist, ein fertiges zu kopieren.
+     Fünf komplette, designte Templates liegen dem npm-Package bei
+     (<code>node_modules/fast-pdf/examples/</code>) — eins ins Projekt kopieren und den
+     Import von <code>"../src/index"</code> auf <code>"fast-pdf"</code> ändern:</p>
+  <p data-lang="zh" hidden>做出一份好看文档最快的方式，是复制一份现成的。npm 包内附带五个完整的精心设计的模板
+     （<code>node_modules/fast-pdf/examples/</code>）——复制一个到你的项目，并把导入从
+     <code>"../src/index"</code> 改为 <code>"fast-pdf"</code>：</p>
+
+  <div data-lang="en" class="overflow-x-auto"><table class="api">
+    <tr><th>Template</th><th>What you get</th></tr>
+    <tr><td>invoice.ts</td><td>Invoice with letterhead, item table, totals block, footer</td></tr>
+    <tr><td>report.ts</td><td>Design-forward report: full-bleed cover, KPI cards, vector bar chart</td></tr>
+    <tr><td>signature.ts</td><td>Contract with clause sections and clickable AcroForm signature fields</td></tr>
+    <tr><td>showcase.ts</td><td>Feature tour: TOC, outlines, watermark, cell spans, columns, links</td></tr>
+    <tr><td>basic.ts</td><td>Minimal text + table starting point</td></tr>
+  </table></div>
+  <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
+    <tr><th>Template</th><th>Was du bekommst</th></tr>
+    <tr><td>invoice.ts</td><td>Rechnung mit Briefkopf, Positionstabelle, Summenblock, Footer</td></tr>
+    <tr><td>report.ts</td><td>Designstarker Report: vollflächiges Cover, KPI-Karten, Vektor-Balkendiagramm</td></tr>
+    <tr><td>signature.ts</td><td>Vertrag mit Paragraphen und klickbaren AcroForm-Signaturfeldern</td></tr>
+    <tr><td>showcase.ts</td><td>Feature-Tour: TOC, Lesezeichen, Wasserzeichen, Zell-Spans, Spalten, Links</td></tr>
+    <tr><td>basic.ts</td><td>Minimaler Startpunkt mit Text + Tabelle</td></tr>
+  </table></div>
+  <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
+    <tr><th>模板</th><th>包含内容</th></tr>
+    <tr><td>invoice.ts</td><td>发票：信头、明细表、合计区、页脚</td></tr>
+    <tr><td>report.ts</td><td>注重设计的报告：满版封面、KPI 卡片、矢量柱状图</td></tr>
+    <tr><td>signature.ts</td><td>合同：条款章节与可点击的 AcroForm 签名字段</td></tr>
+    <tr><td>showcase.ts</td><td>功能巡览：目录、书签、水印、单元格合并、分栏、链接</td></tr>
+    <tr><td>basic.ts</td><td>最小起点：文本 + 表格</td></tr>
+  </table></div>
+
+  <p data-lang="en">Working with Claude Code or another coding agent? fast-pdf ships a design skill —
+     curated palettes, layout recipes (letterhead, totals block, signature area), typography
+     rules and a render-preview-iterate loop. One command installs it into your project:</p>
+  <p data-lang="de" hidden>Du arbeitest mit Claude Code oder einem anderen Coding-Agenten? fast-pdf bringt eine
+     Design-Skill mit — kuratierte Paletten, Layout-Rezepte (Briefkopf, Summenblock,
+     Signaturbereich), Typografie-Regeln und eine Render-Preview-Iterationsschleife.
+     Ein Befehl installiert sie ins Projekt:</p>
+  <p data-lang="zh" hidden>在使用 Claude Code 或其他编码智能体？fast-pdf 附带一个设计技能——精选调色板、
+     版式配方（信头、合计区、签名区）、排版规则，以及“渲染—预览—迭代”工作流。一条命令即可安装到你的项目：</p>
+
+<pre data-lang="en" class="code-block"><code>npm install fast-pdf
+npx fast-pdf-skill     // copies the skill to ./.claude/skills/fast-pdf-designer/</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>npm install fast-pdf
+npx fast-pdf-skill     // kopiert die Skill nach ./.claude/skills/fast-pdf-designer/</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>npm install fast-pdf
+npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Then just ask:</b> "an invoice with fast-pdf" — the agent picks up
+    the design rules automatically, starts from a template and validates the result visually
+    before handing it over.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Dann einfach fragen:</b> „eine Rechnung mit fast-pdf" — der Agent
+    übernimmt die Design-Regeln automatisch, startet von einem Template und prüft das Ergebnis
+    visuell, bevor er es abliefert.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">然后直接提问：</b>“用 fast-pdf 做一张发票”——智能体会自动应用设计规则，
+    从模板出发，并在交付前对结果进行视觉校验。</div>
 </section>
 
 <footer class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
