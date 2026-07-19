@@ -177,6 +177,41 @@
     <li class="stat"><b>113</b>项测试 · 95&nbsp;% 覆盖率</li>
     <li class="stat"><b>~94&nbsp;KB</b>ESM，支持 Tree-Shaking</li>
   </ul>
+
+  <p data-lang="en" class="mt-8 mb-1 text-[15px] font-semibold">Compared to the usual approaches:</p>
+  <p data-lang="de" hidden class="mt-8 mb-1 text-[15px] font-semibold">Im Vergleich zu den üblichen Ansätzen:</p>
+  <p data-lang="zh" hidden class="mt-8 mb-1 text-[15px] font-semibold">与常见方案对比：</p>
+
+  <div data-lang="en" class="overflow-x-auto"><table class="api">
+    <tr><th></th><th>fast-pdf</th><th>Component-framework renderers</th><th>HTML → headless browser</th></tr>
+    <tr><td>Runtime deps</td><td><b>0</b></td><td>10+, incl. a UI framework as peer dependency</td><td>a ~300 MB browser binary</td></tr>
+    <tr><td>Runs on</td><td>Node, Bun, Deno, browser, edge</td><td>Node + browser; edge runtimes are tricky</td><td>servers that can run a browser</td></tr>
+    <tr><td>3-page document</td><td><b>~1.6 ms</b></td><td>element tree → flexbox layout → PDF lib</td><td>~1000 ms+ (browser startup + render)</td></tr>
+    <tr><td>Tables</td><td>built-in: repeating headers, spans, JSON → table</td><td>hand-built from flexbox views</td><td>HTML/CSS</td></tr>
+    <tr><td>Signature form fields</td><td>✓ AcroForm</td><td>—</td><td>✗ printed output has no form fields</td></tr>
+    <tr><td>TOC, outlines, watermark</td><td>✓ built-in</td><td>partly</td><td>✗</td></tr>
+    <tr><td>Bundle</td><td>~94 KB ESM, tree-shakeable</td><td>several 100 KB + the framework</td><td>n/a</td></tr>
+  </table></div>
+  <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
+    <tr><th></th><th>fast-pdf</th><th>Komponenten-Framework-Renderer</th><th>HTML → Headless-Browser</th></tr>
+    <tr><td>Runtime-Dependencies</td><td><b>0</b></td><td>10+, inkl. UI-Framework als Peer-Dependency</td><td>~300-MB-Browser-Binary</td></tr>
+    <tr><td>Läuft auf</td><td>Node, Bun, Deno, Browser, Edge</td><td>Node + Browser; Edge-Runtimes schwierig</td><td>nur Servern mit Browser</td></tr>
+    <tr><td>3-Seiten-Dokument</td><td><b>~1,6 ms</b></td><td>Elementbaum → Flexbox-Layout → PDF-Lib</td><td>~1000 ms+ (Browser-Start + Rendering)</td></tr>
+    <tr><td>Tabellen</td><td>eingebaut: wiederholende Header, Spans, JSON → Tabelle</td><td>selbst bauen aus Flexbox-Views</td><td>HTML/CSS</td></tr>
+    <tr><td>Signatur-Formularfelder</td><td>✓ AcroForm</td><td>—</td><td>✗ Druckausgabe hat keine Formularfelder</td></tr>
+    <tr><td>TOC, Lesezeichen, Wasserzeichen</td><td>✓ eingebaut</td><td>teilweise</td><td>✗</td></tr>
+    <tr><td>Bundle</td><td>~94 KB ESM, tree-shakeable</td><td>mehrere 100 KB + Framework</td><td>n/a</td></tr>
+  </table></div>
+  <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
+    <tr><th></th><th>fast-pdf</th><th>组件框架渲染方案</th><th>HTML → 无头浏览器</th></tr>
+    <tr><td>运行时依赖</td><td><b>0</b></td><td>10 余个，且需 UI 框架作为 peer 依赖</td><td>约 300 MB 的浏览器二进制</td></tr>
+    <tr><td>运行环境</td><td>Node、Bun、Deno、浏览器、边缘运行时</td><td>Node + 浏览器；边缘运行时困难</td><td>仅限能运行浏览器的服务器</td></tr>
+    <tr><td>3 页文档</td><td><b>~1.6 ms</b></td><td>元素树 → Flexbox 布局 → PDF 库</td><td>~1000 ms+（浏览器启动 + 渲染）</td></tr>
+    <tr><td>表格</td><td>内置：重复表头、跨行列、JSON → 表格</td><td>需用 Flexbox 视图手工搭建</td><td>HTML/CSS</td></tr>
+    <tr><td>签名表单字段</td><td>✓ AcroForm</td><td>—</td><td>✗ 打印输出没有表单字段</td></tr>
+    <tr><td>目录、书签、水印</td><td>✓ 内置</td><td>部分支持</td><td>✗</td></tr>
+    <tr><td>包体积</td><td>~94 KB ESM，可 Tree-Shaking</td><td>数百 KB + 框架本身</td><td>n/a</td></tr>
+  </table></div>
 </header>
 
 <section id="schnellstart" class="doc-section">

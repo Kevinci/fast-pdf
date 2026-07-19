@@ -23,13 +23,15 @@ await pdf.save("document.pdf");
 
 ## Why
 
-| | fast-pdf | HTML → Chromium (Puppeteer) | classic JS PDF libs |
+| | fast-pdf | Component-framework renderers | HTML → headless browser |
 |---|---|---|---|
-| Generates PDF | directly | via a ~300 MB browser | directly |
-| Runtime deps | **0** | Chromium + system libs | several |
-| Serverless/edge | ✅ | ⚠️ heavyweight | varies |
-| Browser | ✅ | ❌ | varies |
-| Typical doc | **~1 ms** | ~1000 ms+ | ~10–100 ms |
+| Runtime deps | **0** | 10+, incl. a UI framework as peer dependency | a ~300 MB browser binary |
+| Runs on | Node, Bun, Deno, browser, edge | Node + browser; edge runtimes are tricky | servers that can run a browser |
+| 3-page document | **~1.6 ms** | element tree → flexbox layout → PDF lib | ~1000 ms+ (browser startup + render) |
+| Tables | built-in: repeating headers, col/row spans, JSON → table | hand-built from flexbox views | HTML/CSS |
+| Signature form fields | ✅ AcroForm | — | ❌ printed output has no form fields |
+| TOC, outlines, watermark | ✅ built-in | partly | ❌ |
+| Bundle | ~94 KB ESM, tree-shakeable | several 100 KB + the framework | n/a |
 
 Measured on this repo's benchmark (`npm run bench`, Apple Silicon, Node 22):
 a 3-page text document renders in **~1.3 ms**, a 170-page / 5000-row table document
