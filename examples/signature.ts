@@ -45,21 +45,20 @@ pdf.y = 150;
 pdf.table(
   [
     [
-      { text: "AUFTRAGGEBER", bold: true, color: ACCENT },
-      { text: "AUFTRAGNEHMER", bold: true, color: ACCENT },
+      { text: "AUFTRAGGEBER", bold: true, color: ACCENT, fill: PANEL },
+      { text: "AUFTRAGNEHMER", bold: true, color: ACCENT, fill: PANEL },
     ],
     [
-      "Beispiel AG\nFrau Erika Mustermann\nHauptstraße 1\n10115 Berlin",
-      "Awesome Software GmbH\nHerr Kevin Imig\nMusterstraße 12\n50667 Köln",
+      { text: "Beispiel AG\nFrau Erika Mustermann\nHauptstraße 1\n10115 Berlin", fill: PANEL },
+      { text: "Awesome Software GmbH\nHerr Kevin Imig\nMusterstraße 12\n50667 Köln", fill: PANEL },
     ],
   ],
   {
     header: false,
     widths: [237, 238],
     borderWidth: 0,
-    fill: PANEL,
     fontSize: 10,
-    cellPadding: 12,
+    padding: 12,
   },
 );
 
