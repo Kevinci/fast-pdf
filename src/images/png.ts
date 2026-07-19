@@ -1,6 +1,15 @@
 import { Name, PDFString, latin1String } from "../pdf/objects";
 import { deflate, inflate, supportsDecompression } from "../pdf/compress";
+import { FastPDFError } from "../errors";
 import type { ParsedImage } from "./image";
+
+/**
+ * Upper bound for the alpha decode path (which must inflate and re-encode
+ * pixel data): 2^27 px ≈ 134 MP covers an A0 poster scanned at 300 dpi.
+ * Decoding needs ~8 bytes per pixel, so this caps allocations at ~1 GB and
+ * stops crafted headers from requesting terabyte-sized buffers.
+ */
+const MAX_DECODE_PIXELS = 1 << 27;
 
 interface PngInfo {
   width: number;
@@ -23,7 +32,11 @@ function readPng(bytes: Uint8Array): PngInfo {
     const length = view.getUint32(pos);
     const type = latin1String(bytes.subarray(pos + 4, pos + 8));
     const dataStart = pos + 8;
+    if (dataStart + length > bytes.length) {
+      throw new FastPDFError(`Invalid PNG: truncated ${type} chunk`, "INVALID_IMAGE_FILE");
+    }
     if (type === "IHDR") {
+      if (length < 13) throw new FastPDFError("Invalid PNG: IHDR chunk too short", "INVALID_IMAGE_FILE");
       width = view.getUint32(dataStart);
       height = view.getUint32(dataStart + 4);
       bitDepth = bytes[dataStart + 8]!;
@@ -38,7 +51,9 @@ function readPng(bytes: Uint8Array): PngInfo {
     }
     pos = dataStart + length + 4; // + CRC
   }
-  if (width === 0 || height === 0) throw new Error("Invalid PNG: missing IHDR");
+  if (width === 0 || height === 0) {
+    throw new FastPDFError("Invalid PNG: missing IHDR or zero dimensions", "INVALID_IMAGE_FILE");
+  }
 
   let idatLength = 0;
   for (const c of idatChunks) idatLength += c.length;
@@ -53,8 +68,17 @@ function readPng(bytes: Uint8Array): PngInfo {
 
 /** Sync dimension probe (for layout before the async full parse). */
 export function pngSize(bytes: Uint8Array): { width: number; height: number } {
+  // The spec requires IHDR to be the first chunk, directly after the signature.
+  if (bytes.length < 24 || latin1String(bytes.subarray(12, 16)) !== "IHDR") {
+    throw new FastPDFError("Invalid PNG: missing IHDR chunk", "INVALID_IMAGE_FILE");
+  }
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  return { width: view.getUint32(16), height: view.getUint32(20) };
+  const width = view.getUint32(16);
+  const height = view.getUint32(20);
+  if (width === 0 || height === 0) {
+    throw new FastPDFError("Invalid PNG: zero width or height", "INVALID_IMAGE_FILE");
+  }
+  return { width, height };
 }
 
 const CHANNELS: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
@@ -74,17 +98,24 @@ const CHANNELS: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
 export async function parsePng(bytes: Uint8Array): Promise<ParsedImage> {
   const png = readPng(bytes);
   if (png.interlace !== 0) {
-    throw new Error("Interlaced (Adam7) PNGs are not supported — re-export without interlacing");
+    throw new FastPDFError(
+      "Interlaced (Adam7) PNGs are not supported — re-export without interlacing",
+      "UNSUPPORTED_IMAGE",
+    );
   }
   const channels = CHANNELS[png.colorType];
-  if (channels === undefined) throw new Error(`Invalid PNG color type: ${png.colorType}`);
+  if (channels === undefined) {
+    throw new FastPDFError(`Invalid PNG color type: ${png.colorType}`, "INVALID_IMAGE_FILE");
+  }
 
   if (png.colorType === 0 || png.colorType === 2 || png.colorType === 3) {
     let colorSpace: Name | (Name | number | PDFString)[];
     if (png.colorType === 0) colorSpace = new Name("DeviceGray");
     else if (png.colorType === 2) colorSpace = new Name("DeviceRGB");
     else {
-      if (!png.palette) throw new Error("Invalid PNG: indexed color without PLTE chunk");
+      if (!png.palette) {
+        throw new FastPDFError("Invalid PNG: indexed color without PLTE chunk", "INVALID_IMAGE_FILE");
+      }
       colorSpace = [
         new Name("Indexed"),
         new Name("DeviceRGB"),
@@ -112,14 +143,34 @@ export async function parsePng(bytes: Uint8Array): Promise<ParsedImage> {
 
   // Alpha path (color types 4 and 6).
   if (png.bitDepth !== 8) {
-    throw new Error(`PNGs with alpha are supported at 8-bit depth only (got ${png.bitDepth}-bit)`);
+    throw new FastPDFError(
+      `PNGs with alpha are supported at 8-bit depth only (got ${png.bitDepth}-bit)`,
+      "UNSUPPORTED_IMAGE",
+    );
   }
   if (!supportsDecompression()) {
     throw new Error("PNGs with alpha require DecompressionStream, which this runtime lacks");
   }
-  const raw = unfilter(await inflate(png.idat), png.width, png.height, channels);
-  const colorChannels = channels - 1;
   const pixels = png.width * png.height;
+  if (pixels > MAX_DECODE_PIXELS) {
+    throw new FastPDFError(
+      `PNG with alpha is too large to decode: ${png.width}×${png.height} px exceeds the ${MAX_DECODE_PIXELS}-pixel limit`,
+      "IMAGE_TOO_LARGE",
+    );
+  }
+  // The inflate cap (declared size + zlib slack) defuses decompression bombs.
+  const expected = png.height * (1 + png.width * channels);
+  let inflated: Uint8Array;
+  try {
+    inflated = await inflate(png.idat, expected);
+  } catch {
+    throw new FastPDFError("Invalid PNG: corrupt or oversized IDAT stream", "INVALID_IMAGE_FILE");
+  }
+  if (inflated.length < expected) {
+    throw new FastPDFError("Invalid PNG: IDAT data is truncated", "INVALID_IMAGE_FILE");
+  }
+  const raw = unfilter(inflated, png.width, png.height, channels);
+  const colorChannels = channels - 1;
   const color = new Uint8Array(pixels * colorChannels);
   const alpha = new Uint8Array(pixels);
   for (let i = 0; i < pixels; i++) {
@@ -166,7 +217,7 @@ function unfilter(data: Uint8Array, width: number, height: number, channels: num
         case 2: value = x + up; break;
         case 3: value = x + ((left + up) >> 1); break;
         case 4: value = x + paeth(left, up, upLeft); break;
-        default: throw new Error(`Invalid PNG filter type: ${filter}`);
+        default: throw new FastPDFError(`Invalid PNG filter type: ${filter}`, "INVALID_IMAGE_FILE");
       }
       out[rowStart + i] = value & 0xff;
     }

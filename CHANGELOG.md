@@ -4,6 +4,34 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- `signature()` — empty AcroForm signature fields (`/FT /Sig`) for contracts:
+  the recipient clicks the field in their PDF viewer, signs and sends the
+  document back. Draws a signature line and optional label, participates in
+  the flow layout (or absolute via `x`/`y`), auto-names fields
+  `Signature1`, `Signature2`, … with uniqueness enforced.
+
+### Security
+
+- Link targets (`link()`, `text({ link })`) now reject `javascript:`,
+  `vbscript:`, `data:` and `file:` URI schemes — including variants disguised
+  with control characters — with a new `UNSAFE_LINK` error code.
+- The PNG alpha decode path is hardened against decompression bombs: the
+  decompressed IDAT size is capped at the size implied by the declared
+  dimensions, and the pixel count is capped at 2²⁷ (~134 MP).
+  `inflate()` gained an optional `maxBytes` limit.
+- Truncated or malformed PNG/JPEG files now fail with typed
+  `FastPDFError`s (`INVALID_IMAGE_FILE`, `IMAGE_TOO_LARGE`) instead of
+  crashing with `RangeError`s deep in the parser; the same normalization
+  applies to corrupt fonts in `registerFont()` (`INVALID_FONT_FILE`).
+- Numbers ≥ 1e21 are rejected instead of silently serializing in exponent
+  notation (invalid PDF syntax); PDF names with characters beyond U+00FF are
+  now escaped as UTF-8 byte sequences per ISO 32000-1.
+- Added `SECURITY.md` (threat model, reporting) and a README security section.
+
 ## [0.3.0] — 2026-07-18
 
 ### Added

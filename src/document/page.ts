@@ -30,12 +30,23 @@ export interface PendingLink {
   target: LinkTarget;
 }
 
+/** A pending signature form field (empty, to be signed by the recipient). */
+export interface PendingSignatureField {
+  /** AcroForm field name (/T) — unique within the document. */
+  name: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export class Page {
   readonly content = new ContentStream();
   readonly fontsUsed = new Map<string, { font: Font; res: string }>();
   readonly imagesUsed = new Map<string, { entry: ImageEntry; res: string }>();
   readonly extGStatesUsed = new Map<number, { alpha: number; res: string }>();
   readonly links: PendingLink[] = [];
+  readonly sigFields: PendingSignatureField[] = [];
 
   constructor(
     readonly size: PageSize,

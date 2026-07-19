@@ -270,6 +270,27 @@ pdf.toc({ title: "Contents" });           // call last: builds linked TOC pages
                                           // from outline entries, inserts at front
 ```
 
+### Signature fields (contracts)
+
+```ts
+// An empty signature form field: recipients click it in their PDF viewer,
+// sign (certificate or Fill & Sign) and send the document back.
+pdf.signature({ label: "Ort, Datum, Unterschrift Auftraggeber" });
+
+pdf.columns([                             // two signers side by side
+  (d) => d.signature({ label: "Auftraggeber" }),
+  (d) => d.signature({ label: "Auftragnehmer" }),
+]);
+
+pdf.signature({ name: "client", x: 50, y: 700, width: 220, height: 60 });
+```
+
+Draws a signature line (disable with `line: false`) with an optional small
+`label` underneath; the clickable field sits above the line. Field names
+default to `Signature1`, `Signature2`, … and must be unique. Note that the
+field is *for the recipient to sign* — fast-pdf does not cryptographically
+sign the document itself.
+
 ### Error handling
 
 All user-facing failures throw `FastPDFError` with a stable machine-readable
@@ -285,6 +306,16 @@ All user-facing failures throw `FastPDFError` with a stable machine-readable
   feature-detected `save()` adapter; bundles cleanly for browser and edge targets.
 - **Layered architecture** (API → layout → resources → PDF engine → output) with a
   documented WASM migration path.
+
+## Security
+
+Generated PDFs are passive: no JavaScript, no embedded files, no forms. All
+strings are escaped before touching PDF syntax, so untrusted data in text,
+tables or metadata cannot inject PDF operators. Dangerous link schemes
+(`javascript:`, `file:`, `data:`, `vbscript:`) are rejected, and the image
+parsers are hardened against malformed files and decompression bombs.
+See [SECURITY.md](SECURITY.md) for the threat model and how to report
+vulnerabilities.
 
 ## Development
 

@@ -29,10 +29,34 @@ export async function deflate(data: Uint8Array): Promise<Uint8Array | null> {
   return pipeThrough(data, new CompressionStream("deflate"));
 }
 
-/** Inflate a zlib stream. Throws if the runtime lacks DecompressionStream. */
-export async function inflate(data: Uint8Array): Promise<Uint8Array> {
+/**
+ * Inflate a zlib stream. Throws if the runtime lacks DecompressionStream.
+ * `maxBytes` bounds the decompressed size — decompression stops as soon as
+ * the limit is crossed, so a crafted "zlib bomb" cannot exhaust memory.
+ */
+export async function inflate(data: Uint8Array, maxBytes = Infinity): Promise<Uint8Array> {
   if (!supportsDecompression()) {
     throw new Error("DecompressionStream is not available in this runtime");
   }
-  return pipeThrough(data, new DecompressionStream("deflate"));
+  const stream = new Blob([data as BlobPart]).stream().pipeThrough(new DecompressionStream("deflate"));
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    total += value.length;
+    if (total > maxBytes) {
+      await reader.cancel();
+      throw new Error(`Decompressed data exceeds the ${maxBytes}-byte limit`);
+    }
+    chunks.push(value);
+  }
+  const out = new Uint8Array(total);
+  let pos = 0;
+  for (const c of chunks) {
+    out.set(c, pos);
+    pos += c.length;
+  }
+  return out;
 }

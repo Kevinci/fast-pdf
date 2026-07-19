@@ -36,8 +36,10 @@ export type PDFValue =
 
 /** Format a number the PDF way: no exponent, few decimals, no trailing zeros. */
 export function fmtNumber(n: number): string {
-  if (Number.isInteger(n)) return String(n);
   if (!Number.isFinite(n)) throw new Error(`Non-finite number in PDF output: ${n}`);
+  // String() switches to exponent notation at 1e21, which PDF syntax forbids.
+  if (Math.abs(n) >= 1e21) throw new Error(`Number too large for PDF output: ${n}`);
+  if (Number.isInteger(n)) return String(n);
   return n
     .toFixed(4)
     .replace(/0+$/, "")
@@ -48,11 +50,13 @@ const NAME_IRREGULAR = /[^\x21-\x7e]|[#()<>[\]{}/%]/;
 
 function serializeName(value: string): string {
   if (!NAME_IRREGULAR.test(value)) return `/${value}`;
+  // Irregular names are escaped byte-wise; non-ASCII text becomes UTF-8
+  // bytes first (ISO 32000-1 §7.3.5) so every #XX escape stays two digits.
+  const bytes = new TextEncoder().encode(value);
   let out = "/";
-  for (let i = 0; i < value.length; i++) {
-    const c = value.charCodeAt(i);
-    if (c > 0x21 && c < 0x7f && !"#()<>[]{}/%".includes(value[i]!)) {
-      out += value[i];
+  for (const c of bytes) {
+    if (c > 0x21 && c < 0x7f && !"#()<>[]{}/%".includes(String.fromCharCode(c))) {
+      out += String.fromCharCode(c);
     } else {
       out += "#" + c.toString(16).padStart(2, "0").toUpperCase();
     }

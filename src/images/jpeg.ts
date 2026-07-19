@@ -1,4 +1,5 @@
 import { Name } from "../pdf/objects";
+import { FastPDFError } from "../errors";
 import type { ParsedImage } from "./image";
 
 /**
@@ -26,6 +27,9 @@ export function parseJpeg(bytes: Uint8Array): ParsedImage {
       const height = (bytes[pos + 5]! << 8) | bytes[pos + 6]!;
       const width = (bytes[pos + 7]! << 8) | bytes[pos + 8]!;
       const components = bytes[pos + 9]!;
+      if (width === 0 || height === 0) {
+        throw new FastPDFError("Invalid JPEG: zero width or height", "INVALID_IMAGE_FILE");
+      }
       const colorSpace =
         components === 1 ? "DeviceGray" : components === 4 ? "DeviceCMYK" : "DeviceRGB";
       return {
@@ -43,5 +47,5 @@ export function parseJpeg(bytes: Uint8Array): ParsedImage {
     }
     pos += 2 + length;
   }
-  throw new Error("Invalid JPEG: no SOF frame header found");
+  throw new FastPDFError("Invalid JPEG: no SOF frame header found", "INVALID_IMAGE_FILE");
 }

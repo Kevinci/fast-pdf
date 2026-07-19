@@ -12,6 +12,8 @@ export type FastPDFErrorCode =
   | "UNSUPPORTED_IMAGE"
   | "INVALID_FONT_FILE"
   | "INVALID_IMAGE_FILE"
+  | "IMAGE_TOO_LARGE"
+  | "UNSAFE_LINK"
   | "INTERNAL";
 
 export class FastPDFError extends Error {

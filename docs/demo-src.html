@@ -93,7 +93,7 @@
     <li><a class="nav-link" href="#tabellen">Tables</a></li>
     <li><a class="nav-link" href="#bilder">Images</a></li>
     <li><a class="nav-link" href="#formen">Shapes</a></li>
-    <li><a class="nav-link" href="#features">Document features</a></li>
+    <li><a class="nav-link" href="#features">Document features<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: signature()"></span></a></li>
     <li><a class="nav-link" href="#fehler">Error handling</a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
@@ -108,7 +108,7 @@
     <li><a class="nav-link" href="#tabellen">Tabellen</a></li>
     <li><a class="nav-link" href="#bilder">Bilder</a></li>
     <li><a class="nav-link" href="#formen">Formen</a></li>
-    <li><a class="nav-link" href="#features">Dokumentfeatures</a></li>
+    <li><a class="nav-link" href="#features">Dokumentfeatures<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: signature()"></span></a></li>
     <li><a class="nav-link" href="#fehler">Fehlerbehandlung</a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
@@ -123,7 +123,7 @@
     <li><a class="nav-link" href="#tabellen">表格</a></li>
     <li><a class="nav-link" href="#bilder">图片</a></li>
     <li><a class="nav-link" href="#formen">图形</a></li>
-    <li><a class="nav-link" href="#features">文档功能</a></li>
+    <li><a class="nav-link" href="#features">文档功能<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：signature()"></span></a></li>
     <li><a class="nav-link" href="#fehler">错误处理</a></li>
     <li><a class="nav-link" href="#performance">性能</a></li>
     <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
@@ -756,9 +756,9 @@ pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
 </section>
 
 <section id="features" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Document features</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Dokumentfeatures</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>文档功能</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Document features<span class="chip">New: signature()</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Dokumentfeatures<span class="chip">Neu: signature()</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>文档功能<span class="chip">新增：signature()</span></h2>
 
   <p data-lang="en">Recurring elements are drawn onto every page at render time —
      so they know the <b>final</b> page number and count:</p>
@@ -813,6 +813,60 @@ pdf.text("官网", { link: "https://example.com" });        // 外部链接
 pdf.toc({ title: "目录" });      // 最后调用：生成带链接的目录页
                                  // 并插入到文档最前面——
                                  // 页码会自动正确偏移</code></pre>
+
+  <h3 data-lang="en" class="doc-h3">Signature fields</h3>
+  <h3 data-lang="de" hidden class="doc-h3">Signaturfelder</h3>
+  <h3 data-lang="zh" hidden class="doc-h3">签名字段</h3>
+
+  <p data-lang="en"><code>signature()</code> places an <b>empty AcroForm /Sig field</b> — the clickable
+     area recipients use to digitally sign the document in their PDF viewer (e.g. Adobe Acrobat)
+     and send it back. A signature line and an optional label are drawn automatically;
+     in flow mode the field moves the cursor and breaks pages like any other content:</p>
+  <p data-lang="de" hidden><code>signature()</code> platziert ein <b>leeres AcroForm-/Sig-Feld</b> — die klickbare
+     Fläche, über die Empfänger das Dokument im PDF-Viewer (z.&nbsp;B. Adobe Acrobat) digital
+     signieren und zurückschicken. Signaturlinie und optionales Label werden automatisch
+     gezeichnet; im Flow-Modus bewegt das Feld den Cursor und bricht Seiten wie jeder andere Inhalt:</p>
+  <p data-lang="zh" hidden><code>signature()</code> 会放置一个<b>空的 AcroForm /Sig 字段</b>——接收方在 PDF
+     阅读器（如 Adobe Acrobat）中点击该区域即可对文档进行数字签名并回传。签名线和可选的标签会自动绘制；
+     在排版流模式下，该字段会像其他内容一样移动光标并自动分页：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.signature({ label: "Client · place, date" });   // flow mode, auto-named "Signature1"
+
+// Absolute positioning + custom names: two fields side by side
+pdf.signature({ name: "client",     x: 60,  y: 600, width: 210, height: 56, label: "Client" });
+pdf.signature({ name: "contractor", x: 325, y: 600, width: 210, height: 56, label: "Contractor" });
+
+pdf.signature({ name: "initials-p1", width: 86, height: 32, line: false });  // initials, no line</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.signature({ label: "Auftraggeber · Ort, Datum" });   // Flow-Modus, Auto-Name "Signature1"
+
+// Absolute Positionierung + eigene Namen: zwei Felder nebeneinander
+pdf.signature({ name: "client",     x: 60,  y: 600, width: 210, height: 56, label: "Auftraggeber" });
+pdf.signature({ name: "contractor", x: 325, y: 600, width: 210, height: 56, label: "Auftragnehmer" });
+
+pdf.signature({ name: "initials-p1", width: 86, height: 32, line: false });  // Paraphe ohne Linie</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.signature({ label: "甲方 · 地点、日期" });        // 排版流模式，自动命名 "Signature1"
+
+// 绝对定位 + 自定义名称：两个字段并排
+pdf.signature({ name: "client",     x: 60,  y: 600, width: 210, height: 56, label: "甲方" });
+pdf.signature({ name: "contractor", x: 325, y: 600, width: 210, height: 56, label: "乙方" });
+
+pdf.signature({ name: "initials-p1", width: 86, height: 32, line: false });  // 缩写签名，无签名线</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Good to know:</b> field names must be unique per document
+    (auto-numbered <code>Signature1</code>, <code>Signature2</code>, … if omitted). fast-pdf creates the
+    <em>fields to be signed by the recipient</em> — it does not cryptographically sign the document itself.
+    A complete, ready-to-sign contract lives in <code>examples/signature.ts</code>
+    (<code>npx tsx examples/signature.ts</code>, then open the PDF in Acrobat and click a field).</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Gut zu wissen:</b> Feldnamen müssen pro Dokument eindeutig sein
+    (ohne Angabe automatisch <code>Signature1</code>, <code>Signature2</code>, …). fast-pdf erzeugt die
+    <em>vom Empfänger zu signierenden Felder</em> — das Dokument selbst wird nicht kryptografisch signiert.
+    Ein kompletter, unterschriftsreifer Vertrag liegt in <code>examples/signature.ts</code>
+    (<code>npx tsx examples/signature.ts</code>, dann das PDF in Acrobat öffnen und ein Feld anklicken).</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">值得注意：</b>字段名称在每个文档中必须唯一
+    （省略时自动编号为 <code>Signature1</code>、<code>Signature2</code>……）。fast-pdf 创建的是
+    <em>供接收方签署的字段</em>——它不会对文档本身进行加密签名。
+    一份完整的、可直接签署的合同示例见 <code>examples/signature.ts</code>
+    （运行 <code>npx tsx examples/signature.ts</code>，然后在 Acrobat 中打开 PDF 并点击签名字段）。</div>
 </section>
 
 <section id="fehler" class="doc-section">

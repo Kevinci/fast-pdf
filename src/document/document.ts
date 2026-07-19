@@ -216,6 +216,28 @@ export interface WatermarkOptions {
   bold?: boolean;
 }
 
+export interface SignatureOptions {
+  /**
+   * AcroForm field name — unique within the document, no periods.
+   * Default: "Signature1", "Signature2", …
+   */
+  name?: string;
+  /** Small label under the signature line (e.g. "Auftraggeber"). */
+  label?: string;
+  /** Field width in points. Default: 220. */
+  width?: number;
+  /** Field height in points. Default: 60. */
+  height?: number;
+  x?: number;
+  /** Providing `y` switches to absolute positioning (no cursor movement). */
+  y?: number;
+  /** Draw a signature line at the bottom of the field. Default: true. */
+  line?: boolean;
+  /** Horizontal alignment within the flow area (flow mode). Default: "left". */
+  align?: "left" | "center" | "right";
+  spacingAfter?: number;
+}
+
 export interface OutlineOptions {
   /** Nesting depth, 0 = top level. Default: 0. */
   level?: number;
@@ -264,6 +286,8 @@ export class PDFDocument {
   private readonly outlines: { title: string; level: number; page: Page; y: number }[] = [];
   /** Named link targets. */
   private readonly anchors = new Map<string, { page: Page; y: number }>();
+  /** Signature field names already taken (must be unique per document). */
+  private readonly sigFieldNames = new Set<string>();
   /** Non-null while decorators run: overrides the "current page". */
   private activePage: Page | null = null;
 
@@ -523,7 +547,15 @@ export class PDFDocument {
       variants = [undefined, undefined, undefined, undefined];
       this.customFonts.set(family, variants);
     }
-    variants[slot] = new EmbeddedFont(`emb:${family}:${slot}`, toBytes(data));
+    try {
+      variants[slot] = new EmbeddedFont(`emb:${family}:${slot}`, toBytes(data));
+    } catch (e) {
+      if (e instanceof FastPDFError) throw e;
+      // Out-of-bounds reads on corrupt files surface as RangeError etc. —
+      // normalize them so callers get a stable error code.
+      const msg = e instanceof Error ? e.message : String(e);
+      throw new FastPDFError(`Invalid font file: ${msg}`, "INVALID_FONT_FILE");
+    }
     return this;
   }
 
@@ -561,6 +593,8 @@ export class PDFDocument {
     };
     const font = this.resolveFontStyle(style.font, style.bold, style.italic);
     const lineStep = style.size * style.lineHeight;
+
+    if (options.link !== undefined) checkLinkTarget(options.link);
 
     if (options.y !== undefined) {
       // Absolute positioning: draw where told, leave the flow cursor alone.
@@ -1078,7 +1112,75 @@ export class PDFDocument {
    * an anchor reference ("#name").
    */
   link(x: number, y: number, width: number, height: number, target: string): this {
+    checkLinkTarget(target);
     this.page.links.push({ x, y, width, height, target });
+    return this;
+  }
+
+  /**
+   * An empty signature form field (AcroForm /Sig) — the area recipients
+   * click to sign the document in their PDF viewer and send it back.
+   * Draws a signature line (and optional label) unless disabled; the
+   * clickable field covers the area above the line.
+   *
+   * Note: this creates a *field to be signed by the recipient*. The
+   * document itself is not cryptographically signed by fast-pdf.
+   */
+  signature(options: SignatureOptions = {}): this {
+    const width = options.width ?? 220;
+    const height = options.height ?? 60;
+    let name = options.name;
+    if (name !== undefined) {
+      if (name === "" || name.includes(".")) {
+        throw new FastPDFError(
+          `Invalid signature field name "${name}" — must be non-empty and must not contain periods`,
+          "INVALID_ARGUMENT",
+        );
+      }
+      if (this.sigFieldNames.has(name)) {
+        throw new FastPDFError(`Signature field name "${name}" is already used`, "INVALID_ARGUMENT");
+      }
+    } else {
+      let n = this.sigFieldNames.size + 1;
+      while (this.sigFieldNames.has(`Signature${n}`)) n++;
+      name = `Signature${n}`;
+    }
+    this.sigFieldNames.add(name);
+
+    const labelSize = this.defaults.size * 0.8;
+    const labelGap = 4;
+    const extra = options.label !== undefined ? labelGap + labelSize * 1.2 : 0;
+
+    const draw = (x: number, yTop: number): void => {
+      const page = this.page;
+      if (options.line ?? true) {
+        page.content
+          .strokeColor({ r: 0.25, g: 0.25, b: 0.3 })
+          .lineWidth(0.75)
+          .moveTo(x, page.ty(yTop + height))
+          .lineTo(x + width, page.ty(yTop + height))
+          .stroke();
+      }
+      if (options.label !== undefined) {
+        const font = this.resolveFontStyle(this.defaults.font, false, false);
+        const baseline = page.ty(yTop + height + labelGap + (font.ascent * labelSize) / 1000);
+        page.content
+          .fillColor({ r: 0.45, g: 0.45, b: 0.5 })
+          .text(font.encode(options.label), x, baseline, page.fontRes(font), labelSize);
+      }
+      page.sigFields.push({ name: name!, x, y: yTop, width, height });
+    };
+
+    if (options.y !== undefined) {
+      draw(options.x ?? this.page.margins.left, options.y);
+      return this;
+    }
+
+    this.breakPageIfNeeded(height + extra);
+    const free = this.flowWidth - width;
+    const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
+    draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
+    this.cursorY += height + extra + (options.spacingAfter ?? 0);
     return this;
   }
 
@@ -1234,6 +1336,9 @@ export class PDFDocument {
     const refOf = new Map<Page, Ref>();
     this.pages.forEach((page, i) => refOf.set(page, pageRefs[i]!));
 
+    // Signature field widgets, collected for the document-level /AcroForm.
+    const acroFields: Ref[] = [];
+
     for (let i = 0; i < this.pages.length; i++) {
       const page = this.pages[i]!;
       const raw = page.content.toBytes();
@@ -1251,6 +1356,30 @@ export class PDFDocument {
       for (const [key, { res }] of page.extGStatesUsed) gsDict[res] = gsRefs.get(key)!;
 
       const annots = page.links.map((link) => writer.add(this.buildLinkAnnot(link, page, refOf)));
+      for (const field of page.sigFields) {
+        // Widgets need an appearance stream (empty — viewers render their
+        // own "sign here" affordance; the visible line is page content).
+        const apRef = writer.addStream(
+          {
+            Type: new Name("XObject"),
+            Subtype: new Name("Form"),
+            BBox: [0, 0, field.width, field.height],
+          },
+          new Uint8Array(0),
+        );
+        const widgetRef = writer.add({
+          Type: new Name("Annot"),
+          Subtype: new Name("Widget"),
+          FT: new Name("Sig"),
+          T: textString(field.name),
+          Rect: [field.x, page.ty(field.y + field.height), field.x + field.width, page.ty(field.y)],
+          F: 4, // print
+          P: pageRefs[i],
+          AP: { N: apRef },
+        });
+        acroFields.push(widgetRef);
+        annots.push(widgetRef);
+      }
 
       writer.fill(pageRefs[i]!, {
         Type: new Name("Page"),
@@ -1273,6 +1402,9 @@ export class PDFDocument {
       Pages: pagesRef,
       Outlines: outlinesRef,
       PageMode: outlinesRef ? new Name("UseOutlines") : undefined,
+      // SigFlags 1 = SignaturesExist: the document contains signature
+      // field(s), so viewers enable their signing UI.
+      AcroForm: acroFields.length > 0 ? { Fields: acroFields, SigFlags: 1 } : undefined,
     });
     const infoRef = writer.add(this.buildInfo());
     return writer.finalize(catalogRef, infoRef);
@@ -1435,10 +1567,35 @@ function clampAlpha(a: number): number {
   return a < 0 ? 0 : a > 1 ? 1 : a;
 }
 
+/**
+ * URI schemes that PDF viewers may hand straight to the OS or script engine.
+ * Rejected so untrusted data flowing into a link target cannot turn an
+ * invoice into a script/local-file launcher.
+ */
+const BLOCKED_URI_SCHEMES = new Set(["javascript", "vbscript", "data", "file"]);
+
+/** Validate an external link target ("#anchor" refs are resolved elsewhere). */
+function checkLinkTarget(target: string): void {
+  if (target.startsWith("#")) return;
+  // Strip control chars and spaces before matching — they must not be able
+  // to disguise the scheme ("java\nscript:" and friends).
+  const compact = target.replace(/[\x00-\x20\x7f]/g, "");
+  const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(compact)?.[1]?.toLowerCase();
+  if (scheme !== undefined && BLOCKED_URI_SCHEMES.has(scheme)) {
+    throw new FastPDFError(`Link target scheme "${scheme}:" is not allowed`, "UNSAFE_LINK");
+  }
+}
+
 /** Percent-encode a URI so it fits into an ASCII PDF string. */
 function toAsciiUri(uri: string): string {
   let out = "";
-  for (const ch of encodeURI(uri)) {
+  let encoded: string;
+  try {
+    encoded = encodeURI(uri);
+  } catch {
+    throw new FastPDFError(`Link target is not a valid URI: "${uri}"`, "INVALID_ARGUMENT");
+  }
+  for (const ch of encoded) {
     const c = ch.codePointAt(0)!;
     out += c > 0x7e ? encodeURIComponent(ch) : ch;
   }

@@ -24,6 +24,7 @@ export type {
   HeaderFooterOptions,
   PageNumberOptions,
   WatermarkOptions,
+  SignatureOptions,
   OutlineOptions,
   TOCOptions,
   ObjectTableColumn,
