@@ -1,6 +1,6 @@
 {
   "name": "fast-pdf",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
   "author": "Kevin Imig <kevinci.coding@gmail.com>",
