@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Security
+
+- Numeric input hardening (Enterprise Roadmap Phase 3): the public drawing and
+  text entry points (`line()`, `rect()`, `circle()`, `ellipse()`, `text()`)
+  now reject `NaN`, `±Infinity` and out-of-range magnitudes (≥ 1e21) at the
+  call site with a new stable `INVALID_NUMBER` error code, instead of letting a
+  bad value leak into the serializer.
+- `fmtNumber()` now throws a typed `FastPDFError` (`INVALID_NUMBER`) as a
+  last-line-of-defence guard, rather than a generic `Error`, so no code path
+  can emit a corrupt PDF number.
+
 ## [0.4.0] — 2026-07-19
 
 ### Added

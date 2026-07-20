@@ -12,6 +12,7 @@ import { parsePng, pngSize } from "../images/png";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
+import { assertFinite } from "../validate";
 import {
   BLACK,
   PAGE_FORMATS,
@@ -591,6 +592,14 @@ export class PDFDocument {
       strikethrough: options.strikethrough ?? this.defaults.strikethrough,
       letterSpacing: options.letterSpacing ?? this.defaults.letterSpacing,
     };
+    assertFinite(style.size, "text size");
+    assertFinite(style.lineHeight, "text lineHeight");
+    assertFinite(style.letterSpacing, "text letterSpacing");
+    if (options.x !== undefined) assertFinite(options.x, "text x");
+    if (options.y !== undefined) assertFinite(options.y, "text y");
+    if (options.width !== undefined) assertFinite(options.width, "text width");
+    if (options.spacingAfter !== undefined) assertFinite(options.spacingAfter, "text spacingAfter");
+
     const font = this.resolveFontStyle(style.font, style.bold, style.italic);
     const lineStep = style.size * style.lineHeight;
 
@@ -948,6 +957,10 @@ export class PDFDocument {
   // ── Vector primitives (absolute coordinates, top-left based) ─────────
 
   line(x1: number, y1: number, x2: number, y2: number, options: LineOptions = {}): this {
+    assertFinite(x1, "line x1");
+    assertFinite(y1, "line y1");
+    assertFinite(x2, "line x2");
+    assertFinite(y2, "line y2");
     this.page.content
       .strokeColor(options.color !== undefined ? parseColor(options.color) : BLACK)
       .lineWidth(options.width ?? 1)
@@ -958,6 +971,10 @@ export class PDFDocument {
   }
 
   rect(x: number, y: number, width: number, height: number, options: RectOptions = {}): this {
+    assertFinite(x, "rect x");
+    assertFinite(y, "rect y");
+    assertFinite(width, "rect width");
+    assertFinite(height, "rect height");
     const r = Math.min(options.radius ?? 0, width / 2, height / 2);
     buildRectPath(this.page.content, x, this.page.ty(y), width, height, r);
     return this.paintPath(options);
@@ -970,6 +987,10 @@ export class PDFDocument {
 
   /** Ellipse with center (cx, cy) and radii rx/ry (top-left coordinates). */
   ellipse(cx: number, cy: number, rx: number, ry: number, options: ShapeOptions = {}): this {
+    assertFinite(cx, "ellipse cx");
+    assertFinite(cy, "ellipse cy");
+    assertFinite(rx, "ellipse rx");
+    assertFinite(ry, "ellipse ry");
     if (rx <= 0 || ry <= 0) {
       throw new FastPDFError(`Ellipse radii must be positive (got ${rx}, ${ry})`, "INVALID_ARGUMENT");
     }

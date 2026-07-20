@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { PDFDocument } from "../src/document/document";
 import { FastPDFError } from "../src/errors";
 import { fmtNumber, latin1String, Name, serialize } from "../src/pdf/objects";
+import { assertFinite, assertNonNegative } from "../src/validate";
 import { deflate, inflate } from "../src/pdf/compress";
 import { parsePng, pngSize } from "../src/images/png";
 
@@ -66,9 +67,45 @@ describe("text content injection", () => {
   });
 });
 
+describe("numeric input validation", () => {
+  it.each([NaN, Infinity, -Infinity, 1e21, -1e21])(
+    "rejects %s at the drawing entry points with INVALID_NUMBER",
+    (bad) => {
+      const doc = new PDFDocument();
+      expect(code(() => doc.rect(bad, 0, 10, 10))).toBe("INVALID_NUMBER");
+      expect(code(() => doc.line(0, bad, 10, 10))).toBe("INVALID_NUMBER");
+      expect(code(() => doc.circle(0, 0, bad))).toBe("INVALID_NUMBER");
+      expect(code(() => doc.ellipse(0, 0, 5, bad))).toBe("INVALID_NUMBER");
+      expect(code(() => doc.text("hi", { size: bad }))).toBe("INVALID_NUMBER");
+      expect(code(() => doc.text("hi", { x: bad }))).toBe("INVALID_NUMBER");
+    },
+  );
+
+  it("fails fast at the call site, not later at render", () => {
+    const doc = new PDFDocument();
+    // The throw must happen synchronously on the bad call — not deferred to render().
+    expect(() => doc.rect(NaN, 0, 10, 10)).toThrow(FastPDFError);
+  });
+
+  it("accepts the largest still-representable magnitude", () => {
+    const doc = new PDFDocument();
+    expect(() => doc.rect(0, 0, 1e20, 1e20)).not.toThrow();
+  });
+
+  it("assertFinite / assertNonNegative guard their contracts", () => {
+    expect(assertFinite(3.5, "x")).toBe(3.5);
+    expect(code(() => assertFinite(NaN, "x"))).toBe("INVALID_NUMBER");
+    expect(code(() => assertFinite(Infinity, "x"))).toBe("INVALID_NUMBER");
+    expect(assertNonNegative(0, "x")).toBe(0);
+    expect(code(() => assertNonNegative(-1, "x"))).toBe("INVALID_NUMBER");
+  });
+});
+
 describe("PDF syntax hardening", () => {
   it("rejects numbers that would serialize in exponent notation", () => {
     expect(() => fmtNumber(1e21)).toThrow(/too large/);
+    expect(() => fmtNumber(1e21)).toThrow(FastPDFError);
+    expect(code(() => fmtNumber(NaN))).toBe("INVALID_NUMBER");
     expect(fmtNumber(1e20)).toBe("100000000000000000000");
   });
 

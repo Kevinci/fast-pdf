@@ -5,6 +5,7 @@
  * All serialization goes through latin1 encoding: one JS char code = one byte.
  * TextEncoder (UTF-8) must never touch PDF bytes.
  */
+import { FastPDFError } from "../errors";
 
 /** Reference to an indirect object ("12 0 R"). */
 export class Ref {
@@ -36,9 +37,11 @@ export type PDFValue =
 
 /** Format a number the PDF way: no exponent, few decimals, no trailing zeros. */
 export function fmtNumber(n: number): string {
-  if (!Number.isFinite(n)) throw new Error(`Non-finite number in PDF output: ${n}`);
+  // Last line of defence: public entry points validate first (src/validate.ts),
+  // but any number reaching the serializer must still be representable.
+  if (!Number.isFinite(n)) throw new FastPDFError(`Non-finite number in PDF output: ${n}`, "INVALID_NUMBER");
   // String() switches to exponent notation at 1e21, which PDF syntax forbids.
-  if (Math.abs(n) >= 1e21) throw new Error(`Number too large for PDF output: ${n}`);
+  if (Math.abs(n) >= 1e21) throw new FastPDFError(`Number too large for PDF output: ${n}`, "INVALID_NUMBER");
   if (Number.isInteger(n)) return String(n);
   return n
     .toFixed(4)

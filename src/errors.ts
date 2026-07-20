@@ -6,6 +6,7 @@
  */
 export type FastPDFErrorCode =
   | "INVALID_ARGUMENT"
+  | "INVALID_NUMBER"
   | "INVALID_COLOR"
   | "UNKNOWN_FONT"
   | "UNKNOWN_PAGE_FORMAT"
