@@ -95,6 +95,7 @@
     <li><a class="nav-link" href="#formen">Shapes</a></li>
     <li><a class="nav-link" href="#features">Document features<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: signature()"></span></a></li>
     <li><a class="nav-link" href="#fehler">Error handling</a></li>
+    <li><a class="nav-link" href="#security">Security<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: input hardening"></span></a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
     <li><a class="nav-link" href="#templates">Templates &amp; AI skill<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: npx fast-pdf-skill"></span></a></li>
@@ -111,6 +112,7 @@
     <li><a class="nav-link" href="#formen">Formen</a></li>
     <li><a class="nav-link" href="#features">Dokumentfeatures<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: signature()"></span></a></li>
     <li><a class="nav-link" href="#fehler">Fehlerbehandlung</a></li>
+    <li><a class="nav-link" href="#security">Sicherheit<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: Eingabehärtung"></span></a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
     <li><a class="nav-link" href="#templates">Templates &amp; AI-Skill<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: npx fast-pdf-skill"></span></a></li>
@@ -127,6 +129,7 @@
     <li><a class="nav-link" href="#formen">图形</a></li>
     <li><a class="nav-link" href="#features">文档功能<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：signature()"></span></a></li>
     <li><a class="nav-link" href="#fehler">错误处理</a></li>
+    <li><a class="nav-link" href="#security">安全<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：输入校验"></span></a></li>
     <li><a class="nav-link" href="#performance">性能</a></li>
     <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
     <li><a class="nav-link" href="#templates">模板与 AI 技能<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：npx fast-pdf-skill"></span></a></li>
@@ -961,10 +964,66 @@ try {
 }</code></pre>
 </section>
 
+<section id="security" class="doc-section">
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Security</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Sicherheit</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>安全</h2>
+
+  <p data-lang="en">Security is a first-class design goal, not an afterthought. The long-term aim is a build
+     that regulated industries — banks and insurers — can rely on. That bar isn’t fully cleared yet,
+     so here is the honest split: what is hardened <b>today</b>, and what is still <b>on the roadmap</b>.</p>
+  <p data-lang="de" hidden>Sicherheit ist von Anfang an ein zentrales Entwurfsziel, kein nachträglicher Aufsatz.
+     Das Fernziel ist eine Version, der regulierte Branchen — Banken und Versicherungen — vertrauen können.
+     Diese Messlatte ist noch nicht vollständig erreicht, deshalb hier die ehrliche Aufteilung: was <b>heute</b>
+     gehärtet ist und was noch <b>auf der Roadmap</b> steht.</p>
+  <p data-lang="zh" hidden>安全是从一开始就确立的核心设计目标，而非事后补丁。长期目标是打造一个受监管行业——银行与保险公司——
+     可以信赖的版本。这个标准目前尚未完全达到，因此在此如实说明：<b>当前已加固</b>的部分，以及仍<b>在路线图上</b>的部分。</p>
+
+  <h3 data-lang="en" class="doc-h3">Hardened today</h3>
+  <h3 data-lang="de" hidden class="doc-h3">Heute schon gehärtet</h3>
+  <h3 data-lang="zh" hidden class="doc-h3">当前已加固</h3>
+
+  <div data-lang="en" class="overflow-x-auto"><table class="api">
+    <tr><th>Area</th><th>Protection</th></tr>
+    <tr><td>String &amp; name injection</td><td>Every literal and name is byte-escaped (<code>escapeString</code>, name <code>#XX</code>) — content can’t break out of the object stream</td></tr>
+    <tr><td>Link schemes</td><td><code>javascript:</code>, <code>vbscript:</code>, <code>data:</code> and <code>file:</code> targets are rejected → <code>UNSAFE_LINK</code></td></tr>
+    <tr><td>Null &amp; control bytes</td><td>Escaped octally, never written raw</td></tr>
+    <tr><td>Numeric input</td><td><code>NaN</code>, <code>±Infinity</code> and out-of-range magnitudes are rejected at the call site → <code>INVALID_NUMBER</code></td></tr>
+    <tr><td>Memory exhaustion</td><td>Decompression is size-bounded (zlib-bomb guard); oversized images are refused → <code>IMAGE_TOO_LARGE</code></td></tr>
+    <tr><td>Failure surface</td><td>Every user-facing error is a typed <code>FastPDFError</code> with a stable <code>code</code></td></tr>
+  </table></div>
+  <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
+    <tr><th>Bereich</th><th>Schutz</th></tr>
+    <tr><td>String- &amp; Name-Injection</td><td>Jedes Literal und jeder Name wird byteweise escaped (<code>escapeString</code>, Name <code>#XX</code>) — Inhalte können nicht aus dem Objektstrom ausbrechen</td></tr>
+    <tr><td>Link-Schemata</td><td><code>javascript:</code>, <code>vbscript:</code>, <code>data:</code> und <code>file:</code> werden abgewiesen → <code>UNSAFE_LINK</code></td></tr>
+    <tr><td>Null- &amp; Steuerbytes</td><td>Oktal escaped, nie roh geschrieben</td></tr>
+    <tr><td>Numerische Eingaben</td><td><code>NaN</code>, <code>±Infinity</code> und zu große Beträge werden am Aufrufort abgewiesen → <code>INVALID_NUMBER</code></td></tr>
+    <tr><td>Speichererschöpfung</td><td>Dekompression ist größenbegrenzt (zlib-Bomben-Schutz); zu große Bilder werden abgelehnt → <code>IMAGE_TOO_LARGE</code></td></tr>
+    <tr><td>Fehleroberfläche</td><td>Jeder nutzerseitige Fehler ist ein typisierter <code>FastPDFError</code> mit stabilem <code>code</code></td></tr>
+  </table></div>
+  <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
+    <tr><th>领域</th><th>防护</th></tr>
+    <tr><td>字符串与名称注入</td><td>每个字面量和名称都按字节转义（<code>escapeString</code>、名称 <code>#XX</code>）——内容无法逃逸出对象流</td></tr>
+    <tr><td>链接协议</td><td>拒绝 <code>javascript:</code>、<code>vbscript:</code>、<code>data:</code> 和 <code>file:</code> 目标 → <code>UNSAFE_LINK</code></td></tr>
+    <tr><td>空字节与控制字节</td><td>以八进制转义，绝不原样写入</td></tr>
+    <tr><td>数值输入</td><td>在调用处即拒绝 <code>NaN</code>、<code>±Infinity</code> 及超范围数值 → <code>INVALID_NUMBER</code></td></tr>
+    <tr><td>内存耗尽</td><td>解压受大小限制（zlib 炸弹防护）；过大图片被拒绝 → <code>IMAGE_TOO_LARGE</code></td></tr>
+    <tr><td>错误界面</td><td>每个面向使用者的错误都是带稳定 <code>code</code> 的 <code>FastPDFError</code></td></tr>
+  </table></div>
+
+  <h3 data-lang="en" class="doc-h3">On the roadmap</h3>
+  <h3 data-lang="de" hidden class="doc-h3">Auf der Roadmap</h3>
+  <h3 data-lang="zh" hidden class="doc-h3">路线图上</h3>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Toward banks &amp; insurers:</b> encryption (AES-128/256) with user/owner passwords and permissions, digital signatures (PKCS#7, PAdES-ready), PDF/A-1/2/3 archival profiles, and byte-identical <b>deterministic</b> output for reproducible hashes and audits. These are planned, not shipped — tracked in the enterprise roadmap.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Richtung Banken &amp; Versicherungen:</b> Verschlüsselung (AES-128/256) mit User-/Owner-Passwörtern und Berechtigungen, digitale Signaturen (PKCS#7, PAdES-ready), PDF/A-1/2/3-Archivprofile und byte-identische <b>deterministische</b> Ausgabe für reproduzierbare Hashes und Audits. Das ist geplant, noch nicht ausgeliefert — festgehalten in der Enterprise-Roadmap.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">面向银行与保险公司：</b>加密（AES-128/256）及用户/所有者密码与权限、数字签名（PKCS#7、支持 PAdES）、PDF/A-1/2/3 归档规范，以及字节一致的<b>确定性</b>输出，用于可复现的哈希与审计。这些为计划项，尚未发布——记录于企业路线图中。</div>
+</section>
+
 <section id="performance" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Performance</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Performance</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>性能</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>Performance</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>Performance</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>性能</h2>
 
   <p data-lang="en">Direct PDF synthesis instead of a browser detour. Compression uses the native
      <code>CompressionStream</code> API (zlib) — zero bundle bytes for it.
@@ -1002,9 +1061,9 @@ try {
 </section>
 
 <section id="ergebnis" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>See it rendered</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>So sieht’s aus</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>效果展示</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>See it rendered</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>So sieht’s aus</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>效果展示</h2>
 
   <p data-lang="en">A design-forward report from <code>examples/report.ts</code> (<code>npx tsx examples/report.ts</code>),
      rendered with macOS Quartz — full-bleed color, a vector bar chart and big type, all from
@@ -1037,9 +1096,9 @@ try {
 </section>
 
 <section id="templates" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>Templates &amp; AI skill<span class="chip">New: npx fast-pdf-skill</span></h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>Templates &amp; AI-Skill<span class="chip">Neu: npx fast-pdf-skill</span></h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>模板与 AI 技能<span class="chip">新增：npx fast-pdf-skill</span></h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>Templates &amp; AI skill<span class="chip">New: npx fast-pdf-skill</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>Templates &amp; AI-Skill<span class="chip">Neu: npx fast-pdf-skill</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>模板与 AI 技能<span class="chip">新增：npx fast-pdf-skill</span></h2>
 
   <p data-lang="en">The fastest way to a good-looking document is copying a finished one.
      Five complete, designed templates ship with the npm package
