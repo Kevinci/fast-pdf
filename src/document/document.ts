@@ -51,6 +51,14 @@ export interface PDFDocumentOptions extends PageOptions {
   lineHeight?: number;
   /** Compress content streams (FlateDecode). Default: true. */
   compress?: boolean;
+  /**
+   * Produce byte-identical output for identical input. When `true`, the
+   * document embeds no wall-clock timestamp (unless `metadata.creationDate`
+   * is set explicitly), so the same content always renders to the same bytes
+   * — ideal for reproducible builds, hashing, archiving and signatures.
+   * Default: false (a real creation/modification date is embedded).
+   */
+  deterministic?: boolean;
   metadata?: DocumentMetadata;
 }
 
@@ -271,6 +279,7 @@ export class PDFDocument {
   private readonly defaults: TextStyle;
   private readonly pageDefaults: Required<PageOptions>;
   private readonly compress: boolean;
+  private readonly deterministic: boolean;
   private readonly metadata: DocumentMetadata;
   private readonly images = new Map<Uint8Array, ImageEntry>();
   /** family → [regular, bold, italic, boldItalic] embedded fonts. */
@@ -311,6 +320,7 @@ export class PDFDocument {
       letterSpacing: 0,
     };
     this.compress = options.compress ?? true;
+    this.deterministic = options.deterministic ?? false;
     this.metadata = options.metadata ?? {};
     this.cursorY = 0;
     this.addPage();
@@ -1531,6 +1541,11 @@ export class PDFDocument {
 
   private buildInfo(): Record<string, PDFValue | undefined> {
     const m = this.metadata;
+    // An explicit creationDate is always honoured. Otherwise a wall-clock date
+    // is embedded — unless the document is deterministic, in which case the
+    // timestamp is omitted so identical content renders to identical bytes.
+    const date = m.creationDate ?? (this.deterministic ? undefined : new Date());
+    const stamp = date !== undefined ? textString(formatDate(date)) : undefined;
     return {
       Title: m.title !== undefined ? textString(m.title) : undefined,
       Author: m.author !== undefined ? textString(m.author) : undefined,
@@ -1538,7 +1553,8 @@ export class PDFDocument {
       Keywords: m.keywords !== undefined ? textString(m.keywords) : undefined,
       Creator: m.creator !== undefined ? textString(m.creator) : undefined,
       Producer: textString(m.producer ?? "fast-pdf"),
-      CreationDate: textString(formatDate(m.creationDate ?? new Date())),
+      CreationDate: stamp,
+      ModDate: stamp,
     };
   }
 

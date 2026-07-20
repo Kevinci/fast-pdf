@@ -25,6 +25,15 @@ export class PDFString {
   constructor(readonly value: string) {}
 }
 
+/**
+ * A PDF hexadecimal string ("<48656c6c6f>"). `value` is the already
+ * hex-encoded payload (an even number of hex digits). Used where a byte
+ * string is cleaner as hex than as an escaped literal, e.g. the file `/ID`.
+ */
+export class HexString {
+  constructor(readonly value: string) {}
+}
+
 export type PDFValue =
   | number
   | boolean
@@ -32,6 +41,7 @@ export type PDFValue =
   | Ref
   | Name
   | PDFString
+  | HexString
   | PDFValue[]
   | { [key: string]: PDFValue | undefined };
 
@@ -90,6 +100,7 @@ export function serialize(value: PDFValue): string {
   if (value instanceof Ref) return `${value.num} ${value.gen} R`;
   if (value instanceof Name) return serializeName(value.value);
   if (value instanceof PDFString) return `(${escapeString(value.value)})`;
+  if (value instanceof HexString) return `<${value.value}>`;
   if (Array.isArray(value)) return `[${value.map(serialize).join(" ")}]`;
   // dictionary
   const parts: string[] = [];

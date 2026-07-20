@@ -101,3 +101,49 @@ describe("PDFDocument", () => {
     expect(pdf.y).toBeGreaterThan(pdf.pageSize.height / 20); // wrapped into multiple lines
   });
 });
+
+describe("deterministic output", () => {
+  const build = (opts: ConstructorParameters<typeof PDFDocument>[0]) => {
+    const pdf = new PDFDocument(opts);
+    pdf.text("Reproducible").table([["A", "B"], ["1", "2"]]);
+    return pdf.render();
+  };
+
+  it("embeds no wall-clock timestamp in deterministic mode", async () => {
+    const text = latin1String(await build({ deterministic: true }));
+    expect(text).not.toContain("/CreationDate");
+    expect(text).not.toContain("/ModDate");
+  });
+
+  it("renders byte-identical output across runs in deterministic mode", async () => {
+    expect(await build({ deterministic: true })).toEqual(await build({ deterministic: true }));
+  });
+
+  it("still honours an explicit creationDate in deterministic mode", async () => {
+    const text = latin1String(await build({ deterministic: true, metadata: { creationDate: FIXED_DATE } }));
+    expect(text).toContain("/CreationDate (D:20260101000000Z)");
+    expect(text).toContain("/ModDate (D:20260101000000Z)");
+  });
+
+  it("embeds a real timestamp by default (non-deterministic)", async () => {
+    const text = latin1String(await build({}));
+    expect(text).toContain("/CreationDate (D:");
+  });
+
+  it("writes a content-derived file /ID that is stable for stable input", async () => {
+    const text = latin1String(await build({ deterministic: true }));
+    const id = /\/ID \[<([0-9a-f]{32})> <([0-9a-f]{32})>\]/.exec(text);
+    expect(id).not.toBeNull();
+    expect(id![1]).toBe(id![2]); // both entries equal for a freshly created file
+    const again = /\/ID \[<([0-9a-f]{32})>/.exec(latin1String(await build({ deterministic: true })));
+    expect(again![1]).toBe(id![1]); // same content → same id
+  });
+
+  it("gives different documents different /IDs", async () => {
+    const a = /\/ID \[<([0-9a-f]{32})>/.exec(latin1String(await build({ deterministic: true })))![1];
+    const other = new PDFDocument({ deterministic: true });
+    other.text("A completely different document");
+    const b = /\/ID \[<([0-9a-f]{32})>/.exec(latin1String(await other.render()))![1];
+    expect(a).not.toBe(b);
+  });
+});

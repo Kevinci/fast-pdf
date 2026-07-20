@@ -1,4 +1,26 @@
-import { latin1Bytes, serialize, type PDFValue, Ref } from "./objects";
+import { latin1Bytes, serialize, HexString, type PDFValue, Ref } from "./objects";
+
+/**
+ * A 128-bit content digest of the assembled file body, rendered as 32 hex
+ * digits. Four independent FNV-1a lanes (distinct odd multipliers) are folded
+ * over every byte. This is an identifier, not a cryptographic hash: its only
+ * contract is that identical content yields an identical value, so the file
+ * `/ID` — and therefore the whole document — is byte-stable for byte-stable
+ * input. Callers that need integrity should hash the finished file themselves.
+ */
+function contentDigest(chunks: Uint8Array[]): string {
+  const lanes = [0x811c9dc5, 0xdeadbeef, 0x9e3779b9, 0x85ebca6b];
+  const mult = [0x01000193, 0x01000195, 0x01000197, 0x01000199];
+  for (const chunk of chunks) {
+    for (let i = 0; i < chunk.length; i++) {
+      const b = chunk[i]!;
+      for (let l = 0; l < 4; l++) {
+        lanes[l] = Math.imul((lanes[l]! ^ b) >>> 0, mult[l]!) >>> 0;
+      }
+    }
+  }
+  return lanes.map((v) => (v >>> 0).toString(16).padStart(8, "0")).join("");
+}
 
 /**
  * PDFWriter — indirect object registry and file assembly.
@@ -82,7 +104,11 @@ export class PDFWriter {
     for (let num = 1; num < size; num++) {
       xref += `${String(offsets[num]).padStart(10, "0")} 00000 n \n`;
     }
-    const trailer: Record<string, PDFValue | undefined> = { Size: size, Root: root, Info: info };
+    // File identifier, derived from the body so it is stable for stable input.
+    // Both array entries are equal for a freshly created file (the first is the
+    // permanent id, the second is updated on incremental change — see ISO 32000-1 §7.5.5).
+    const id = new HexString(contentDigest(chunks));
+    const trailer: Record<string, PDFValue | undefined> = { Size: size, Root: root, Info: info, ID: [id, id] };
     xref += `trailer\n${serialize(trailer)}\nstartxref\n${xrefOffset}\n%%EOF\n`;
     push(latin1Bytes(xref));
 

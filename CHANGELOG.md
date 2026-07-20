@@ -6,6 +6,17 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- Deterministic output (Enterprise Roadmap Phase 4): a new `deterministic`
+  document option produces byte-identical PDFs for identical input. In that
+  mode no wall-clock timestamp is embedded (unless `metadata.creationDate` is
+  set explicitly), making output reproducible for hashing, archiving and
+  signatures. An explicit `creationDate` is always honoured.
+- Every document now carries a file `/ID` in the trailer, derived from a
+  128-bit digest of the file body — stable for stable input, distinct for
+  distinct documents. `ModDate` is now written alongside `CreationDate`.
+
 ### Security
 
 - Numeric input hardening (Enterprise Roadmap Phase 3): the public drawing and

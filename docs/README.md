@@ -141,12 +141,17 @@ Messung von:
 
 ## Phase 4 – Compliance (v2.0)
 
+> Stand 2026-07-20: Deterministische Ausgabe ist umgesetzt — die Option
+> `deterministic: true` erzeugt byte-identische PDFs (kein Wall-Clock-Zeitstempel,
+> sofern kein `creationDate` gesetzt ist). Jedes Dokument trägt jetzt ein aus dem
+> Dateiinhalt abgeleitetes `/ID` im Trailer. Abgedeckt durch `tests/document.test.ts`.
+
 ### Deterministische PDFs
 
-- [ ] Byte-identische PDFs
-- [ ] Abschaltbare Zeitstempel
-- [ ] Stabile Objekt-IDs
-- [ ] Reproduzierbare Hashes
+- [x] Byte-identische PDFs (`deterministic: true`)
+- [x] Abschaltbare Zeitstempel (weggelassen bzw. per `creationDate` fixierbar)
+- [x] Stabile Objekt-IDs (deterministische Objekt-Reihenfolge)
+- [x] Reproduzierbare Hashes (inhaltsabgeleitetes `/ID`, stabil bei stabilem Input)
 
 Ideal für:
 
