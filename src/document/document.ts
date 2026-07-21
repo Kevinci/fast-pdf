@@ -11,6 +11,7 @@ import { columnWidths, countColumns, measureTable, type CellValue, type TableOpt
 import { detectFormat, toBytes, type ParsedImage } from "../images/image";
 import { parseJpeg } from "../images/jpeg";
 import { parsePng, pngSize } from "../images/png";
+import { gifSize, parseGif } from "../images/gif";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
@@ -967,8 +968,14 @@ export class PDFDocument {
     let entry = this.images.get(bytes);
     if (entry) return entry;
     const format = detectFormat(bytes);
-    if (!format) throw new FastPDFError("Unsupported image format (JPEG and PNG are supported)", "UNSUPPORTED_IMAGE");
-    const size = format === "jpeg" ? parseJpeg(bytes) : pngSize(bytes);
+    if (!format) {
+      throw new FastPDFError("Unsupported image format (JPEG, PNG, GIF and WebP are supported)", "UNSUPPORTED_IMAGE");
+    }
+    const size =
+      format === "jpeg" ? parseJpeg(bytes)
+      : format === "png" ? pngSize(bytes)
+      : format === "gif" ? gifSize(bytes)
+      : (() => { throw new FastPDFError("WebP support is not enabled in this build", "UNSUPPORTED_IMAGE"); })();
     entry = {
       id: `img${this.images.size}`,
       bytes,
@@ -1334,7 +1341,9 @@ export class PDFDocument {
     const imageRefs = new Map<string, Ref>();
     for (const entry of this.images.values()) {
       const parsed: ParsedImage =
-        entry.format === "jpeg" ? parseJpeg(entry.bytes) : await parsePng(entry.bytes);
+        entry.format === "jpeg" ? parseJpeg(entry.bytes)
+        : entry.format === "png" ? await parsePng(entry.bytes)
+        : await parseGif(entry.bytes);
       let smaskRef: Ref | undefined;
       if (parsed.smask) {
         smaskRef = writer.addStream(

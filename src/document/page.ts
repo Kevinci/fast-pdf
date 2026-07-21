@@ -1,12 +1,13 @@
 import { ContentStream } from "../pdf/content";
 import type { Font } from "../fonts/font";
+import type { ImageFormat } from "../images/image";
 import type { Margins, PageSize } from "../types/index";
 
 /** An image registered on the document, shared across pages. */
 export interface ImageEntry {
   id: string;
   bytes: Uint8Array;
-  format: "jpeg" | "png";
+  format: ImageFormat;
   /** Natural size in pixels. */
   pxWidth: number;
   pxHeight: number;

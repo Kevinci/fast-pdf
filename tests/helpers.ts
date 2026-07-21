@@ -215,6 +215,116 @@ export function makeTTF(): Uint8Array {
   return font;
 }
 
+/**
+ * Build a GIF (89a) with a global colour table and a single image frame,
+ * LZW-compressing the palette indices. `palette` is a flat RGB array.
+ */
+export function makeGif(
+  width: number,
+  height: number,
+  palette: number[],
+  indices: number[],
+  options: { transparentIndex?: number; interlaced?: boolean } = {},
+): Uint8Array {
+  const colors = palette.length / 3;
+  let tableBits = 1;
+  while (1 << tableBits < colors) tableBits++; // 2^tableBits entries
+  const tableEntries = 1 << tableBits;
+  const minCodeSize = Math.max(2, tableBits);
+
+  const out: number[] = [];
+  for (const c of "GIF89a") out.push(c.charCodeAt(0));
+  out.push(width & 0xff, width >> 8, height & 0xff, height >> 8);
+  out.push(0x80 | ((tableBits - 1) & 7)); // global colour table, size
+  out.push(0, 0); // background index, aspect ratio
+  for (let i = 0; i < tableEntries * 3; i++) out.push(palette[i] ?? 0);
+
+  if (options.transparentIndex !== undefined) {
+    out.push(0x21, 0xf9, 4, 0x01, 0, 0, options.transparentIndex, 0);
+  }
+
+  out.push(0x2c); // image descriptor
+  out.push(0, 0, 0, 0); // left, top
+  out.push(width & 0xff, width >> 8, height & 0xff, height >> 8);
+  out.push(options.interlaced ? 0x40 : 0x00);
+  out.push(minCodeSize);
+
+  // Interlaced GIFs store rows in 4-pass order; reorder before encoding.
+  let stored = indices;
+  if (options.interlaced) {
+    const passes = [
+      { start: 0, step: 8 },
+      { start: 4, step: 8 },
+      { start: 2, step: 4 },
+      { start: 1, step: 2 },
+    ];
+    stored = [];
+    for (const { start, step } of passes) {
+      for (let y = start; y < height; y += step) {
+        for (let x = 0; x < width; x++) stored.push(indices[y * width + x]!);
+      }
+    }
+  }
+
+  const lzw = lzwEncode(stored, minCodeSize);
+  for (let i = 0; i < lzw.length; i += 255) {
+    const chunk = lzw.slice(i, i + 255);
+    out.push(chunk.length, ...chunk);
+  }
+  out.push(0); // block terminator
+  out.push(0x3b); // trailer
+  return new Uint8Array(out);
+}
+
+function lzwEncode(indices: number[], minCodeSize: number): number[] {
+  const clearCode = 1 << minCodeSize;
+  const eoiCode = clearCode + 1;
+  const bytes: number[] = [];
+  let bitBuf = 0;
+  let bitCount = 0;
+  const emit = (code: number, size: number): void => {
+    bitBuf |= code << bitCount;
+    bitCount += size;
+    while (bitCount >= 8) {
+      bytes.push(bitBuf & 0xff);
+      bitBuf >>>= 8;
+      bitCount -= 8;
+    }
+  };
+
+  let dict = new Map<string, number>();
+  let next = eoiCode + 1;
+  let codeSize = minCodeSize + 1;
+  const reset = (): void => {
+    dict = new Map();
+    for (let i = 0; i < clearCode; i++) dict.set(String(i), i);
+    next = eoiCode + 1;
+    codeSize = minCodeSize + 1;
+  };
+
+  reset();
+  emit(clearCode, codeSize);
+  let w = String(indices[0]);
+  for (let i = 1; i < indices.length; i++) {
+    const k = indices[i]!;
+    const wk = w + "," + k;
+    if (dict.has(wk)) {
+      w = wk;
+    } else {
+      emit(dict.get(w)!, codeSize);
+      dict.set(wk, next++);
+      // The decoder bumps code size one entry later, so bump when `next`
+      // has just exceeded the current width's capacity.
+      if (next - 1 === 1 << codeSize && codeSize < 12) codeSize++;
+      w = String(k);
+    }
+  }
+  emit(dict.get(w)!, codeSize);
+  emit(eoiCode, codeSize);
+  if (bitCount > 0) bytes.push(bitBuf & 0xff);
+  return bytes;
+}
+
 /** Minimal JPEG: SOI + SOF0 + EOI. */
 export function makeJpeg(width: number, height: number, components = 3): Uint8Array {
   const sofData = [8, height >> 8, height & 0xff, width >> 8, width & 0xff, components];
