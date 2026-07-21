@@ -14,6 +14,7 @@ import { parsePng, pngSize } from "../images/png";
 import { gifSize, parseGif } from "../images/gif";
 import { parseXml } from "../svg/parse";
 import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
+import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
@@ -143,6 +144,14 @@ export interface SvgOptions {
   /** Colour substituted for `currentColor` in the SVG. Default: black. */
   color?: ColorInput;
   spacingAfter?: number;
+}
+
+export interface MarkdownOptions {
+  /**
+   * Resolve an image reference from `![alt](src)` to raw bytes. Without a
+   * resolver, images render as their alt text (fast-pdf's core does no I/O).
+   */
+  resolveImage?: (src: string) => Uint8Array | ArrayBuffer | undefined;
 }
 
 export interface LineOptions {
@@ -302,6 +311,15 @@ const DEFAULT_MARGIN = 50;
 
 /** Bézier circle approximation constant: 4/3 · (√2 − 1). */
 const KAPPA = 0.5522847498;
+
+/** Markdown rendering palette and relative heading sizes. */
+const MD_HEADING_SCALE = [1.9, 1.55, 1.3, 1.15, 1.0, 0.9];
+const MD_LINK_COLOR: RGB = { r: 0.13, g: 0.4, b: 0.85 };
+const MD_CODE_COLOR: RGB = { r: 0.72, g: 0.11, b: 0.15 };
+const MD_CODE_BG: RGB = { r: 0.96, g: 0.96, b: 0.97 };
+const MD_QUOTE_BAR: RGB = { r: 0.8, g: 0.82, b: 0.86 };
+const MD_QUOTE_TEXT: RGB = { r: 0.35, g: 0.38, b: 0.44 };
+const MD_RULE_COLOR: RGB = { r: 0.85, g: 0.87, b: 0.9 };
 
 /**
  * PDFDocument — the public API.
@@ -1067,6 +1085,234 @@ export class PDFDocument {
     draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
     this.cursorY += boxH + (options.spacingAfter ?? 0);
     return this;
+  }
+
+  // ── Markdown ─────────────────────────────────────────────────────────
+
+  /**
+   * Render a Markdown document (a CommonMark/GFM subset) into the flow:
+   * headings, paragraphs, ordered/unordered (nested) lists, blockquotes,
+   * fenced code blocks, thematic breaks and pipe tables, plus inline
+   * emphasis, strong, `code`, links and images.
+   *
+   * Images render as their alt text unless `resolveImage` is supplied, since
+   * fast-pdf's core performs no I/O. Table cells render as plain text.
+   */
+  markdown(source: string, options: MarkdownOptions = {}): this {
+    this.renderMarkdown(parseMarkdown(source), options);
+    return this;
+  }
+
+  private renderMarkdown(blocks: MdBlock[], options: MarkdownOptions): void {
+    const base = this.defaults.size;
+    for (let b = 0; b < blocks.length; b++) {
+      const block = blocks[b]!;
+      switch (block.type) {
+        case "heading": {
+          const size = base * (MD_HEADING_SCALE[block.level - 1] ?? 1);
+          if (b > 0) this.cursorY += size * 0.5;
+          this.mdInline(block.inline, { size, bold: true, lineHeight: 1.2 });
+          this.cursorY += size * 0.35;
+          break;
+        }
+        case "paragraph": {
+          const only = block.inline.length === 1 ? block.inline[0]! : undefined;
+          if (only?.image !== undefined && options.resolveImage) {
+            const bytes = options.resolveImage(only.image);
+            if (bytes) {
+              this.image(bytes, { spacingAfter: base * 0.6 });
+              break;
+            }
+          }
+          this.mdInline(block.inline, { size: base });
+          this.cursorY += base * 0.6;
+          break;
+        }
+        case "hr": {
+          this.cursorY += base * 0.3;
+          this.breakPageIfNeeded(base);
+          this.page.content
+            .strokeColor(MD_RULE_COLOR)
+            .lineWidth(0.75)
+            .moveTo(this.flowX, this.page.ty(this.cursorY))
+            .lineTo(this.flowX + this.flowWidth, this.page.ty(this.cursorY))
+            .stroke();
+          this.cursorY += base * 0.8;
+          break;
+        }
+        case "code":
+          this.mdCodeBlock(block.text, base);
+          break;
+        case "blockquote":
+          this.mdBlockquote(block.blocks, options, base);
+          break;
+        case "list":
+          this.mdList(block, options, base);
+          break;
+        case "table": {
+          const flat = (runs: MdRun[]): string => runs.map((r) => r.text).join("");
+          const rows: CellValue[][] = [block.headers.map(flat), ...block.rows.map((r) => r.map(flat))];
+          this.table(rows, { header: true, aligns: block.aligns });
+          this.cursorY += base * 0.4;
+          break;
+        }
+      }
+    }
+  }
+
+  private mdCodeBlock(text: string, base: number): void {
+    const font = this.resolveFontStyle("courier", false, false);
+    const size = base * 0.9;
+    const step = size * 1.35;
+    const pad = 8;
+    const lines = text.split("\n");
+    const height = lines.length * step + pad * 2;
+    this.breakPageIfNeeded(Math.min(height, this.page.contentBottom - this.page.margins.top));
+    const top = this.cursorY;
+    this.page.content.fillColor(MD_CODE_BG).rect(this.flowX, this.page.ty(top + height), this.flowWidth, height).fill();
+    let y = top + pad;
+    for (const line of lines) {
+      const baseline = this.page.ty(y + (font.ascent * size) / 1000);
+      this.page.content.fillColor(MD_CODE_COLOR).text(font.encode(line), this.flowX + pad, baseline, this.page.fontRes(font), size);
+      y += step;
+    }
+    this.cursorY = top + height + base * 0.5;
+  }
+
+  private mdBlockquote(blocks: MdBlock[], options: MarkdownOptions, base: number): void {
+    const indent = base;
+    const outerX = this.flowX;
+    const startY = this.cursorY;
+    const prevFrame = this.frame;
+    const prevColor = this.defaults.color;
+    this.frame = { x: outerX + indent, width: this.flowWidth - indent };
+    this.defaults.color = MD_QUOTE_TEXT;
+    try {
+      this.renderMarkdown(blocks, options);
+    } finally {
+      this.frame = prevFrame;
+      this.defaults.color = prevColor;
+    }
+    // A vertical bar spanning the quote (single-page quotes; long quotes clip).
+    if (this.cursorY > startY) {
+      this.page.content
+        .fillColor(MD_QUOTE_BAR)
+        .rect(outerX + indent * 0.25, this.page.ty(this.cursorY), 3, this.cursorY - startY)
+        .fill();
+    }
+    this.cursorY += base * 0.3;
+  }
+
+  private mdList(block: Extract<MdBlock, { type: "list" }>, options: MarkdownOptions, base: number): void {
+    const font = this.resolveFontStyle(this.defaults.font, false, false);
+    const indent = base * 1.6;
+    const prevFrame = this.frame;
+    const outerX = this.flowX;
+    let n = block.start;
+    for (const item of block.items) {
+      this.breakPageIfNeeded(base * this.defaults.lineHeight);
+      const marker = block.ordered ? `${n}.` : "•";
+      const baseline = this.page.ty(this.cursorY + (font.ascent * base) / 1000);
+      this.page.content
+        .fillColor(this.defaults.color)
+        .text(font.encode(marker), outerX, baseline, this.page.fontRes(font), base);
+      this.frame = { x: outerX + indent, width: prevFrame ? prevFrame.width - indent : this.page.contentWidth - (outerX - this.page.margins.left) - indent };
+      try {
+        this.renderMarkdown(item, options);
+      } finally {
+        this.frame = prevFrame;
+      }
+      this.cursorY += base * 0.15;
+      n++;
+    }
+  }
+
+  /**
+   * Lay out styled inline runs with word wrapping across the flow width,
+   * mixing fonts (bold/italic/monospace), colours, links and underlines on
+   * one line. A "word" may span several runs (e.g. `super**cali**`), so
+   * wrapping works on whitespace-separated chunks, not per run.
+   */
+  private mdInline(runs: MdRun[], opts: { size: number; bold?: boolean; lineHeight?: number }): void {
+    interface Seg { text: string; font: Font; color: RGB; link?: string; underline: boolean }
+    const size = opts.size;
+    const lineHeight = opts.lineHeight ?? this.defaults.lineHeight;
+    const step = size * lineHeight;
+    const baseFont = this.resolveFontStyle(this.defaults.font, opts.bold ?? false, false);
+    const spaceWidth = baseFont.widthOf(" ", size);
+
+    // Build whitespace-separated chunks; each chunk keeps its styled segments.
+    const chunks: { segs: Seg[]; width: number; spaceBefore: boolean }[] = [];
+    let cur: Seg[] = [];
+    let curSpaceBefore = false;
+    let pendingSpace = false;
+    const closeChunk = (): void => {
+      if (cur.length > 0) {
+        chunks.push({ segs: cur, width: cur.reduce((a, s) => a + s.font.widthOf(s.text, size), 0), spaceBefore: curSpaceBefore });
+        cur = [];
+      }
+    };
+    for (const run of runs) {
+      const font = run.code
+        ? this.resolveFontStyle("courier", false, false)
+        : this.resolveFontStyle(this.defaults.font, (opts.bold ?? false) || !!run.bold, !!run.italic);
+      const link = run.link !== undefined ? this.mdSafeLink(run.link) : undefined;
+      const color = run.code ? MD_CODE_COLOR : link !== undefined ? MD_LINK_COLOR : this.defaults.color;
+      for (const part of run.text.split(/(\s+)/)) {
+        if (part === "") continue;
+        if (/^\s+$/.test(part)) {
+          closeChunk();
+          pendingSpace = true;
+          continue;
+        }
+        if (cur.length === 0) curSpaceBefore = pendingSpace;
+        cur.push({ text: part, font, color, link, underline: link !== undefined });
+        pendingSpace = false;
+      }
+    }
+    closeChunk();
+
+    const startX = this.flowX;
+    const maxX = this.flowX + this.flowWidth;
+    this.breakPageIfNeeded(step);
+    let x = startX;
+    let lineHasContent = false;
+    for (const chunk of chunks) {
+      const lead = chunk.spaceBefore && lineHasContent ? spaceWidth : 0;
+      if (lineHasContent && x + lead + chunk.width > maxX + 0.01) {
+        this.cursorY += step;
+        this.breakPageIfNeeded(step);
+        x = startX;
+        lineHasContent = false;
+      } else {
+        x += lead;
+      }
+      for (const seg of chunk.segs) {
+        const w = seg.font.widthOf(seg.text, size);
+        const baseline = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000);
+        this.page.content.fillColor(seg.color).text(seg.font.encode(seg.text), x, baseline, this.page.fontRes(seg.font), size);
+        if (seg.underline) {
+          const uy = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000 + size * 0.1);
+          this.page.content.strokeColor(seg.color).lineWidth(Math.max(0.4, size * 0.04)).moveTo(x, uy).lineTo(x + w, uy).stroke();
+        }
+        if (seg.link !== undefined) {
+          this.page.links.push({ x, y: this.cursorY, width: w, height: step, target: seg.link });
+        }
+        x += w;
+      }
+      lineHasContent = true;
+    }
+    this.cursorY += step;
+  }
+
+  /** Validate a Markdown link target, dropping unsafe ones (kept as plain text). */
+  private mdSafeLink(target: string): string | undefined {
+    try {
+      checkLinkTarget(target);
+      return target;
+    } catch {
+      return undefined;
+    }
   }
 
   private registerImage(bytes: Uint8Array): ImageEntry {

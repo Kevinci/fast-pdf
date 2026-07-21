@@ -13,6 +13,7 @@ export type {
   TextOptions,
   ImageOptions,
   SvgOptions,
+  MarkdownOptions,
   LineOptions,
   RectOptions,
   ShapeOptions,
