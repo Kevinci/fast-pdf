@@ -181,14 +181,20 @@ Ideal für:
 
 ## Phase 5 – Security & Cryptography (v2.2)
 
+> Stand 2026-07-21: Verschlüsselung ist umgesetzt — der AES-256-Standard-Handler
+> (Revision 6, PDF 2.0) über die Option `encrypt`. Bewusst **nur R6/AES-256**
+> (SHA-256/384/512 + AES-256 über WebCrypto, keine RC4/MD5-Altlasten). End-to-End
+> gegen macOS Quartz validiert; Reader-seitige Passwort-Prüfung (Algorithm 11) in
+> `tests/encryption.test.ts` unabhängig nachgebaut.
+
 ### Encryption
 
-- [ ] AES-128
-- [ ] AES-256
-- [ ] User Password
-- [ ] Owner Password
-- [ ] Permissions
-- [ ] Document Protection
+- [ ] AES-128 (bewusst ausgelassen — R4 bräuchte MD5; R6/AES-256 ist sicherer)
+- [x] AES-256 (Standard Security Handler V5 / R6, AESV3)
+- [x] User Password (Öffnen-Passwort; leer = ohne Prompt)
+- [x] Owner Password (volle Rechte)
+- [x] Permissions (Drucken, Kopieren, Ändern, Annotieren, Formulare, …)
+- [x] Document Protection (Strings **und** Streams werden verschlüsselt)
 
 ### Digital Signatures
 

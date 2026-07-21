@@ -8,6 +8,15 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Document encryption (Enterprise Roadmap Phase 5): a new `encrypt` document
+  option protects the file with the AES-256 standard security handler
+  (revision 6 / AESV3, ISO 32000-2). Supports a user password (open password),
+  an owner password (full rights) and granular permissions (printing, copying,
+  modifying, annotating, form filling, assembling, accessibility). Only the
+  modern R6 handler is implemented — all cryptography runs through the Web
+  Crypto API (SHA-256/384/512 + AES-256), with no RC4/MD5 and no dependency.
+  Both strings and streams are encrypted. New `ENCRYPTION_UNSUPPORTED` error
+  code for runtimes without Web Crypto.
 - Deterministic output (Enterprise Roadmap Phase 4): a new `deterministic`
   document option produces byte-identical PDFs for identical input. In that
   mode no wall-clock timestamp is embedded (unless `metadata.creationDate` is

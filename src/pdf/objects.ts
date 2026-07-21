@@ -59,6 +59,20 @@ export function fmtNumber(n: number): string {
     .replace(/\.$/, "");
 }
 
+/** Lower-case hex encoding of a byte array (two digits per byte). */
+export function bytesToHex(bytes: Uint8Array): string {
+  let hex = "";
+  for (let i = 0; i < bytes.length; i++) hex += bytes[i]!.toString(16).padStart(2, "0");
+  return hex;
+}
+
+/** Decode an even-length hex string back to bytes. */
+export function hexToBytes(hex: string): Uint8Array {
+  const out = new Uint8Array(hex.length >> 1);
+  for (let i = 0; i < out.length; i++) out[i] = parseInt(hex.substr(i * 2, 2), 16);
+  return out;
+}
+
 const NAME_IRREGULAR = /[^\x21-\x7e]|[#()<>[\]{}/%]/;
 
 function serializeName(value: string): string {

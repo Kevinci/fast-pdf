@@ -57,3 +57,9 @@ export { PDFWriter } from "./pdf/writer";
 export { ContentStream } from "./pdf/content";
 export { Ref, Name, PDFString, serialize, type PDFValue } from "./pdf/objects";
 export { deflate, inflate, supportsCompression } from "./pdf/compress";
+export {
+  createSecurityHandler,
+  supportsEncryption,
+  type EncryptionOptions,
+  type DocumentPermissions,
+} from "./pdf/encrypt";

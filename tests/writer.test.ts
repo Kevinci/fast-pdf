@@ -4,7 +4,7 @@ import { Name, latin1String } from "../src/pdf/objects";
 import { deflate, inflate, supportsCompression } from "../src/pdf/compress";
 
 describe("PDFWriter", () => {
-  it("produces a structurally valid file with exact xref offsets", () => {
+  it("produces a structurally valid file with exact xref offsets", async () => {
     const writer = new PDFWriter();
     const pagesRef = writer.reserve();
     const pageRef = writer.add({
@@ -14,7 +14,7 @@ describe("PDFWriter", () => {
     });
     writer.fill(pagesRef, { Type: new Name("Pages"), Kids: [pageRef], Count: 1 });
     const catalog = writer.add({ Type: new Name("Catalog"), Pages: pagesRef });
-    const bytes = writer.finalize(catalog);
+    const bytes = await writer.finalize(catalog);
     const text = latin1String(bytes);
 
     expect(text.startsWith("%PDF-1.7\n")).toBe(true);
@@ -36,18 +36,18 @@ describe("PDFWriter", () => {
     }
   });
 
-  it("adds /Length to stream objects", () => {
+  it("adds /Length to stream objects", async () => {
     const writer = new PDFWriter();
     const data = new Uint8Array([1, 2, 3, 4, 5]);
     const ref = writer.add({ Type: new Name("Catalog") });
     writer.addStream({}, data);
-    const bytes = writer.finalize(ref);
+    const bytes = await writer.finalize(ref);
     const text = latin1String(bytes);
     expect(text).toContain("/Length 5");
     expect(text).toContain("stream\n\x01\x02\x03\x04\x05\nendstream");
   });
 
-  it("rejects double fills and unfilled reservations", () => {
+  it("rejects double fills and unfilled reservations", async () => {
     const writer = new PDFWriter();
     const ref = writer.reserve();
     writer.fill(ref, { A: 1 });
@@ -56,7 +56,7 @@ describe("PDFWriter", () => {
     const writer2 = new PDFWriter();
     const root = writer2.add({ Type: new Name("Catalog") });
     writer2.reserve();
-    expect(() => writer2.finalize(root)).toThrow(/never written/);
+    await expect(writer2.finalize(root)).rejects.toThrow(/never written/);
   });
 });
 

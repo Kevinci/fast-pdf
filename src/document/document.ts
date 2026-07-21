@@ -1,5 +1,6 @@
 import { Name, PDFString, textString, type PDFValue, type Ref } from "../pdf/objects";
 import { PDFWriter } from "../pdf/writer";
+import { createSecurityHandler, type EncryptionOptions } from "../pdf/encrypt";
 import { ContentStream } from "../pdf/content";
 import { deflate } from "../pdf/compress";
 import { isStandardFamily, resolveFont, styleIndex, type Font } from "../fonts/font";
@@ -59,6 +60,13 @@ export interface PDFDocumentOptions extends PageOptions {
    * Default: false (a real creation/modification date is embedded).
    */
   deterministic?: boolean;
+  /**
+   * Encrypt the document with the AES-256 (revision 6) standard security
+   * handler. Provide a user and/or owner password and optional permission
+   * restrictions. Encrypted output is inherently non-deterministic (random
+   * salts and IVs). Requires the Web Crypto API.
+   */
+  encrypt?: EncryptionOptions;
   metadata?: DocumentMetadata;
 }
 
@@ -280,6 +288,7 @@ export class PDFDocument {
   private readonly pageDefaults: Required<PageOptions>;
   private readonly compress: boolean;
   private readonly deterministic: boolean;
+  private readonly encryption?: EncryptionOptions;
   private readonly metadata: DocumentMetadata;
   private readonly images = new Map<Uint8Array, ImageEntry>();
   /** family → [regular, bold, italic, boldItalic] embedded fonts. */
@@ -321,6 +330,7 @@ export class PDFDocument {
     };
     this.compress = options.compress ?? true;
     this.deterministic = options.deterministic ?? false;
+    this.encryption = options.encrypt;
     this.metadata = options.metadata ?? {};
     this.cursorY = 0;
     this.addPage();
@@ -1438,6 +1448,15 @@ export class PDFDocument {
       AcroForm: acroFields.length > 0 ? { Fields: acroFields, SigFlags: 1 } : undefined,
     });
     const infoRef = writer.add(this.buildInfo());
+
+    if (this.encryption !== undefined) {
+      const handler = await createSecurityHandler(this.encryption);
+      const encryptRef = writer.add(handler.dict);
+      return writer.finalize(catalogRef, infoRef, {
+        exemptObject: encryptRef.num,
+        encrypt: handler.encrypt,
+      });
+    }
     return writer.finalize(catalogRef, infoRef);
   }
 

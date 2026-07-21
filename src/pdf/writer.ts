@@ -1,4 +1,39 @@
-import { latin1Bytes, serialize, HexString, type PDFValue, Ref } from "./objects";
+import {
+  latin1Bytes,
+  serialize,
+  HexString,
+  PDFString,
+  Name,
+  bytesToHex,
+  hexToBytes,
+  type PDFValue,
+  Ref,
+} from "./objects";
+
+/**
+ * PDFWriter — indirect object registry and file assembly.
+ *
+ * Object bodies are held as structured values and serialized only in
+ * finalize(). Deferring serialization gives encryption a single choke point:
+ * every string and stream is encrypted there, so no call site can forget to
+ * protect a string it emits.
+ *
+ * finalize() lays out the file, computes exact byte offsets for the
+ * cross-reference table and appends the trailer (with a content-derived /ID).
+ */
+
+type Body =
+  | { kind: "value"; value: PDFValue }
+  | { kind: "stream"; dict: Record<string, PDFValue | undefined>; data: Uint8Array }
+  | { kind: "raw"; bytes: Uint8Array };
+
+/** Hooks that turn on document encryption during finalize(). */
+export interface Encryptor {
+  /** Object number of the /Encrypt dictionary — its own strings are never encrypted. */
+  exemptObject: number;
+  /** Encrypt one string or stream payload (prepends a fresh random IV). */
+  encrypt(data: Uint8Array): Promise<Uint8Array>;
+}
 
 /**
  * A 128-bit content digest of the assembled file body, rendered as 32 hex
@@ -22,19 +57,32 @@ function contentDigest(chunks: Uint8Array[]): string {
   return lanes.map((v) => (v >>> 0).toString(16).padStart(8, "0")).join("");
 }
 
-/**
- * PDFWriter — indirect object registry and file assembly.
- *
- * Objects are registered as serialized bodies (everything between
- * "N 0 obj" and "endobj"). finalize() lays out the file, computes exact
- * byte offsets for the cross-reference table and appends the trailer.
- *
- * The writer is synchronous and pure; anything async (compression)
- * happens before bodies are handed in.
- */
+/** Deep-clone a value, replacing every string leaf with its encrypted form. */
+async function encryptStrings(value: PDFValue, encrypt: (d: Uint8Array) => Promise<Uint8Array>): Promise<PDFValue> {
+  if (value instanceof PDFString) {
+    return new HexString(bytesToHex(await encrypt(latin1Bytes(value.value))));
+  }
+  if (value instanceof HexString) {
+    return new HexString(bytesToHex(await encrypt(hexToBytes(value.value))));
+  }
+  if (Array.isArray(value)) {
+    const out: PDFValue[] = [];
+    for (const item of value) out.push(await encryptStrings(item, encrypt));
+    return out;
+  }
+  if (value !== null && typeof value === "object" && !(value instanceof Ref) && !(value instanceof Name)) {
+    const out: { [key: string]: PDFValue } = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v !== undefined) out[k] = await encryptStrings(v, encrypt);
+    }
+    return out;
+  }
+  return value;
+}
+
 export class PDFWriter {
   /** Object bodies indexed by object number (index 0 unused — object 0 is the free head). */
-  private bodies: (Uint8Array | null)[] = [null];
+  private bodies: (Body | null)[] = [null];
 
   /** Allocate an object number without a body yet (for circular references). */
   reserve(): Ref {
@@ -44,10 +92,11 @@ export class PDFWriter {
 
   /** Provide the body for a previously reserved object. */
   fill(ref: Ref, body: PDFValue | Uint8Array): void {
-    if (this.bodies[ref.num] !== null) {
+    if (this.bodies[ref.num] != null) {
       throw new Error(`Object ${ref.num} already written`);
     }
-    this.bodies[ref.num] = body instanceof Uint8Array ? body : latin1Bytes(serialize(body));
+    this.bodies[ref.num] =
+      body instanceof Uint8Array ? { kind: "raw", bytes: body } : { kind: "value", value: body };
   }
 
   /** Register a complete object and return its reference. */
@@ -65,17 +114,36 @@ export class PDFWriter {
   }
 
   fillStream(ref: Ref, dict: Record<string, PDFValue | undefined>, data: Uint8Array): void {
+    if (this.bodies[ref.num] != null) {
+      throw new Error(`Object ${ref.num} already written`);
+    }
+    this.bodies[ref.num] = { kind: "stream", dict, data };
+  }
+
+  /** Serialize one object body to its final bytes, applying encryption when active. */
+  private async serializeBody(num: number, body: Body, enc?: Encryptor): Promise<Uint8Array> {
+    const encryptThis = enc !== undefined && num !== enc.exemptObject;
+    if (body.kind === "raw") return body.bytes;
+    if (body.kind === "value") {
+      const value = encryptThis ? await encryptStrings(body.value, enc!.encrypt) : body.value;
+      return latin1Bytes(serialize(value));
+    }
+    // stream
+    const dict = encryptThis
+      ? ((await encryptStrings(body.dict as PDFValue, enc!.encrypt)) as Record<string, PDFValue | undefined>)
+      : body.dict;
+    const data = encryptThis ? await enc!.encrypt(body.data) : body.data;
     const head = latin1Bytes(serialize({ ...dict, Length: data.length }) + "\nstream\n");
     const tail = latin1Bytes("\nendstream");
-    const body = new Uint8Array(head.length + data.length + tail.length);
-    body.set(head, 0);
-    body.set(data, head.length);
-    body.set(tail, head.length + data.length);
-    this.fill(ref, body);
+    const out = new Uint8Array(head.length + data.length + tail.length);
+    out.set(head, 0);
+    out.set(data, head.length);
+    out.set(tail, head.length + data.length);
+    return out;
   }
 
   /** Assemble the final PDF file. */
-  finalize(root: Ref, info?: Ref): Uint8Array {
+  async finalize(root: Ref, info?: Ref, enc?: Encryptor): Promise<Uint8Array> {
     const chunks: Uint8Array[] = [];
     let offset = 0;
     const push = (bytes: Uint8Array) => {
@@ -94,7 +162,7 @@ export class PDFWriter {
       }
       offsets.push(offset);
       push(latin1Bytes(`${num} 0 obj\n`));
-      push(body);
+      push(await this.serializeBody(num, body, enc));
       push(latin1Bytes("\nendobj\n"));
     }
 
@@ -108,7 +176,13 @@ export class PDFWriter {
     // Both array entries are equal for a freshly created file (the first is the
     // permanent id, the second is updated on incremental change — see ISO 32000-1 §7.5.5).
     const id = new HexString(contentDigest(chunks));
-    const trailer: Record<string, PDFValue | undefined> = { Size: size, Root: root, Info: info, ID: [id, id] };
+    const trailer: Record<string, PDFValue | undefined> = {
+      Size: size,
+      Root: root,
+      Info: info,
+      Encrypt: enc !== undefined ? new Ref(enc.exemptObject) : undefined,
+      ID: [id, id],
+    };
     xref += `trailer\n${serialize(trailer)}\nstartxref\n${xrefOffset}\n%%EOF\n`;
     push(latin1Bytes(xref));
 
