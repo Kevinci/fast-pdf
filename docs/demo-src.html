@@ -991,6 +991,8 @@ try {
     <tr><td>Numeric input</td><td><code>NaN</code>, <code>±Infinity</code> and out-of-range magnitudes are rejected at the call site → <code>INVALID_NUMBER</code></td></tr>
     <tr><td>Memory exhaustion</td><td>Decompression is size-bounded (zlib-bomb guard); oversized images are refused → <code>IMAGE_TOO_LARGE</code></td></tr>
     <tr><td>Failure surface</td><td>Every user-facing error is a typed <code>FastPDFError</code> with a stable <code>code</code></td></tr>
+    <tr><td>Document encryption</td><td>AES-256 (R6 / AESV3) with user/owner passwords and granular permissions via <code>encrypt</code> — strings and streams are both encrypted</td></tr>
+    <tr><td>Reproducible output</td><td><code>deterministic</code> mode emits byte-identical PDFs (no wall-clock timestamp) with a content-derived file <code>/ID</code></td></tr>
   </table></div>
   <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
     <tr><th>Bereich</th><th>Schutz</th></tr>
@@ -1000,6 +1002,8 @@ try {
     <tr><td>Numerische Eingaben</td><td><code>NaN</code>, <code>±Infinity</code> und zu große Beträge werden am Aufrufort abgewiesen → <code>INVALID_NUMBER</code></td></tr>
     <tr><td>Speichererschöpfung</td><td>Dekompression ist größenbegrenzt (zlib-Bomben-Schutz); zu große Bilder werden abgelehnt → <code>IMAGE_TOO_LARGE</code></td></tr>
     <tr><td>Fehleroberfläche</td><td>Jeder nutzerseitige Fehler ist ein typisierter <code>FastPDFError</code> mit stabilem <code>code</code></td></tr>
+    <tr><td>Dokumentverschlüsselung</td><td>AES-256 (R6 / AESV3) mit User-/Owner-Passwörtern und granularen Berechtigungen über <code>encrypt</code> — Strings und Streams werden verschlüsselt</td></tr>
+    <tr><td>Reproduzierbare Ausgabe</td><td><code>deterministic</code> erzeugt byte-identische PDFs (kein Wall-Clock-Zeitstempel) mit inhaltsabgeleitetem <code>/ID</code></td></tr>
   </table></div>
   <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
     <tr><th>领域</th><th>防护</th></tr>
@@ -1009,15 +1013,17 @@ try {
     <tr><td>数值输入</td><td>在调用处即拒绝 <code>NaN</code>、<code>±Infinity</code> 及超范围数值 → <code>INVALID_NUMBER</code></td></tr>
     <tr><td>内存耗尽</td><td>解压受大小限制（zlib 炸弹防护）；过大图片被拒绝 → <code>IMAGE_TOO_LARGE</code></td></tr>
     <tr><td>错误界面</td><td>每个面向使用者的错误都是带稳定 <code>code</code> 的 <code>FastPDFError</code></td></tr>
+    <tr><td>文档加密</td><td>AES-256（R6 / AESV3），通过 <code>encrypt</code> 提供用户/所有者密码与细粒度权限——字符串与流均加密</td></tr>
+    <tr><td>可复现输出</td><td><code>deterministic</code> 模式生成字节一致的 PDF（无墙钟时间戳），并带有内容派生的文件 <code>/ID</code></td></tr>
   </table></div>
 
   <h3 data-lang="en" class="doc-h3">On the roadmap</h3>
   <h3 data-lang="de" hidden class="doc-h3">Auf der Roadmap</h3>
   <h3 data-lang="zh" hidden class="doc-h3">路线图上</h3>
 
-  <div data-lang="en" class="hint"><b class="text-(--accent)">Toward banks &amp; insurers:</b> encryption (AES-128/256) with user/owner passwords and permissions, digital signatures (PKCS#7, PAdES-ready), PDF/A-1/2/3 archival profiles, and byte-identical <b>deterministic</b> output for reproducible hashes and audits. These are planned, not shipped — tracked in the enterprise roadmap.</div>
-  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Richtung Banken &amp; Versicherungen:</b> Verschlüsselung (AES-128/256) mit User-/Owner-Passwörtern und Berechtigungen, digitale Signaturen (PKCS#7, PAdES-ready), PDF/A-1/2/3-Archivprofile und byte-identische <b>deterministische</b> Ausgabe für reproduzierbare Hashes und Audits. Das ist geplant, noch nicht ausgeliefert — festgehalten in der Enterprise-Roadmap.</div>
-  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">面向银行与保险公司：</b>加密（AES-128/256）及用户/所有者密码与权限、数字签名（PKCS#7、支持 PAdES）、PDF/A-1/2/3 归档规范，以及字节一致的<b>确定性</b>输出，用于可复现的哈希与审计。这些为计划项，尚未发布——记录于企业路线图中。</div>
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Still toward banks &amp; insurers:</b> cryptographic <b>digital signatures</b> (PKCS#7, PAdES), PDF/A-1/2/3 archival profiles, and tagged/accessible PDF. These are planned, not shipped — tracked in the enterprise roadmap.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b> kryptografische <b>digitale Signaturen</b> (PKCS#7, PAdES), PDF/A-1/2/3-Archivprofile und getaggte/barrierefreie PDFs. Das ist geplant, noch nicht ausgeliefert — festgehalten in der Enterprise-Roadmap.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">仍在面向银行与保险公司：</b>加密<b>数字签名</b>（PKCS#7、PAdES）、PDF/A-1/2/3 归档规范，以及带标签的无障碍 PDF。这些为计划项，尚未发布——记录于企业路线图中。</div>
 </section>
 
 <section id="performance" class="doc-section">
