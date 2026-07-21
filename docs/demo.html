@@ -1001,6 +1001,7 @@ try {
     <tr><td>Failure surface</td><td>Every user-facing error is a typed <code>FastPDFError</code> with a stable <code>code</code></td></tr>
     <tr><td>Document encryption</td><td>AES-256 (R6 / AESV3) with user/owner passwords and granular permissions via <code>encrypt</code> — strings and streams are both encrypted</td></tr>
     <tr><td>Reproducible output</td><td><code>deterministic</code> mode emits byte-identical PDFs (no wall-clock timestamp) with a content-derived file <code>/ID</code></td></tr>
+    <tr><td>Digital signatures</td><td>Detached PAdES-B (CAdES) signing via <code>signature({ sign })</code> — RSA + SHA-256, embedded certificate, verifiable in Acrobat and with <code>openssl</code></td></tr>
   </table></div>
   <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
     <tr><th>Bereich</th><th>Schutz</th></tr>
@@ -1012,6 +1013,7 @@ try {
     <tr><td>Fehleroberfläche</td><td>Jeder nutzerseitige Fehler ist ein typisierter <code>FastPDFError</code> mit stabilem <code>code</code></td></tr>
     <tr><td>Dokumentverschlüsselung</td><td>AES-256 (R6 / AESV3) mit User-/Owner-Passwörtern und granularen Berechtigungen über <code>encrypt</code> — Strings und Streams werden verschlüsselt</td></tr>
     <tr><td>Reproduzierbare Ausgabe</td><td><code>deterministic</code> erzeugt byte-identische PDFs (kein Wall-Clock-Zeitstempel) mit inhaltsabgeleitetem <code>/ID</code></td></tr>
+    <tr><td>Digitale Signaturen</td><td>Detached PAdES-B (CAdES) über <code>signature({ sign })</code> — RSA + SHA-256, eingebettetes Zertifikat, in Acrobat und mit <code>openssl</code> prüfbar</td></tr>
   </table></div>
   <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
     <tr><th>领域</th><th>防护</th></tr>
@@ -1023,15 +1025,16 @@ try {
     <tr><td>错误界面</td><td>每个面向使用者的错误都是带稳定 <code>code</code> 的 <code>FastPDFError</code></td></tr>
     <tr><td>文档加密</td><td>AES-256（R6 / AESV3），通过 <code>encrypt</code> 提供用户/所有者密码与细粒度权限——字符串与流均加密</td></tr>
     <tr><td>可复现输出</td><td><code>deterministic</code> 模式生成字节一致的 PDF（无墙钟时间戳），并带有内容派生的文件 <code>/ID</code></td></tr>
+    <tr><td>数字签名</td><td>通过 <code>signature({ sign })</code> 进行分离式 PAdES-B（CAdES）签名——RSA + SHA-256，内嵌证书，可在 Acrobat 与 <code>openssl</code> 中验证</td></tr>
   </table></div>
 
   <h3 data-lang="en" class="doc-h3">On the roadmap</h3>
   <h3 data-lang="de" hidden class="doc-h3">Auf der Roadmap</h3>
   <h3 data-lang="zh" hidden class="doc-h3">路线图上</h3>
 
-  <div data-lang="en" class="hint"><b class="text-(--accent)">Still toward banks &amp; insurers:</b> cryptographic <b>digital signatures</b> (PKCS#7, PAdES), PDF/A-1/2/3 archival profiles, and tagged/accessible PDF. These are planned, not shipped — tracked in the enterprise roadmap.</div>
-  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b> kryptografische <b>digitale Signaturen</b> (PKCS#7, PAdES), PDF/A-1/2/3-Archivprofile und getaggte/barrierefreie PDFs. Das ist geplant, noch nicht ausgeliefert — festgehalten in der Enterprise-Roadmap.</div>
-  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">仍在面向银行与保险公司：</b>加密<b>数字签名</b>（PKCS#7、PAdES）、PDF/A-1/2/3 归档规范，以及带标签的无障碍 PDF。这些为计划项，尚未发布——记录于企业路线图中。</div>
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Still toward banks &amp; insurers:</b> PDF/A-1/2/3 archival profiles, tagged/accessible PDF, and signature timestamps (RFC 3161). These are planned, not shipped — tracked in the enterprise roadmap.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b> PDF/A-1/2/3-Archivprofile, getaggte/barrierefreie PDFs und Signatur-Zeitstempel (RFC 3161). Das ist geplant, noch nicht ausgeliefert — festgehalten in der Enterprise-Roadmap.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">仍在面向银行与保险公司：</b>PDF/A-1/2/3 归档规范、带标签的无障碍 PDF，以及签名时间戳（RFC 3161）。这些为计划项，尚未发布——记录于企业路线图中。</div>
 </section>
 
 <section id="performance" class="doc-section">
