@@ -12,6 +12,7 @@ export type {
   PageBreakOptions,
   TextOptions,
   ImageOptions,
+  SvgOptions,
   LineOptions,
   RectOptions,
   ShapeOptions,

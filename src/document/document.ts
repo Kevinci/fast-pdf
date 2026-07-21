@@ -12,6 +12,8 @@ import { detectFormat, toBytes, type ParsedImage } from "../images/image";
 import { parseJpeg } from "../images/jpeg";
 import { parsePng, pngSize } from "../images/png";
 import { gifSize, parseGif } from "../images/gif";
+import { parseXml } from "../svg/parse";
+import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
@@ -120,6 +122,26 @@ export interface ImageOptions {
   rotate?: number;
   /** Horizontal alignment within the flow area (flow mode). Default: "left". */
   align?: "left" | "center" | "right";
+  spacingAfter?: number;
+}
+
+export interface SvgOptions {
+  /** Target width/height in points. Aspect ratio is preserved if only one is given. */
+  width?: number;
+  height?: number;
+  x?: number;
+  /** Providing `y` switches to absolute positioning (no cursor movement). */
+  y?: number;
+  /**
+   * How the drawing fills a fixed width×height box:
+   * "contain" fits it inside (default), "fill" stretches, "cover" fills and
+   * clips the overflow.
+   */
+  fit?: "contain" | "fill" | "cover";
+  /** Horizontal alignment within the flow area (flow mode). Default: "left". */
+  align?: "left" | "center" | "right";
+  /** Colour substituted for `currentColor` in the SVG. Default: black. */
+  color?: ColorInput;
   spacingAfter?: number;
 }
 
@@ -956,6 +978,89 @@ export class PDFDocument {
       return this;
     }
 
+    this.breakPageIfNeeded(boxH);
+    const free = this.flowWidth - boxW;
+    const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
+    draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
+    this.cursorY += boxH + (options.spacingAfter ?? 0);
+    return this;
+  }
+
+  /**
+   * Draw an SVG (a subset: paths, rect/circle/ellipse/line/polygon/polyline,
+   * groups, transforms, presentation attributes and basic `<text>`) as crisp
+   * vector graphics scaled into a box. Great for logos and icons.
+   *
+   * Not supported: gradients, patterns, filters, clip-paths, masks and CSS
+   * stylesheets — shapes using them fall back to a flat fill.
+   */
+  svg(source: string | Uint8Array, options: SvgOptions = {}): this {
+    const text = typeof source === "string" ? source : new TextDecoder().decode(source);
+    const svg = parseXml(text);
+    const view = viewport(svg);
+    const [vbX, vbY, vbW, vbH] = view.viewBox;
+    if (vbW <= 0 || vbH <= 0) {
+      throw new FastPDFError("SVG has a zero-sized viewBox/viewport", "INVALID_ARGUMENT");
+    }
+    const iw = view.width || vbW;
+    const ih = view.height || vbH;
+
+    if (options.width !== undefined) assertFinite(options.width, "svg width");
+    if (options.height !== undefined) assertFinite(options.height, "svg height");
+
+    let boxW = options.width ?? 0;
+    let boxH = options.height ?? 0;
+    if (!boxW && !boxH) {
+      boxW = Math.min(iw, this.flowWidth);
+      boxH = (boxW * ih) / iw;
+    } else if (!boxW) {
+      boxW = (boxH * iw) / ih;
+    } else if (!boxH) {
+      boxH = (boxW * ih) / iw;
+    }
+
+    const fit = options.fit ?? "contain";
+    let sx = boxW / vbW;
+    let sy = boxH / vbH;
+    let ox = 0;
+    let oy = 0;
+    if (fit !== "fill") {
+      const s = fit === "cover" ? Math.max(sx, sy) : Math.min(sx, sy);
+      sx = sy = s;
+      ox = (boxW - vbW * s) / 2;
+      oy = (boxH - vbH * s) / 2;
+    }
+
+    const currentColor = options.color !== undefined ? parseColor(options.color) : BLACK;
+
+    const draw = (boxX: number, boxTop: number): void => {
+      const pageH = this.page.size.height;
+      const base: Mat = [
+        sx, 0, 0, -sy,
+        boxX + ox - vbX * sx,
+        pageH - boxTop - oy + vbY * sy,
+      ];
+      const clip = fit === "cover";
+      if (clip) this.page.content.save().rect(boxX, this.page.ty(boxTop + boxH), boxW, boxH).clip();
+      const ctx: SvgContext = {
+        content: this.page.content,
+        gsRes: (alpha) => this.page.gsRes(alpha),
+        currentColor,
+        drawText: (str, px, py, size, fill, anchor) => {
+          const font = this.resolveFontStyle(this.defaults.font, false, false);
+          const w = font.widthOf(str, size);
+          const shift = anchor === "middle" ? -w / 2 : anchor === "end" ? -w : 0;
+          this.page.content.fillColor(fill).text(font.encode(str), px + shift, py, this.page.fontRes(font), size);
+        },
+      };
+      renderSvg(svg, base, ctx);
+      if (clip) this.page.content.restore();
+    };
+
+    if (options.y !== undefined) {
+      draw(options.x ?? this.page.margins.left, options.y);
+      return this;
+    }
     this.breakPageIfNeeded(boxH);
     const free = this.flowWidth - boxW;
     const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
