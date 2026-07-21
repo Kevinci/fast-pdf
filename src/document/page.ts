@@ -38,6 +38,8 @@ export interface PendingSignatureField {
   y: number;
   width: number;
   height: number;
+  /** When set, the field is cryptographically signed at render time. */
+  sign?: import("../pdf/sign").SigningOptions;
 }
 
 export class Page {

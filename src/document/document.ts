@@ -1,6 +1,7 @@
 import { Name, PDFString, textString, type PDFValue, type Ref } from "../pdf/objects";
 import { PDFWriter } from "../pdf/writer";
 import { createSecurityHandler, type EncryptionOptions } from "../pdf/encrypt";
+import { signaturePlaceholder, embedSignature, type SigningOptions } from "../pdf/sign";
 import { ContentStream } from "../pdf/content";
 import { deflate } from "../pdf/compress";
 import { isStandardFamily, resolveFont, styleIndex, type Font } from "../fonts/font";
@@ -253,6 +254,11 @@ export interface SignatureOptions {
   /** Horizontal alignment within the flow area (flow mode). Default: "left". */
   align?: "left" | "center" | "right";
   spacingAfter?: number;
+  /**
+   * Cryptographically sign the document through this field, producing a
+   * detached PAdES-B (CAdES) signature. At most one signed field per document.
+   */
+  sign?: SigningOptions;
 }
 
 export interface OutlineOptions {
@@ -1209,7 +1215,7 @@ export class PDFDocument {
           .fillColor({ r: 0.45, g: 0.45, b: 0.5 })
           .text(font.encode(options.label), x, baseline, page.fontRes(font), labelSize);
       }
-      page.sigFields.push({ name: name!, x, y: yTop, width, height });
+      page.sigFields.push({ name: name!, x, y: yTop, width, height, sign: options.sign });
     };
 
     if (options.y !== undefined) {
@@ -1379,6 +1385,8 @@ export class PDFDocument {
 
     // Signature field widgets, collected for the document-level /AcroForm.
     const acroFields: Ref[] = [];
+    // Signing options of the (at most one) cryptographically signed field.
+    let signState: SigningOptions | undefined;
 
     for (let i = 0; i < this.pages.length; i++) {
       const page = this.pages[i]!;
@@ -1408,11 +1416,25 @@ export class PDFDocument {
           },
           new Uint8Array(0),
         );
+        let sigValueRef: Ref | undefined;
+        if (field.sign !== undefined) {
+          if (signState !== undefined) {
+            throw new FastPDFError("at most one signed signature field per document", "INVALID_ARGUMENT");
+          }
+          if (this.encryption !== undefined) {
+            throw new FastPDFError("signing an encrypted document is not supported", "INVALID_ARGUMENT");
+          }
+          // The signature dictionary is emitted as raw bytes so the /ByteRange
+          // and /Contents placeholders keep their exact fixed widths.
+          sigValueRef = writer.add(signaturePlaceholder(field.sign));
+          signState = field.sign;
+        }
         const widgetRef = writer.add({
           Type: new Name("Annot"),
           Subtype: new Name("Widget"),
           FT: new Name("Sig"),
           T: textString(field.name),
+          V: sigValueRef,
           Rect: [field.x, page.ty(field.y + field.height), field.x + field.width, page.ty(field.y)],
           F: 4, // print
           P: pageRefs[i],
@@ -1443,9 +1465,10 @@ export class PDFDocument {
       Pages: pagesRef,
       Outlines: outlinesRef,
       PageMode: outlinesRef ? new Name("UseOutlines") : undefined,
-      // SigFlags 1 = SignaturesExist: the document contains signature
-      // field(s), so viewers enable their signing UI.
-      AcroForm: acroFields.length > 0 ? { Fields: acroFields, SigFlags: 1 } : undefined,
+      // SigFlags: bit 1 = SignaturesExist. A real signature also sets bit 2
+      // (AppendOnly, value 3) so viewers preserve the signed bytes.
+      AcroForm:
+        acroFields.length > 0 ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 } : undefined,
     });
     const infoRef = writer.add(this.buildInfo());
 
@@ -1457,7 +1480,8 @@ export class PDFDocument {
         encrypt: handler.encrypt,
       });
     }
-    return writer.finalize(catalogRef, infoRef);
+    const bytes = await writer.finalize(catalogRef, infoRef);
+    return signState !== undefined ? embedSignature(bytes, signState) : bytes;
   }
 
   /** Run page decorators exactly once, over the final page order. */

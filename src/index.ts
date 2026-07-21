@@ -63,3 +63,4 @@ export {
   type EncryptionOptions,
   type DocumentPermissions,
 } from "./pdf/encrypt";
+export type { SigningOptions } from "./pdf/sign";

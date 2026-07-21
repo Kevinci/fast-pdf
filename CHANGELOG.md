@@ -8,6 +8,14 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- Digital signatures (Enterprise Roadmap Phase 5): `signature({ sign: … })`
+  now cryptographically signs the document with a detached **PAdES-B (CAdES)**
+  signature — SubFilter `ETSI.CAdES.detached`, RSA + SHA-256, with the ESS
+  signing-certificate-v2 attribute. The signer key and certificate are passed
+  as PEM (PKCS#8 + X.509); the CMS SignedData is built in-house and the digest
+  is signed via the Web Crypto API (no dependency). Validated end-to-end
+  against `openssl cms -verify` and macOS Quartz. One signed field per
+  document; signing an encrypted document is rejected.
 - Document encryption (Enterprise Roadmap Phase 5): a new `encrypt` document
   option protects the file with the AES-256 standard security handler
   (revision 6 / AESV3, ISO 32000-2). Supports a user password (open password),

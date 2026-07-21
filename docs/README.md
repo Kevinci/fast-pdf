@@ -196,14 +196,20 @@ Ideal für:
 - [x] Permissions (Drucken, Kopieren, Ändern, Annotieren, Formulare, …)
 - [x] Document Protection (Strings **und** Streams werden verschlüsselt)
 
+> Stand 2026-07-21: Digitale Signaturen sind umgesetzt — detached **PAdES-B
+> (CAdES)** über `signature({ sign })`. Schlüssel/Zertifikat als PEM, CMS
+> selbst gebaut, Signatur (RSA+SHA-256) über WebCrypto. Gegen
+> `openssl cms -verify` und Quartz validiert; In-Process-Verifikation in
+> `tests/signing.test.ts`.
+
 ### Digital Signatures
 
-- [ ] Signature Placeholder
-- [ ] Hash Support
-- [ ] PKCS#7
-- [ ] PAdES Ready
-- [ ] Mehrere Signaturen
-- [ ] Timestamp Support
+- [x] Signature Placeholder (leeres `/Sig`-Feld — existierte, jetzt auch signiert)
+- [x] Hash Support (SHA-256, messageDigest bindet die ByteRange)
+- [x] PKCS#7 (CMS SignedData, `adbe`-kompatibel)
+- [x] PAdES Ready (PAdES-B: `ETSI.CAdES.detached` + signing-certificate-v2)
+- [ ] Mehrere Signaturen (aktuell genau eine signierte Signatur pro Dokument)
+- [ ] Timestamp Support (RFC 3161 TSA — nur `signingTime`-Attribut bisher)
 
 ### Dokumentintegrität
 
