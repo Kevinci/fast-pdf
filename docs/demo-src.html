@@ -765,18 +765,24 @@ pdf.image(stamp, { width: 80, rotate: -15, align: "center" });</code></pre>
     <tr><th>Format</th><th>Behavior</th></tr>
     <tr><td>JPEG</td><td>Embedded as-is (DCTDecode), no re-encoding — grayscale, RGB, CMYK</td></tr>
     <tr><td>PNG</td><td>Gray/RGB/indexed without re-encoding; the alpha channel becomes a real SMask (transparency)</td></tr>
+    <tr><td>GIF</td><td>First frame; palette decoded to RGB, a transparent index becomes an SMask (dependency-free LZW)</td></tr>
+    <tr><td>WebP</td><td>Lossless (VP8L) decoded to RGB + SMask — full transform/colour-cache/LZ77 set; lossy (VP8) is rejected</td></tr>
     <tr><td>Cache</td><td>Identical image bytes are embedded once, no matter how many pages use them</td></tr>
   </table></div>
   <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
     <tr><th>Format</th><th>Verhalten</th></tr>
     <tr><td>JPEG</td><td>1:1 eingebettet (DCTDecode), kein Re-Encoding — Graustufen, RGB, CMYK</td></tr>
     <tr><td>PNG</td><td>Grau/RGB/indiziert ohne Re-Encoding; Alphakanal wird zur echten SMask (Transparenz)</td></tr>
+    <tr><td>GIF</td><td>Erster Frame; Palette zu RGB dekodiert, transparenter Index wird zur SMask (dependency-freies LZW)</td></tr>
+    <tr><td>WebP</td><td>Verlustfrei (VP8L) zu RGB + SMask — voller Transform-/Color-Cache-/LZ77-Satz; verlustbehaftet (VP8) wird abgewiesen</td></tr>
     <tr><td>Cache</td><td>Identische Bild-Bytes werden nur einmal eingebettet, egal auf wie vielen Seiten</td></tr>
   </table></div>
   <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
     <tr><th>格式</th><th>行为</th></tr>
     <tr><td>JPEG</td><td>原样嵌入（DCTDecode），不重新编码——支持灰度、RGB、CMYK</td></tr>
     <tr><td>PNG</td><td>灰度/RGB/索引色不重新编码；Alpha 通道转换为真正的 SMask（透明度）</td></tr>
+    <tr><td>GIF</td><td>首帧；调色板解码为 RGB，透明索引转换为 SMask（无依赖 LZW）</td></tr>
+    <tr><td>WebP</td><td>无损 (VP8L) 解码为 RGB + SMask——完整的变换/颜色缓存/LZ77；有损 (VP8) 会被拒绝</td></tr>
     <tr><td>缓存</td><td>相同的图片字节只嵌入一次，无论多少页引用它</td></tr>
   </table></div>
 </section>

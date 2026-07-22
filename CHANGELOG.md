@@ -8,6 +8,25 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- WebP images (lossless): `image()` now accepts lossless WebP (the VP8L
+  profile), decoded in-house to a DeviceRGB image plus, when the picture has
+  transparency, an 8-bit `/SMask`. The decoder implements the complete VP8L
+  feature set — the four inverse transforms (predictor, cross-color,
+  subtract-green, colour-indexing with pixel bundling), the colour cache,
+  meta-Huffman code groups and LZ77 with 2-D distance mapping — with no
+  dependency, and is validated bit-exact against libwebp. Lossy WebP (VP8) is
+  intentionally not decoded and is rejected with the `UNSUPPORTED_IMAGE` error
+  code.
+- GIF images: `image()` accepts GIF and renders the first frame, compositing it
+  onto the logical screen; the palette is decoded to DeviceRGB and a transparent
+  colour index becomes an `/SMask`. Dependency-free LZW decoder.
+- SVG rendering: a new `svg()` method renders a practical SVG subset as native
+  PDF vector graphics — `rect`, `circle`, `ellipse`, `line`, `polyline`,
+  `polygon`, `path`, `text`, groups (`g`) with fills, strokes and opacity, and
+  the full transform list (`translate`, `rotate`, `scale`, `skewX/Y`, `matrix`).
+- Markdown rendering: a new `markdown()` method renders a CommonMark subset —
+  headings, paragraphs, ordered/unordered lists, tables, code blocks,
+  blockquotes, horizontal rules, and inline emphasis, links and images.
 - Digital signatures (Enterprise Roadmap Phase 5): `signature({ sign: … })`
   now cryptographically signs the document with a detached **PAdES-B (CAdES)**
   signature — SubFilter `ETSI.CAdES.detached`, RSA + SHA-256, with the ESS
