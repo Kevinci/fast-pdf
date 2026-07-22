@@ -12,6 +12,7 @@ import { detectFormat, toBytes, type ParsedImage } from "../images/image";
 import { parseJpeg } from "../images/jpeg";
 import { parsePng, pngSize } from "../images/png";
 import { gifSize, parseGif } from "../images/gif";
+import { parseWebp, webpSize } from "../images/webp";
 import { parseXml } from "../svg/parse";
 import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
 import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
@@ -1326,7 +1327,7 @@ export class PDFDocument {
       format === "jpeg" ? parseJpeg(bytes)
       : format === "png" ? pngSize(bytes)
       : format === "gif" ? gifSize(bytes)
-      : (() => { throw new FastPDFError("WebP support is not enabled in this build", "UNSUPPORTED_IMAGE"); })();
+      : webpSize(bytes);
     entry = {
       id: `img${this.images.size}`,
       bytes,
@@ -1694,7 +1695,8 @@ export class PDFDocument {
       const parsed: ParsedImage =
         entry.format === "jpeg" ? parseJpeg(entry.bytes)
         : entry.format === "png" ? await parsePng(entry.bytes)
-        : await parseGif(entry.bytes);
+        : entry.format === "gif" ? await parseGif(entry.bytes)
+        : await parseWebp(entry.bytes);
       let smaskRef: Ref | undefined;
       if (parsed.smask) {
         smaskRef = writer.addStream(
