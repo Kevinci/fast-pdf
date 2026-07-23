@@ -79,7 +79,7 @@
 
 <nav aria-label="Contents" class="pt-7 md:sticky md:top-0 md:max-h-screen md:self-start md:overflow-y-auto md:pb-6">
   <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">fast-<span class="text-(--accent)">pdf</span></div>
-  <div class="mb-3 font-mono text-xs text-(--muted)">v0.4.0 · Demo &amp; Guide</div>
+  <div class="mb-3 font-mono text-xs text-(--muted)">v0.5.0 · Demo &amp; Guide</div>
 
   <label class="mb-4 block">
     <span class="sr-only">Language / Sprache / 语言</span>
@@ -94,53 +94,59 @@
   <ul data-lang="en" class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">Quick start</a></li>
     <li><a class="nav-link" href="#ausgabe">Output formats</a></li>
-    <li><a class="nav-link" href="#seiten">Pages &amp; breaks<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: pageBreak()"></span></a></li>
+    <li><a class="nav-link" href="#seiten">Pages &amp; breaks</a></li>
     <li><a class="nav-link" href="#text">Text &amp; typography</a></li>
     <li><a class="nav-link" href="#fonts">Custom fonts</a></li>
     <li><a class="nav-link" href="#layout">Layout engine</a></li>
     <li><a class="nav-link" href="#tabellen">Tables</a></li>
-    <li><a class="nav-link" href="#bilder">Images</a></li>
+    <li><a class="nav-link" href="#bilder">Images<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: GIF &amp; WebP"></span></a></li>
     <li><a class="nav-link" href="#formen">Shapes</a></li>
-    <li><a class="nav-link" href="#features">Document features<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: signature()"></span></a></li>
+    <li><a class="nav-link" href="#svg">SVG graphics<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: svg()"></span></a></li>
+    <li><a class="nav-link" href="#markdown">Markdown<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: markdown()"></span></a></li>
+    <li><a class="nav-link" href="#features">Document features</a></li>
     <li><a class="nav-link" href="#fehler">Error handling</a></li>
-    <li><a class="nav-link" href="#security">Security<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: input hardening"></span></a></li>
+    <li><a class="nav-link" href="#security">Security<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: encryption &amp; signatures"></span></a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
-    <li><a class="nav-link" href="#templates">Templates &amp; AI skill<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="New: npx fast-pdf-skill"></span></a></li>
+    <li><a class="nav-link" href="#templates">Templates &amp; AI skill</a></li>
   </ul>
   <ul data-lang="de" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">Schnellstart</a></li>
     <li><a class="nav-link" href="#ausgabe">Ausgabeformate</a></li>
-    <li><a class="nav-link" href="#seiten">Seiten &amp; Umbrüche<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: pageBreak()"></span></a></li>
+    <li><a class="nav-link" href="#seiten">Seiten &amp; Umbrüche</a></li>
     <li><a class="nav-link" href="#text">Text &amp; Typografie</a></li>
     <li><a class="nav-link" href="#fonts">Eigene Schriften</a></li>
     <li><a class="nav-link" href="#layout">Layout-Engine</a></li>
     <li><a class="nav-link" href="#tabellen">Tabellen</a></li>
-    <li><a class="nav-link" href="#bilder">Bilder</a></li>
+    <li><a class="nav-link" href="#bilder">Bilder<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: GIF &amp; WebP"></span></a></li>
     <li><a class="nav-link" href="#formen">Formen</a></li>
-    <li><a class="nav-link" href="#features">Dokumentfeatures<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: signature()"></span></a></li>
+    <li><a class="nav-link" href="#svg">SVG-Grafiken<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: svg()"></span></a></li>
+    <li><a class="nav-link" href="#markdown">Markdown<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: markdown()"></span></a></li>
+    <li><a class="nav-link" href="#features">Dokumentfeatures</a></li>
     <li><a class="nav-link" href="#fehler">Fehlerbehandlung</a></li>
-    <li><a class="nav-link" href="#security">Sicherheit<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: Eingabehärtung"></span></a></li>
+    <li><a class="nav-link" href="#security">Sicherheit<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: Verschlüsselung &amp; Signaturen"></span></a></li>
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
-    <li><a class="nav-link" href="#templates">Templates &amp; AI-Skill<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="Neu: npx fast-pdf-skill"></span></a></li>
+    <li><a class="nav-link" href="#templates">Templates &amp; AI-Skill</a></li>
   </ul>
   <ul data-lang="zh" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">快速开始</a></li>
     <li><a class="nav-link" href="#ausgabe">输出格式</a></li>
-    <li><a class="nav-link" href="#seiten">页面与分页<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：pageBreak()"></span></a></li>
+    <li><a class="nav-link" href="#seiten">页面与分页</a></li>
     <li><a class="nav-link" href="#text">文本与排版</a></li>
     <li><a class="nav-link" href="#fonts">自定义字体</a></li>
     <li><a class="nav-link" href="#layout">布局引擎</a></li>
     <li><a class="nav-link" href="#tabellen">表格</a></li>
-    <li><a class="nav-link" href="#bilder">图片</a></li>
+    <li><a class="nav-link" href="#bilder">图片<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：GIF 与 WebP"></span></a></li>
     <li><a class="nav-link" href="#formen">图形</a></li>
-    <li><a class="nav-link" href="#features">文档功能<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：signature()"></span></a></li>
+    <li><a class="nav-link" href="#svg">SVG 图形<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：svg()"></span></a></li>
+    <li><a class="nav-link" href="#markdown">Markdown<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：markdown()"></span></a></li>
+    <li><a class="nav-link" href="#features">文档功能</a></li>
     <li><a class="nav-link" href="#fehler">错误处理</a></li>
-    <li><a class="nav-link" href="#security">安全<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：输入校验"></span></a></li>
+    <li><a class="nav-link" href="#security">安全<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：加密与签名"></span></a></li>
     <li><a class="nav-link" href="#performance">性能</a></li>
     <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
-    <li><a class="nav-link" href="#templates">模板与 AI 技能<span class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]" title="新增：npx fast-pdf-skill"></span></a></li>
+    <li><a class="nav-link" href="#templates">模板与 AI 技能</a></li>
   </ul>
 </nav>
 
@@ -173,20 +179,20 @@
   <ul data-lang="en" class="m-0 flex list-none flex-wrap gap-2.5 p-0">
     <li class="stat"><b>0</b>runtime dependencies</li>
     <li class="stat"><b>~1.6&nbsp;ms</b>3-page document</li>
-    <li class="stat"><b>113</b>tests · 95&nbsp;% coverage</li>
-    <li class="stat"><b>~94&nbsp;KB</b>ESM, tree-shakeable</li>
+    <li class="stat"><b>245</b>tests · 94&nbsp;% coverage</li>
+    <li class="stat"><b>~187&nbsp;KB</b>ESM, tree-shakeable</li>
   </ul>
   <ul data-lang="de" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
     <li class="stat"><b>0</b>Runtime-Dependencies</li>
     <li class="stat"><b>~1,6&nbsp;ms</b>3-Seiten-Dokument</li>
-    <li class="stat"><b>113</b>Tests · 95&nbsp;% Coverage</li>
-    <li class="stat"><b>~94&nbsp;KB</b>ESM, tree-shakeable</li>
+    <li class="stat"><b>245</b>Tests · 94&nbsp;% Coverage</li>
+    <li class="stat"><b>~187&nbsp;KB</b>ESM, tree-shakeable</li>
   </ul>
   <ul data-lang="zh" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
     <li class="stat"><b>0</b>运行时依赖</li>
     <li class="stat"><b>~1.6&nbsp;ms</b>3 页文档</li>
-    <li class="stat"><b>113</b>项测试 · 95&nbsp;% 覆盖率</li>
-    <li class="stat"><b>~94&nbsp;KB</b>ESM，支持 Tree-Shaking</li>
+    <li class="stat"><b>245</b>项测试 · 94&nbsp;% 覆盖率</li>
+    <li class="stat"><b>~187&nbsp;KB</b>ESM，支持 Tree-Shaking</li>
   </ul>
 
   <p data-lang="en" class="mt-8 mb-1 text-[15px] font-semibold">Compared to the usual approaches:</p>
@@ -201,7 +207,7 @@
     <tr><td>Tables</td><td>built-in: repeating headers, spans, JSON → table</td><td>hand-built from flexbox views</td><td>HTML/CSS</td></tr>
     <tr><td>Signature form fields</td><td>✓ AcroForm</td><td>—</td><td>✗ printed output has no form fields</td></tr>
     <tr><td>TOC, outlines, watermark</td><td>✓ built-in</td><td>partly</td><td>✗</td></tr>
-    <tr><td>Bundle</td><td>~94 KB ESM, tree-shakeable</td><td>several 100 KB + the framework</td><td>n/a</td></tr>
+    <tr><td>Bundle</td><td>~187 KB ESM, tree-shakeable</td><td>several 100 KB + the framework</td><td>n/a</td></tr>
   </table></div>
   <div data-lang="de" hidden class="overflow-x-auto"><table class="api">
     <tr><th></th><th>fast-pdf</th><th>Komponenten-Framework-Renderer</th><th>HTML → Headless-Browser</th></tr>
@@ -211,7 +217,7 @@
     <tr><td>Tabellen</td><td>eingebaut: wiederholende Header, Spans, JSON → Tabelle</td><td>selbst bauen aus Flexbox-Views</td><td>HTML/CSS</td></tr>
     <tr><td>Signatur-Formularfelder</td><td>✓ AcroForm</td><td>—</td><td>✗ Druckausgabe hat keine Formularfelder</td></tr>
     <tr><td>TOC, Lesezeichen, Wasserzeichen</td><td>✓ eingebaut</td><td>teilweise</td><td>✗</td></tr>
-    <tr><td>Bundle</td><td>~94 KB ESM, tree-shakeable</td><td>mehrere 100 KB + Framework</td><td>n/a</td></tr>
+    <tr><td>Bundle</td><td>~187 KB ESM, tree-shakeable</td><td>mehrere 100 KB + Framework</td><td>n/a</td></tr>
   </table></div>
   <div data-lang="zh" hidden class="overflow-x-auto"><table class="api">
     <tr><th></th><th>fast-pdf</th><th>组件框架渲染方案</th><th>HTML → 无头浏览器</th></tr>
@@ -221,7 +227,7 @@
     <tr><td>表格</td><td>内置：重复表头、跨行列、JSON → 表格</td><td>需用 Flexbox 视图手工搭建</td><td>HTML/CSS</td></tr>
     <tr><td>签名表单字段</td><td>✓ AcroForm</td><td>—</td><td>✗ 打印输出没有表单字段</td></tr>
     <tr><td>目录、书签、水印</td><td>✓ 内置</td><td>部分支持</td><td>✗</td></tr>
-    <tr><td>包体积</td><td>~94 KB ESM，可 Tree-Shaking</td><td>数百 KB + 框架本身</td><td>n/a</td></tr>
+    <tr><td>包体积</td><td>~187 KB ESM，可 Tree-Shaking</td><td>数百 KB + 框架本身</td><td>n/a</td></tr>
   </table></div>
 </header>
 
@@ -337,9 +343,9 @@ return new Response(pdf.toStream(), {
 </section>
 
 <section id="seiten" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Pages &amp; breaks<span class="chip">New: pageBreak()</span></h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Seiten &amp; Umbrüche<span class="chip">Neu: pageBreak()</span></h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>页面与分页<span class="chip">新增：pageBreak()</span></h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Pages &amp; breaks</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>Seiten &amp; Umbrüche</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">03</span>页面与分页</h2>
 
   <p data-lang="en">Text and tables break pages automatically. What most libraries are missing:
      <b>deciding yourself where the next page starts.</b> That’s exactly what
@@ -749,9 +755,9 @@ pdf.objectTable(orders, {           // …… 或完全自定义
 </section>
 
 <section id="bilder" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Images</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Bilder</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>图片</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Images<span class="chip">New: GIF &amp; WebP</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>Bilder<span class="chip">Neu: GIF &amp; WebP</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">08</span>图片<span class="chip">新增：GIF 与 WebP</span></h2>
 
 <pre data-lang="en" class="code-block"><code>pdf.image(bytes, { width: 200 });                        // flows, keeps aspect ratio
 pdf.image(logo,  { x: 400, y: 30, width: 120 });         // absolute position
@@ -820,10 +826,165 @@ pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
   <p data-lang="zh" hidden>圆和椭圆采用精确的贝塞尔曲线近似；<code>fill</code> 与 <code>stroke</code> 可自由组合。</p>
 </section>
 
+<section id="svg" class="doc-section">
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>SVG graphics<span class="chip">New: svg()</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>SVG-Grafiken<span class="chip">Neu: svg()</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>SVG 图形<span class="chip">新增：svg()</span></h2>
+
+  <p data-lang="en"><code>svg()</code> renders a practical SVG subset as <b>native PDF vector graphics</b> —
+     no rasterization, crisp at every zoom level. Ideal for logos and icons. Supported:
+     <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>line</code>, <code>polyline</code>,
+     <code>polygon</code>, <code>path</code>, <code>text</code> and groups (<code>g</code>) with fills,
+     strokes, opacity and the full transform list
+     (<code>translate</code>, <code>rotate</code>, <code>scale</code>, <code>skewX/Y</code>, <code>matrix</code>):</p>
+  <p data-lang="de" hidden><code>svg()</code> rendert ein praxistaugliches SVG-Subset als <b>native PDF-Vektorgrafik</b> —
+     keine Rasterung, gestochen scharf bei jedem Zoom. Ideal für Logos und Icons. Unterstützt:
+     <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>line</code>, <code>polyline</code>,
+     <code>polygon</code>, <code>path</code>, <code>text</code> und Gruppen (<code>g</code>) mit Füllungen,
+     Konturen, Opazität und der vollen Transform-Liste
+     (<code>translate</code>, <code>rotate</code>, <code>scale</code>, <code>skewX/Y</code>, <code>matrix</code>):</p>
+  <p data-lang="zh" hidden><code>svg()</code> 将一个实用的 SVG 子集渲染为<b>原生 PDF 矢量图形</b>——
+     不做栅格化，任何缩放级别都清晰锐利。非常适合徽标和图标。支持：
+     <code>rect</code>、<code>circle</code>、<code>ellipse</code>、<code>line</code>、<code>polyline</code>、
+     <code>polygon</code>、<code>path</code>、<code>text</code> 以及带填充、描边、不透明度和完整变换列表
+     （<code>translate</code>、<code>rotate</code>、<code>scale</code>、<code>skewX/Y</code>、<code>matrix</code>）的组（<code>g</code>）：</p>
+
+<pre data-lang="en" class="code-block"><code>const logo = await fetch("/logo.svg").then((r) =&gt; r.text());
+
+pdf.svg(logo, { width: 160, align: "center" });     // flows, keeps aspect ratio
+pdf.svg(logo, { x: 430, y: 30, width: 110 });       // absolute: letterhead logo
+pdf.svg(logo, { width: 200, height: 100, fit: "cover" });   // contain | fill | cover
+
+// currentColor is substituted — one icon set, any theme color:
+pdf.svg(icon, { width: 14, color: "#2e5ce6" });</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>const logo = await fetch("/logo.svg").then((r) =&gt; r.text());
+
+pdf.svg(logo, { width: 160, align: "center" });     // Flow, Seitenverhältnis bleibt
+pdf.svg(logo, { x: 430, y: 30, width: 110 });       // absolut: Briefkopf-Logo
+pdf.svg(logo, { width: 200, height: 100, fit: "cover" });   // contain | fill | cover
+
+// currentColor wird ersetzt — ein Icon-Set, jede Theme-Farbe:
+pdf.svg(icon, { width: 14, color: "#2e5ce6" });</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>const logo = await fetch("/logo.svg").then((r) =&gt; r.text());
+
+pdf.svg(logo, { width: 160, align: "center" });     // 排版流内，保持宽高比
+pdf.svg(logo, { x: 430, y: 30, width: 110 });       // 绝对定位：信头徽标
+pdf.svg(logo, { width: 200, height: 100, fit: "cover" });   // contain | fill | cover
+
+// currentColor 会被替换——一套图标，任意主题色：
+pdf.svg(icon, { width: 14, color: "#2e5ce6" });</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Not supported:</b> gradients, patterns, filters, clip-paths, masks
+    and CSS stylesheets — shapes using them fall back to a flat fill. Input can be a string or
+    <code>Uint8Array</code>; a zero-sized viewBox throws <code>INVALID_ARGUMENT</code>.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Nicht unterstützt:</b> Verläufe, Patterns, Filter, Clip-Paths, Masken
+    und CSS-Stylesheets — Formen damit fallen auf eine flache Füllung zurück. Eingabe als String oder
+    <code>Uint8Array</code>; eine leere viewBox wirft <code>INVALID_ARGUMENT</code>.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">不支持：</b>渐变、图案、滤镜、裁剪路径、蒙版和 CSS 样式表——
+    使用它们的图形会回退为纯色填充。输入可以是字符串或 <code>Uint8Array</code>；viewBox 尺寸为零会抛出
+    <code>INVALID_ARGUMENT</code>。</div>
+</section>
+
+<section id="markdown" class="doc-section">
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Markdown<span class="chip">New: markdown()</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Markdown<span class="chip">Neu: markdown()</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Markdown<span class="chip">新增：markdown()</span></h2>
+
+  <p data-lang="en"><code>markdown()</code> renders a CommonMark/GFM subset straight into the flow —
+     headings, paragraphs, nested ordered/unordered lists, pipe tables, fenced code blocks,
+     blockquotes, horizontal rules, plus inline <b>bold</b>, <em>italic</em>, <code>code</code>,
+     links and images. Perfect for turning LLM output, release notes or CMS content into a
+     document without writing layout code:</p>
+  <p data-lang="de" hidden><code>markdown()</code> rendert ein CommonMark-/GFM-Subset direkt in den Flow —
+     Überschriften, Absätze, verschachtelte Listen, Pipe-Tabellen, Code-Blöcke, Blockquotes,
+     Trennlinien sowie inline <b>fett</b>, <em>kursiv</em>, <code>code</code>, Links und Bilder.
+     Perfekt, um LLM-Output, Release Notes oder CMS-Inhalte ohne Layout-Code in ein
+     Dokument zu verwandeln:</p>
+  <p data-lang="zh" hidden><code>markdown()</code> 将 CommonMark/GFM 子集直接渲染到排版流中——
+     标题、段落、嵌套的有序/无序列表、管道表格、围栏代码块、引用块、分割线，
+     以及行内<b>加粗</b>、<em>斜体</em>、<code>code</code>、链接和图片。
+     无需编写布局代码，即可把 LLM 输出、发布说明或 CMS 内容变成文档：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.markdown(`
+# Quarterly Report
+
+Revenue grew **12 %** — details in the [appendix](#appendix).
+
+| Region | Revenue |
+| ------ | ------: |
+| EMEA   | 4.2 M€  |
+| APAC   | 3.1 M€  |
+
+- automatic page breaks
+- nested lists
+  1. work too
+`);</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.markdown(`
+# Quartalsbericht
+
+Der Umsatz wuchs um **12 %** — Details im [Anhang](#anhang).
+
+| Region | Umsatz |
+| ------ | -----: |
+| EMEA   | 4,2 M€ |
+| APAC   | 3,1 M€ |
+
+- automatische Seitenumbrüche
+- verschachtelte Listen
+  1. gehen auch
+`);</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.markdown(`
+# 季度报告
+
+营收增长 **12 %**——详情见[附录](#appendix)。
+
+| 区域 | 营收   |
+| ---- | -----: |
+| EMEA | 4.2 M€ |
+| APAC | 3.1 M€ |
+
+- 自动分页
+- 嵌套列表
+  1. 同样支持
+`);</code></pre>
+
+  <p data-lang="en">Tables go through <code>table()</code> — repeating headers included. Since the core
+     does no I/O, you resolve image references yourself:</p>
+  <p data-lang="de" hidden>Tabellen laufen über <code>table()</code> — inklusive wiederholender Header. Weil der
+     Kern kein I/O macht, löst du Bild-Referenzen selbst auf:</p>
+  <p data-lang="zh" hidden>表格由 <code>table()</code> 渲染——包括每页重复的表头。由于核心不做任何 I/O，
+     图片引用由你自己解析：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.markdown(readme, {
+  resolveImage: (src) =&gt; imageBytes.get(src),   // ![alt](src) → raw bytes
+});
+// without a resolver, images render as their alt text</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.markdown(readme, {
+  resolveImage: (src) =&gt; imageBytes.get(src),   // ![alt](src) → rohe Bytes
+});
+// ohne Resolver werden Bilder als Alt-Text gerendert</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.markdown(readme, {
+  resolveImage: (src) =&gt; imageBytes.get(src),   // ![alt](src) → 原始字节
+});
+// 不提供 resolver 时，图片渲染为其 alt 文本</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Agent-friendly:</b> pipe a model's Markdown answer straight into a
+    PDF — <code>pdf.markdown(completion)</code>, done. Headings scale from your base font size,
+    code blocks are set in Courier on a tinted background, and everything breaks pages like
+    regular content.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Agent-tauglich:</b> die Markdown-Antwort eines Modells direkt in ein
+    PDF leiten — <code>pdf.markdown(completion)</code>, fertig. Überschriften skalieren aus deiner
+    Basis-Schriftgröße, Code-Blöcke stehen in Courier auf getöntem Hintergrund, und alles
+    bricht Seiten wie regulärer Inhalt.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">对智能体友好：</b>把模型的 Markdown 回答直接导入 PDF——
+    <code>pdf.markdown(completion)</code>，就这么简单。标题按基础字号缩放，代码块用 Courier
+    配浅色背景排版，所有内容都像常规内容一样自动分页。</div>
+</section>
+
 <section id="features" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Document features<span class="chip">New: signature()</span></h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>Dokumentfeatures<span class="chip">Neu: signature()</span></h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">10</span>文档功能<span class="chip">新增：signature()</span></h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Document features</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Dokumentfeatures</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>文档功能</h2>
 
   <p data-lang="en">Recurring elements are drawn onto every page at render time —
      so they know the <b>final</b> page number and count:</p>
@@ -935,9 +1096,9 @@ pdf.signature({ name: "initials-p1", width: 86, height: 32, line: false });  // 
 </section>
 
 <section id="fehler" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Error handling</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>Fehlerbehandlung</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">11</span>错误处理</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>Error handling</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>Fehlerbehandlung</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>错误处理</h2>
 
   <p data-lang="en">All user-facing failures throw <code>FastPDFError</code> with a stable,
      machine-readable <code>code</code> — messages may be reworded, codes never change:</p>
@@ -979,9 +1140,9 @@ try {
 </section>
 
 <section id="security" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Security</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>Sicherheit</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">12</span>安全</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>Security<span class="chip">New: encryption &amp; signatures</span></h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>Sicherheit<span class="chip">Neu: Verschlüsselung &amp; Signaturen</span></h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>安全<span class="chip">新增：加密与签名</span></h2>
 
   <p data-lang="en">Security is a first-class design goal, not an afterthought. The long-term aim is a build
      that regulated industries — banks and insurers — can rely on. That bar isn’t fully cleared yet,
@@ -1044,9 +1205,9 @@ try {
 </section>
 
 <section id="performance" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>Performance</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>Performance</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">13</span>性能</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>Performance</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>Performance</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>性能</h2>
 
   <p data-lang="en">Direct PDF synthesis instead of a browser detour. Compression uses the native
      <code>CompressionStream</code> API (zlib) — zero bundle bytes for it.
@@ -1084,9 +1245,9 @@ try {
 </section>
 
 <section id="ergebnis" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>See it rendered</h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>So sieht’s aus</h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">14</span>效果展示</h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">16</span>See it rendered</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">16</span>So sieht’s aus</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">16</span>效果展示</h2>
 
   <p data-lang="en">A design-forward report from <code>examples/report.ts</code> (<code>npx tsx examples/report.ts</code>),
      rendered with macOS Quartz — full-bleed color, a vector bar chart and big type, all from
@@ -1119,9 +1280,9 @@ try {
 </section>
 
 <section id="templates" class="doc-section">
-  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>Templates &amp; AI skill<span class="chip">New: npx fast-pdf-skill</span></h2>
-  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>Templates &amp; AI-Skill<span class="chip">Neu: npx fast-pdf-skill</span></h2>
-  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">15</span>模板与 AI 技能<span class="chip">新增：npx fast-pdf-skill</span></h2>
+  <h2 data-lang="en" class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">17</span>Templates &amp; AI skill</h2>
+  <h2 data-lang="de" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">17</span>Templates &amp; AI-Skill</h2>
+  <h2 data-lang="zh" hidden class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">17</span>模板与 AI 技能</h2>
 
   <p data-lang="en">The fastest way to a good-looking document is copying a finished one.
      Five complete, designed templates ship with the npm package
@@ -1188,11 +1349,11 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
 </section>
 
 <footer class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
-  <span data-lang="en">fast-pdf v0.4.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="en">fast-pdf v0.5.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
   <a class="text-(--accent) no-underline hover:underline" href="https://github.com/Kevinci/fast-pdf">github.com/Kevinci/fast-pdf</a></span>
-  <span data-lang="de" hidden>fast-pdf v0.4.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="de" hidden>fast-pdf v0.5.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
   <a class="text-(--accent) no-underline hover:underline" href="https://github.com/Kevinci/fast-pdf">github.com/Kevinci/fast-pdf</a></span>
-  <span data-lang="zh" hidden>fast-pdf v0.4.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="zh" hidden>fast-pdf v0.5.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
   <a class="text-(--accent) no-underline hover:underline" href="https://github.com/Kevinci/fast-pdf">github.com/Kevinci/fast-pdf</a></span>
 </footer>
 </main>
