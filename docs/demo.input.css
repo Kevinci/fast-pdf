@@ -37,3 +37,72 @@
 .code-block {
   @apply my-3.5 overflow-x-auto rounded-lg bg-(--code-bg) px-[18px] py-4 font-mono text-[13px] leading-[1.6] text-(--code-ink);
 }
+
+/* Ausklappbare Blöcke — langer Quickstart-Code und die Changelog-Einträge.
+   <details>/<summary>, damit es ohne JavaScript funktioniert. */
+.fold {
+  @apply my-3.5 overflow-hidden rounded-lg border border-(--hairline) bg-(--surface);
+  transition: border-color .2s ease;
+}
+.fold:not([open]):hover { @apply border-(--accent); }
+.fold > summary {
+  @apply block cursor-pointer list-none px-4 py-2.5 select-none;
+}
+.fold > summary::-webkit-details-marker { display: none; }
+.fold > summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.fold-head {
+  @apply flex items-center gap-2 font-mono text-[12.5px] text-(--muted);
+}
+.fold > summary:hover .fold-head { @apply text-(--ink); }
+.fold-head::before {
+  content: "▸";
+  @apply inline-block text-(--accent) transition-transform duration-200;
+}
+.fold[open] .fold-head::before { transform: rotate(90deg); }
+
+/* Der Deckel steht einen Spalt offen: ein angeschnittener Ausschnitt des
+   Inhalts, nach unten ausgeblendet — sichtbar nur im geschlossenen Zustand. */
+.fold-peek {
+  @apply relative block overflow-hidden;
+  margin: 9px -17px -11px;
+  max-height: 62px;
+  pointer-events: none;
+  -webkit-mask-image: linear-gradient(to bottom, #000 15%, transparent 97%);
+  mask-image: linear-gradient(to bottom, #000 15%, transparent 97%);
+}
+.fold[open] .fold-peek { display: none; }
+.fold-peek-code {
+  @apply block bg-(--code-bg) px-[18px] pt-3 font-mono text-[12.5px] leading-[1.6] text-(--code-ink);
+  white-space: pre;
+}
+.fold-peek-text {
+  @apply block px-[17px] pt-1 text-[13.5px] leading-[1.55] text-(--muted);
+}
+/* Code füllt die Karte randlos aus; die Karte bringt die Rundung mit. */
+.fold > .code-block {
+  @apply m-0 rounded-none border-t border-(--hairline);
+}
+
+/* Changelog-Eintrag: Kopf mit Version + Datum, darunter die Rubriken. */
+.cl-body {
+  @apply border-t border-(--hairline) px-4 py-3;
+}
+.cl-h {
+  @apply mt-3.5 mb-1 font-mono text-[10.5px] font-semibold uppercase tracking-[0.12em] text-(--accent);
+}
+.cl-body > .cl-h:first-child { @apply mt-0; }
+.cl-list {
+  @apply my-0 list-disc pl-5 text-[13.5px] leading-[1.55] text-(--muted);
+}
+.cl-list li {
+  @apply mt-1.5 max-w-[68ch];
+}
+.cl-list b {
+  @apply font-semibold text-(--ink);
+}
+.cl-note {
+  @apply max-w-[68ch] text-[13.5px] leading-[1.55] text-(--muted);
+}

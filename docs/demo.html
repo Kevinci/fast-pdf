@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -57,6 +57,78 @@
   .tok-c { color: #6b7488; font-style: italic; }
   .tok-n { color: #f2b46d; }
 
+  /* ── Warp-to-top ──────────────────────────────────────────────────────
+     Der Knopf taucht auf, sobald der Footer im Viewport steht. Ein Klick
+     legt Sternenstreifen über die ganze Seite und scrollt selbst nach oben
+     (eigener rAF-Scroll, damit Effekt und Scrolldauer synchron laufen). */
+  .warp-dock { display: flex; justify-content: center; margin-top: 36px; }
+  #warp-top {
+    display: flex; align-items: center; gap: 10px;
+    margin: 0; padding: 8px 17px 8px 12px;
+    border: 1px solid var(--hairline); border-radius: 999px;
+    background: var(--surface); color: var(--muted);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12px; line-height: 1; letter-spacing: 0.03em;
+    cursor: pointer; opacity: 0; transform: translateY(10px);
+    transition: opacity .5s ease, transform .5s ease,
+                color .2s ease, border-color .2s ease;
+  }
+  #warp-top.is-visible { opacity: 1; transform: none; }
+  #warp-top:hover { color: var(--ink); border-color: var(--accent); }
+  #warp-top:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+  #warp-top svg {
+    display: block; width: 46px; height: auto; overflow: visible;
+    fill: var(--muted);
+    transition: fill .2s ease, transform .35s cubic-bezier(.3, 1.4, .5, 1);
+  }
+  #warp-top:hover svg { fill: var(--accent); transform: translateX(4px); }
+  /* Klick: das Schiff zieht nach oben davon. */
+  #warp-top.is-launching {
+    opacity: 0; transform: translate(90px, -140px) scale(.4);
+    transition: opacity .5s ease, transform .55s cubic-bezier(.5, 0, .75, 0);
+  }
+
+  .warp-fx {
+    position: fixed; inset: 0; z-index: 60;
+    overflow: hidden; pointer-events: none;
+    opacity: 0; transition: opacity .3s ease;
+  }
+  .warp-fx.is-on { opacity: 1; }
+  .warp-fx::after {
+    content: ""; position: absolute; inset: 0;
+    background: radial-gradient(circle at 50% 50%, rgba(10, 14, 24, 0) 20%, rgba(10, 14, 24, 0.5) 90%);
+  }
+  /* Ein Streifen: Unterkante liegt im Bildschirmmittelpunkt, rotiert um ihn
+     herum und fliegt radial nach außen — daher origin 50% 100%. */
+  .warp-streak {
+    position: absolute; left: 50%; top: 50%;
+    width: 2px; height: 12vh; margin-left: -1px; margin-top: -12vh;
+    border-radius: 2px; color: var(--accent);
+    background: linear-gradient(to top, transparent, currentColor);
+    transform-origin: 50% 100%;
+    transform: rotate(var(--a)) scaleY(.15);
+    opacity: 0;
+  }
+  .warp-fx.is-on .warp-streak {
+    animation: warp-fly var(--d) cubic-bezier(.45, .05, .75, .35) var(--t) infinite;
+  }
+  @keyframes warp-fly {
+    0%   { transform: rotate(var(--a)) translateY(0) scaleY(.15); opacity: 0; }
+    12%  { opacity: .95; }
+    100% { transform: rotate(var(--a)) translateY(-105vh) scaleY(1.9); opacity: 0; }
+  }
+  /* Die Seite selbst geht kurz in den Warp: leichter Zoom plus Bewegungsunschärfe. */
+  .is-warping #page { animation: warp-page var(--warp-dur, 900ms) ease-in-out both; }
+  @keyframes warp-page {
+    0%   { transform: none; filter: none; }
+    45%  { transform: scale(1.05); filter: blur(3px) brightness(1.05); }
+    100% { transform: none; filter: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .warp-fx.is-on .warp-streak, .is-warping #page { animation: none; }
+    #warp-top.is-launching { transition: none; }
+  }
+
   /* API-Tabellen */
   table.api { border-collapse: collapse; width: 100%; font-size: 13.5px; margin: 14px 0; }
   table.api th, table.api td {
@@ -73,13 +145,13 @@
   }
 </style>
 <style>/*! tailwindcss v4.3.3 | MIT License | https://tailwindcss.com */
-@layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-border-style:solid;--tw-leading:initial;--tw-font-weight:initial;--tw-tracking:initial;--tw-ordinal:initial;--tw-slashed-zero:initial;--tw-numeric-figure:initial;--tw-numeric-spacing:initial;--tw-numeric-fraction:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-outline-style:solid;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial}}}@layer theme{:root,:host{--font-sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--font-mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;--color-white:#fff;--spacing:.25rem;--text-xs:.75rem;--text-xs--line-height:calc(1 / .75);--text-sm:.875rem;--text-sm--line-height:calc(1.25 / .875);--text-base:1rem;--text-base--line-height:calc(1.5 / 1);--text-xl:1.25rem;--text-xl--line-height:calc(1.75 / 1.25);--font-weight-normal:400;--font-weight-semibold:600;--font-weight-bold:700;--radius-md:.375rem;--radius-lg:.5rem;--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;-webkit-text-decoration:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring:where(:not(iframe)){outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab, red, red)){::placeholder{color:color-mix(in oklab, currentcolor 50%, transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}::-webkit-calendar-picker-indicator{line-height:1}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.collapse{visibility:collapse}.invisible{visibility:hidden}.visible{visibility:visible}.sr-only{clip-path:inset(50%);white-space:nowrap;border-width:0;width:1px;height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden}.absolute{position:absolute}.fixed{position:fixed}.relative{position:relative}.container{width:100%}@media (min-width:40rem){.container{max-width:40rem}}@media (min-width:48rem){.container{max-width:48rem}}@media (min-width:64rem){.container{max-width:64rem}}@media (min-width:80rem){.container{max-width:80rem}}@media (min-width:96rem){.container{max-width:96rem}}.m-0{margin:0}.mx-auto{margin-inline:auto}.mt-2{margin-top:calc(var(--spacing) * 2)}.mt-3{margin-top:calc(var(--spacing) * 3)}.mt-4{margin-top:calc(var(--spacing) * 4)}.mt-6{margin-top:calc(var(--spacing) * 6)}.mt-8{margin-top:calc(var(--spacing) * 8)}.mt-12{margin-top:calc(var(--spacing) * 12)}.mr-2{margin-right:calc(var(--spacing) * 2)}.mr-2\.5{margin-right:calc(var(--spacing) * 2.5)}.mb-0{margin-bottom:0}.mb-1{margin-bottom:var(--spacing)}.mb-2{margin-bottom:calc(var(--spacing) * 2)}.mb-2\.5{margin-bottom:calc(var(--spacing) * 2.5)}.mb-3{margin-bottom:calc(var(--spacing) * 3)}.mb-3\.5{margin-bottom:calc(var(--spacing) * 3.5)}.mb-4{margin-bottom:calc(var(--spacing) * 4)}.mb-6{margin-bottom:calc(var(--spacing) * 6)}.mb-10{margin-bottom:calc(var(--spacing) * 10)}.ml-1{margin-left:var(--spacing)}.ml-1\.5{margin-left:calc(var(--spacing) * 1.5)}.block{display:block}.contents{display:contents}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline{display:inline}.inline-block{display:inline-block}.table{display:table}.size-1{width:var(--spacing);height:var(--spacing)}.size-1\.5{width:calc(var(--spacing) * 1.5);height:calc(var(--spacing) * 1.5)}.h-auto{height:auto}.w-full{width:100%}.max-w-\[62ch\]{max-width:62ch}.max-w-\[440px\]{max-width:440px}.max-w-\[1080px\]{max-width:1080px}.max-w-full{max-width:100%}.min-w-0{min-width:0}.grow{flex-grow:1}.border-collapse{border-collapse:collapse}.transform{transform:var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,)}.cursor-pointer{cursor:pointer}.list-none{list-style-type:none}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-\[repeat\(auto-fit\,minmax\(260px\,1fr\)\)\]{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.flex-wrap{flex-wrap:wrap}.gap-0{gap:0}.gap-2{gap:calc(var(--spacing) * 2)}.gap-2\.5{gap:calc(var(--spacing) * 2.5)}.gap-5{gap:calc(var(--spacing) * 5)}.overflow-x-auto{overflow-x:auto}.rounded{border-radius:.25rem}.rounded-full{border-radius:3.40282e38px}.rounded-md{border-radius:var(--radius-md)}.border{border-style:var(--tw-border-style);border-width:1px}.border-t{border-top-style:var(--tw-border-style);border-top-width:1px}.border-\(--hairline\){border-color:var(--hairline)}.bg-\(--accent\){background-color:var(--accent)}.bg-\(--surface\){background-color:var(--surface)}.bg-white{background-color:var(--color-white)}.p-0{padding:0}.px-2{padding-inline:calc(var(--spacing) * 2)}.px-5{padding-inline:calc(var(--spacing) * 5)}.py-1{padding-block:var(--spacing)}.py-1\.5{padding-block:calc(var(--spacing) * 1.5)}.pt-5{padding-top:calc(var(--spacing) * 5)}.pt-7{padding-top:calc(var(--spacing) * 7)}.pb-24{padding-bottom:calc(var(--spacing) * 24)}.text-center{text-align:center}.align-\[2px\]{vertical-align:2px}.font-mono{font-family:var(--font-mono)}.font-sans{font-family:var(--font-sans)}.text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}.text-\[11px\]{font-size:11px}.text-\[12\.5px\]{font-size:12.5px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-\[16px\]{font-size:16px}.text-\[17px\]{font-size:17px}.text-\[clamp\(28px\,5vw\,40px\)\]{font-size:clamp(28px,5vw,40px)}.leading-\[1\.15\]{--tw-leading:1.15;line-height:1.15}.leading-\[1\.65\]{--tw-leading:1.65;line-height:1.65}.font-bold{--tw-font-weight:var(--font-weight-bold);font-weight:var(--font-weight-bold)}.font-normal{--tw-font-weight:var(--font-weight-normal);font-weight:var(--font-weight-normal)}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.tracking-\[-0\.02em\]{--tw-tracking:-.02em;letter-spacing:-.02em}.tracking-\[-0\.03em\]{--tw-tracking:-.03em;letter-spacing:-.03em}.tracking-\[0\.14em\]{--tw-tracking:.14em;letter-spacing:.14em}.text-balance{text-wrap:balance}.text-\(--accent\){color:var(--accent)}.text-\(--ink\){color:var(--ink)}.text-\(--muted\){color:var(--muted)}.uppercase{text-transform:uppercase}.italic{font-style:italic}.tabular-nums{--tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,)}.no-underline{text-decoration-line:none}.underline{text-decoration-line:underline}.shadow{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a), 0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}.shadow-\[0_8px_28px_rgba\(15\,20\,32\,0\.25\)\]{--tw-shadow:0 8px 28px var(--tw-shadow-color,#0f142040);box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}.ring{--tw-ring-shadow:var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}.outline{outline-style:var(--tw-outline-style);outline-width:1px}.grayscale{--tw-grayscale:grayscale(100%);filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}.filter{filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}@media (hover:hover){.hover\:underline:hover{text-decoration-line:underline}}@media not all and (min-width:48rem){.max-md\:flex{display:flex}.max-md\:w-auto{width:auto}.max-md\:flex-wrap{flex-wrap:wrap}.max-md\:gap-1{gap:var(--spacing)}}@media (min-width:48rem){.md\:sticky{position:sticky}.md\:top-0{top:0}.md\:max-h-screen{max-height:100vh}.md\:grid-cols-\[200px_minmax\(0\,1fr\)\]{grid-template-columns:200px minmax(0,1fr)}.md\:gap-12{gap:calc(var(--spacing) * 12)}.md\:self-start{align-self:flex-start}.md\:overflow-y-auto{overflow-y:auto}.md\:pb-6{padding-bottom:calc(var(--spacing) * 6)}}}.nav-link{border-left-style:var(--tw-border-style);border-left-width:2px;border-color:var(--hairline);padding-inline:calc(var(--spacing) * 2.5);padding-block:var(--spacing);font-family:var(--font-mono);color:var(--muted);font-size:12.5px;text-decoration-line:none;display:block}@media (hover:hover){.nav-link:hover{border-color:var(--muted);color:var(--ink)}}@media not all and (min-width:48rem){.nav-link{border-style:var(--tw-border-style);padding-inline:calc(var(--spacing) * 2.5);border-width:1px;border-radius:3.40282e38px}}.stat{border-radius:var(--radius-md);border-style:var(--tw-border-style);border-width:1px;border-color:var(--hairline);background-color:var(--surface);padding-inline:calc(var(--spacing) * 3.5);padding-block:calc(var(--spacing) * 2.5);color:var(--muted);font-size:12.5px}.stat b{font-family:var(--font-mono);font-size:var(--text-base);line-height:var(--tw-leading,var(--text-base--line-height));--tw-tracking:-.02em;letter-spacing:-.02em;color:var(--ink);--tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);display:block}.chip{margin-left:calc(var(--spacing) * 2);background-color:var(--accent-soft);padding-inline:calc(var(--spacing) * 2);padding-block:calc(var(--spacing) * .5);vertical-align:3px;font-family:var(--font-mono);--tw-font-weight:var(--font-weight-semibold);font-size:10.5px;font-weight:var(--font-weight-semibold);--tw-tracking:.1em;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;border-radius:3.40282e38px;display:inline-block}.doc-section{margin-top:calc(var(--spacing) * 10);scroll-margin-top:calc(var(--spacing) * 4);border-top-style:var(--tw-border-style);border-top-width:1px;border-color:var(--hairline);padding-top:calc(var(--spacing) * 8)}.doc-h2{margin-bottom:var(--spacing);font-family:var(--font-mono);font-size:var(--text-xl);line-height:var(--tw-leading,var(--text-xl--line-height));--tw-font-weight:var(--font-weight-bold);font-weight:var(--font-weight-bold);--tw-tracking:-.02em;letter-spacing:-.02em}.doc-h3{margin-top:calc(var(--spacing) * 6);margin-bottom:calc(var(--spacing) * 1.5);font-family:var(--font-mono);--tw-font-weight:var(--font-weight-semibold);font-size:14.5px;font-weight:var(--font-weight-semibold);--tw-tracking:-.01em;letter-spacing:-.01em}.hint{margin-block:calc(var(--spacing) * 4);border-top-right-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg);border-left-style:var(--tw-border-style);border-left-width:3px;border-color:var(--accent);background-color:var(--surface);max-width:68ch;padding-inline:calc(var(--spacing) * 4);padding-block:calc(var(--spacing) * 3);font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.code-block{margin-block:calc(var(--spacing) * 3.5);border-radius:var(--radius-lg);background-color:var(--code-bg);padding-inline:18px;padding-block:calc(var(--spacing) * 4);font-family:var(--font-mono);--tw-leading:1.6;color:var(--code-ink);font-size:13px;line-height:1.6;overflow-x:auto}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-ordinal{syntax:"*";inherits:false}@property --tw-slashed-zero{syntax:"*";inherits:false}@property --tw-numeric-figure{syntax:"*";inherits:false}@property --tw-numeric-spacing{syntax:"*";inherits:false}@property --tw-numeric-fraction{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}</style>
+@layer properties{@supports (((-webkit-hyphens:none)) and (not (margin-trim:inline))) or ((-moz-orient:inline) and (not (color:rgb(from red r g b)))){*,:before,:after,::backdrop{--tw-rotate-x:initial;--tw-rotate-y:initial;--tw-rotate-z:initial;--tw-skew-x:initial;--tw-skew-y:initial;--tw-border-style:solid;--tw-leading:initial;--tw-font-weight:initial;--tw-tracking:initial;--tw-ordinal:initial;--tw-slashed-zero:initial;--tw-numeric-figure:initial;--tw-numeric-spacing:initial;--tw-numeric-fraction:initial;--tw-shadow:0 0 #0000;--tw-shadow-color:initial;--tw-shadow-alpha:100%;--tw-inset-shadow:0 0 #0000;--tw-inset-shadow-color:initial;--tw-inset-shadow-alpha:100%;--tw-ring-color:initial;--tw-ring-shadow:0 0 #0000;--tw-inset-ring-color:initial;--tw-inset-ring-shadow:0 0 #0000;--tw-ring-inset:initial;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-offset-shadow:0 0 #0000;--tw-outline-style:solid;--tw-blur:initial;--tw-brightness:initial;--tw-contrast:initial;--tw-grayscale:initial;--tw-hue-rotate:initial;--tw-invert:initial;--tw-opacity:initial;--tw-saturate:initial;--tw-sepia:initial;--tw-drop-shadow:initial;--tw-drop-shadow-color:initial;--tw-drop-shadow-alpha:100%;--tw-drop-shadow-size:initial;--tw-ease:initial;--tw-duration:initial}}}@layer theme{:root,:host{--font-sans:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";--font-mono:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;--color-white:#fff;--spacing:.25rem;--text-xs:.75rem;--text-xs--line-height:calc(1 / .75);--text-sm:.875rem;--text-sm--line-height:calc(1.25 / .875);--text-base:1rem;--text-base--line-height:calc(1.5 / 1);--text-xl:1.25rem;--text-xl--line-height:calc(1.75 / 1.25);--font-weight-normal:400;--font-weight-semibold:600;--font-weight-bold:700;--radius-md:.375rem;--radius-lg:.5rem;--ease-in-out:cubic-bezier(.4, 0, .2, 1);--default-transition-duration:.15s;--default-transition-timing-function:cubic-bezier(.4, 0, .2, 1);--default-font-family:var(--font-sans);--default-mono-font-family:var(--font-mono)}}@layer base{*,:after,:before,::backdrop{box-sizing:border-box;border:0 solid;margin:0;padding:0}::file-selector-button{box-sizing:border-box;border:0 solid;margin:0;padding:0}html,:host{-webkit-text-size-adjust:100%;tab-size:4;line-height:1.5;font-family:var(--default-font-family,-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Noto Sans", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji");font-feature-settings:var(--default-font-feature-settings,normal);font-variation-settings:var(--default-font-variation-settings,normal);-webkit-tap-highlight-color:transparent}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;-webkit-text-decoration:inherit;-webkit-text-decoration:inherit;-webkit-text-decoration:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,samp,pre{font-family:var(--default-mono-font-family,ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace);font-feature-settings:var(--default-mono-font-feature-settings,normal);font-variation-settings:var(--default-mono-font-variation-settings,normal);font-size:1em}small{font-size:80%}sub,sup{vertical-align:baseline;font-size:75%;line-height:0;position:relative}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}:-moz-focusring:where(:not(iframe)){outline:auto}progress{vertical-align:baseline}summary{display:list-item}ol,ul,menu{list-style:none}img,svg,video,canvas,audio,iframe,embed,object{vertical-align:middle;display:block}img,video{max-width:100%;height:auto}button,input,select,optgroup,textarea{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}::file-selector-button{font:inherit;font-feature-settings:inherit;font-variation-settings:inherit;letter-spacing:inherit;color:inherit;opacity:1;background-color:#0000;border-radius:0}:where(select:is([multiple],[size])) optgroup{font-weight:bolder}:where(select:is([multiple],[size])) optgroup option{padding-inline-start:20px}::file-selector-button{margin-inline-end:4px}::placeholder{opacity:1}@supports (not ((-webkit-appearance:-apple-pay-button))) or (contain-intrinsic-size:1px){::placeholder{color:currentColor}@supports (color:color-mix(in lab, red, red)){::placeholder{color:color-mix(in oklab, currentcolor 50%, transparent)}}}textarea{resize:vertical}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-date-and-time-value{min-height:1lh;text-align:inherit}::-webkit-datetime-edit{display:inline-flex}::-webkit-datetime-edit-fields-wrapper{padding:0}::-webkit-datetime-edit{padding-block:0}::-webkit-datetime-edit-year-field{padding-block:0}::-webkit-datetime-edit-month-field{padding-block:0}::-webkit-datetime-edit-day-field{padding-block:0}::-webkit-datetime-edit-hour-field{padding-block:0}::-webkit-datetime-edit-minute-field{padding-block:0}::-webkit-datetime-edit-second-field{padding-block:0}::-webkit-datetime-edit-millisecond-field{padding-block:0}::-webkit-datetime-edit-meridiem-field{padding-block:0}::-webkit-calendar-picker-indicator{line-height:1}:-moz-ui-invalid{box-shadow:none}button,input:where([type=button],[type=reset],[type=submit]){appearance:button}::file-selector-button{appearance:button}::-webkit-inner-spin-button{height:auto}::-webkit-outer-spin-button{height:auto}[hidden]:where(:not([hidden=until-found])){display:none!important}}@layer components;@layer utilities{.collapse{visibility:collapse}.invisible{visibility:hidden}.visible{visibility:visible}.sr-only{clip-path:inset(50%);white-space:nowrap;border-width:0;width:1px;height:1px;margin:-1px;padding:0;position:absolute;overflow:hidden}.absolute{position:absolute}.fixed{position:fixed}.relative{position:relative}.container{width:100%}@media (min-width:40rem){.container{max-width:40rem}}@media (min-width:48rem){.container{max-width:48rem}}@media (min-width:64rem){.container{max-width:64rem}}@media (min-width:80rem){.container{max-width:80rem}}@media (min-width:96rem){.container{max-width:96rem}}.m-0{margin:0}.mx-auto{margin-inline:auto}.mt-2{margin-top:calc(var(--spacing) * 2)}.mt-3{margin-top:calc(var(--spacing) * 3)}.mt-4{margin-top:calc(var(--spacing) * 4)}.mt-6{margin-top:calc(var(--spacing) * 6)}.mt-8{margin-top:calc(var(--spacing) * 8)}.mt-12{margin-top:calc(var(--spacing) * 12)}.mr-2{margin-right:calc(var(--spacing) * 2)}.mr-2\.5{margin-right:calc(var(--spacing) * 2.5)}.mb-0{margin-bottom:0}.mb-1{margin-bottom:var(--spacing)}.mb-2{margin-bottom:calc(var(--spacing) * 2)}.mb-2\.5{margin-bottom:calc(var(--spacing) * 2.5)}.mb-3{margin-bottom:calc(var(--spacing) * 3)}.mb-3\.5{margin-bottom:calc(var(--spacing) * 3.5)}.mb-4{margin-bottom:calc(var(--spacing) * 4)}.mb-6{margin-bottom:calc(var(--spacing) * 6)}.mb-10{margin-bottom:calc(var(--spacing) * 10)}.ml-1{margin-left:var(--spacing)}.ml-1\.5{margin-left:calc(var(--spacing) * 1.5)}.ml-auto{margin-left:auto}.block{display:block}.contents{display:contents}.flex{display:flex}.grid{display:grid}.hidden{display:none}.inline{display:inline}.inline-block{display:inline-block}.table{display:table}.size-1{width:var(--spacing);height:var(--spacing)}.size-1\.5{width:calc(var(--spacing) * 1.5);height:calc(var(--spacing) * 1.5)}.h-auto{height:auto}.w-full{width:100%}.max-w-\[62ch\]{max-width:62ch}.max-w-\[440px\]{max-width:440px}.max-w-\[1080px\]{max-width:1080px}.max-w-full{max-width:100%}.min-w-0{min-width:0}.grow{flex-grow:1}.border-collapse{border-collapse:collapse}.transform{transform:var(--tw-rotate-x,) var(--tw-rotate-y,) var(--tw-rotate-z,) var(--tw-skew-x,) var(--tw-skew-y,)}.cursor-pointer{cursor:pointer}.list-none{list-style-type:none}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-\[repeat\(auto-fit\,minmax\(260px\,1fr\)\)\]{grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}.flex-wrap{flex-wrap:wrap}.gap-0{gap:0}.gap-2{gap:calc(var(--spacing) * 2)}.gap-2\.5{gap:calc(var(--spacing) * 2.5)}.gap-5{gap:calc(var(--spacing) * 5)}.overflow-x-auto{overflow-x:auto}.rounded{border-radius:.25rem}.rounded-full{border-radius:3.40282e38px}.rounded-md{border-radius:var(--radius-md)}.border{border-style:var(--tw-border-style);border-width:1px}.border-t{border-top-style:var(--tw-border-style);border-top-width:1px}.border-\(--hairline\){border-color:var(--hairline)}.bg-\(--accent\){background-color:var(--accent)}.bg-\(--surface\){background-color:var(--surface)}.bg-white{background-color:var(--color-white)}.p-0{padding:0}.px-2{padding-inline:calc(var(--spacing) * 2)}.px-5{padding-inline:calc(var(--spacing) * 5)}.py-1{padding-block:var(--spacing)}.py-1\.5{padding-block:calc(var(--spacing) * 1.5)}.pt-5{padding-top:calc(var(--spacing) * 5)}.pt-7{padding-top:calc(var(--spacing) * 7)}.pb-24{padding-bottom:calc(var(--spacing) * 24)}.text-center{text-align:center}.align-\[2px\]{vertical-align:2px}.font-mono{font-family:var(--font-mono)}.font-sans{font-family:var(--font-sans)}.text-xs{font-size:var(--text-xs);line-height:var(--tw-leading,var(--text-xs--line-height))}.text-\[11px\]{font-size:11px}.text-\[12\.5px\]{font-size:12.5px}.text-\[13px\]{font-size:13px}.text-\[15px\]{font-size:15px}.text-\[16px\]{font-size:16px}.text-\[17px\]{font-size:17px}.text-\[clamp\(28px\,5vw\,40px\)\]{font-size:clamp(28px,5vw,40px)}.leading-\[1\.15\]{--tw-leading:1.15;line-height:1.15}.leading-\[1\.65\]{--tw-leading:1.65;line-height:1.65}.font-bold{--tw-font-weight:var(--font-weight-bold);font-weight:var(--font-weight-bold)}.font-normal{--tw-font-weight:var(--font-weight-normal);font-weight:var(--font-weight-normal)}.font-semibold{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold)}.tracking-\[-0\.02em\]{--tw-tracking:-.02em;letter-spacing:-.02em}.tracking-\[-0\.03em\]{--tw-tracking:-.03em;letter-spacing:-.03em}.tracking-\[0\.14em\]{--tw-tracking:.14em;letter-spacing:.14em}.text-balance{text-wrap:balance}.text-\(--accent\){color:var(--accent)}.text-\(--ink\){color:var(--ink)}.text-\(--muted\){color:var(--muted)}.uppercase{text-transform:uppercase}.italic{font-style:italic}.tabular-nums{--tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,)}.no-underline{text-decoration-line:none}.underline{text-decoration-line:underline}.shadow{--tw-shadow:0 1px 3px 0 var(--tw-shadow-color,#0000001a), 0 1px 2px -1px var(--tw-shadow-color,#0000001a);box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}.shadow-\[0_8px_28px_rgba\(15\,20\,32\,0\.25\)\]{--tw-shadow:0 8px 28px var(--tw-shadow-color,#0f142040);box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}.ring{--tw-ring-shadow:var(--tw-ring-inset,) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color,currentcolor);box-shadow:var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow)}.outline{outline-style:var(--tw-outline-style);outline-width:1px}.grayscale{--tw-grayscale:grayscale(100%);filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}.filter{filter:var(--tw-blur,) var(--tw-brightness,) var(--tw-contrast,) var(--tw-grayscale,) var(--tw-hue-rotate,) var(--tw-invert,) var(--tw-saturate,) var(--tw-sepia,) var(--tw-drop-shadow,)}.transition{transition-property:color,background-color,border-color,outline-color,text-decoration-color,fill,stroke,--tw-gradient-from,--tw-gradient-via,--tw-gradient-to,opacity,box-shadow,transform,translate,scale,rotate,filter,-webkit-backdrop-filter,backdrop-filter,display,content-visibility,overlay,pointer-events;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration))}.ease-in-out{--tw-ease:var(--ease-in-out);transition-timing-function:var(--ease-in-out)}@media (hover:hover){.hover\:underline:hover{text-decoration-line:underline}}@media not all and (min-width:48rem){.max-md\:flex{display:flex}.max-md\:w-auto{width:auto}.max-md\:flex-wrap{flex-wrap:wrap}.max-md\:gap-1{gap:var(--spacing)}}@media (min-width:48rem){.md\:sticky{position:sticky}.md\:top-0{top:0}.md\:max-h-screen{max-height:100vh}.md\:grid-cols-\[200px_minmax\(0\,1fr\)\]{grid-template-columns:200px minmax(0,1fr)}.md\:gap-12{gap:calc(var(--spacing) * 12)}.md\:self-start{align-self:flex-start}.md\:overflow-y-auto{overflow-y:auto}.md\:pb-6{padding-bottom:calc(var(--spacing) * 6)}}}.nav-link{border-left-style:var(--tw-border-style);border-left-width:2px;border-color:var(--hairline);padding-inline:calc(var(--spacing) * 2.5);padding-block:var(--spacing);font-family:var(--font-mono);color:var(--muted);font-size:12.5px;text-decoration-line:none;display:block}@media (hover:hover){.nav-link:hover{border-color:var(--muted);color:var(--ink)}}@media not all and (min-width:48rem){.nav-link{border-style:var(--tw-border-style);padding-inline:calc(var(--spacing) * 2.5);border-width:1px;border-radius:3.40282e38px}}.stat{border-radius:var(--radius-md);border-style:var(--tw-border-style);border-width:1px;border-color:var(--hairline);background-color:var(--surface);padding-inline:calc(var(--spacing) * 3.5);padding-block:calc(var(--spacing) * 2.5);color:var(--muted);font-size:12.5px}.stat b{font-family:var(--font-mono);font-size:var(--text-base);line-height:var(--tw-leading,var(--text-base--line-height));--tw-tracking:-.02em;letter-spacing:-.02em;color:var(--ink);--tw-numeric-spacing:tabular-nums;font-variant-numeric:var(--tw-ordinal,) var(--tw-slashed-zero,) var(--tw-numeric-figure,) var(--tw-numeric-spacing,) var(--tw-numeric-fraction,);display:block}.chip{margin-left:calc(var(--spacing) * 2);background-color:var(--accent-soft);padding-inline:calc(var(--spacing) * 2);padding-block:calc(var(--spacing) * .5);vertical-align:3px;font-family:var(--font-mono);--tw-font-weight:var(--font-weight-semibold);font-size:10.5px;font-weight:var(--font-weight-semibold);--tw-tracking:.1em;letter-spacing:.1em;color:var(--accent);text-transform:uppercase;border-radius:3.40282e38px;display:inline-block}.doc-section{margin-top:calc(var(--spacing) * 10);scroll-margin-top:calc(var(--spacing) * 4);border-top-style:var(--tw-border-style);border-top-width:1px;border-color:var(--hairline);padding-top:calc(var(--spacing) * 8)}.doc-h2{margin-bottom:var(--spacing);font-family:var(--font-mono);font-size:var(--text-xl);line-height:var(--tw-leading,var(--text-xl--line-height));--tw-font-weight:var(--font-weight-bold);font-weight:var(--font-weight-bold);--tw-tracking:-.02em;letter-spacing:-.02em}.doc-h3{margin-top:calc(var(--spacing) * 6);margin-bottom:calc(var(--spacing) * 1.5);font-family:var(--font-mono);--tw-font-weight:var(--font-weight-semibold);font-size:14.5px;font-weight:var(--font-weight-semibold);--tw-tracking:-.01em;letter-spacing:-.01em}.hint{margin-block:calc(var(--spacing) * 4);border-top-right-radius:var(--radius-lg);border-bottom-right-radius:var(--radius-lg);border-left-style:var(--tw-border-style);border-left-width:3px;border-color:var(--accent);background-color:var(--surface);max-width:68ch;padding-inline:calc(var(--spacing) * 4);padding-block:calc(var(--spacing) * 3);font-size:var(--text-sm);line-height:var(--tw-leading,var(--text-sm--line-height))}.code-block{margin-block:calc(var(--spacing) * 3.5);border-radius:var(--radius-lg);background-color:var(--code-bg);padding-inline:18px;padding-block:calc(var(--spacing) * 4);font-family:var(--font-mono);--tw-leading:1.6;color:var(--code-ink);font-size:13px;line-height:1.6;overflow-x:auto}.fold{margin-block:calc(var(--spacing) * 3.5);border-radius:var(--radius-lg);border-style:var(--tw-border-style);border-width:1px;border-color:var(--hairline);background-color:var(--surface);transition:border-color .2s;overflow:hidden}.fold:not([open]):hover{border-color:var(--accent)}.fold>summary{cursor:pointer;padding-inline:calc(var(--spacing) * 4);padding-block:calc(var(--spacing) * 2.5);-webkit-user-select:none;user-select:none;list-style-type:none;display:block}.fold>summary::-webkit-details-marker{display:none}.fold>summary:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}.fold-head{align-items:center;gap:calc(var(--spacing) * 2);font-family:var(--font-mono);color:var(--muted);font-size:12.5px;display:flex}.fold>summary:hover .fold-head{color:var(--ink)}.fold-head:before{content:"▸";color:var(--accent);transition-property:transform,translate,scale,rotate;transition-timing-function:var(--tw-ease,var(--default-transition-timing-function));transition-duration:var(--tw-duration,var(--default-transition-duration));--tw-duration:.2s;transition-duration:.2s;display:inline-block}.fold[open] .fold-head:before{transform:rotate(90deg)}.fold-peek{pointer-events:none;max-height:62px;margin:9px -17px -11px;display:block;position:relative;overflow:hidden;-webkit-mask-image:linear-gradient(#000 15%,#0000 97%);mask-image:linear-gradient(#000 15%,#0000 97%)}.fold[open] .fold-peek{display:none}.fold-peek-code{background-color:var(--code-bg);padding-inline:18px;padding-top:calc(var(--spacing) * 3);font-family:var(--font-mono);--tw-leading:1.6;color:var(--code-ink);white-space:pre;font-size:12.5px;line-height:1.6;display:block}.fold-peek-text{padding-inline:17px;padding-top:var(--spacing);--tw-leading:1.55;color:var(--muted);font-size:13.5px;line-height:1.55;display:block}.fold>.code-block{border-top-style:var(--tw-border-style);border-top-width:1px;border-color:var(--hairline);border-radius:0;margin:0}.cl-body{border-top-style:var(--tw-border-style);border-top-width:1px;border-color:var(--hairline);padding-inline:calc(var(--spacing) * 4);padding-block:calc(var(--spacing) * 3)}.cl-h{margin-top:calc(var(--spacing) * 3.5);margin-bottom:var(--spacing);font-family:var(--font-mono);--tw-font-weight:var(--font-weight-semibold);font-size:10.5px;font-weight:var(--font-weight-semibold);--tw-tracking:.12em;letter-spacing:.12em;color:var(--accent);text-transform:uppercase}.cl-body>.cl-h:first-child{margin-top:0}.cl-list{padding-left:calc(var(--spacing) * 5);--tw-leading:1.55;color:var(--muted);margin-block:0;font-size:13.5px;line-height:1.55;list-style-type:disc}.cl-list li{margin-top:calc(var(--spacing) * 1.5);max-width:68ch}.cl-list b{--tw-font-weight:var(--font-weight-semibold);font-weight:var(--font-weight-semibold);color:var(--ink)}.cl-note{--tw-leading:1.55;max-width:68ch;color:var(--muted);font-size:13.5px;line-height:1.55}@property --tw-rotate-x{syntax:"*";inherits:false}@property --tw-rotate-y{syntax:"*";inherits:false}@property --tw-rotate-z{syntax:"*";inherits:false}@property --tw-skew-x{syntax:"*";inherits:false}@property --tw-skew-y{syntax:"*";inherits:false}@property --tw-border-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-leading{syntax:"*";inherits:false}@property --tw-font-weight{syntax:"*";inherits:false}@property --tw-tracking{syntax:"*";inherits:false}@property --tw-ordinal{syntax:"*";inherits:false}@property --tw-slashed-zero{syntax:"*";inherits:false}@property --tw-numeric-figure{syntax:"*";inherits:false}@property --tw-numeric-spacing{syntax:"*";inherits:false}@property --tw-numeric-fraction{syntax:"*";inherits:false}@property --tw-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-shadow-color{syntax:"*";inherits:false}@property --tw-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-inset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-shadow-color{syntax:"*";inherits:false}@property --tw-inset-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-ring-color{syntax:"*";inherits:false}@property --tw-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-inset-ring-color{syntax:"*";inherits:false}@property --tw-inset-ring-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-ring-inset{syntax:"*";inherits:false}@property --tw-ring-offset-width{syntax:"<length>";inherits:false;initial-value:0}@property --tw-ring-offset-color{syntax:"*";inherits:false;initial-value:#fff}@property --tw-ring-offset-shadow{syntax:"*";inherits:false;initial-value:0 0 #0000}@property --tw-outline-style{syntax:"*";inherits:false;initial-value:solid}@property --tw-blur{syntax:"*";inherits:false}@property --tw-brightness{syntax:"*";inherits:false}@property --tw-contrast{syntax:"*";inherits:false}@property --tw-grayscale{syntax:"*";inherits:false}@property --tw-hue-rotate{syntax:"*";inherits:false}@property --tw-invert{syntax:"*";inherits:false}@property --tw-opacity{syntax:"*";inherits:false}@property --tw-saturate{syntax:"*";inherits:false}@property --tw-sepia{syntax:"*";inherits:false}@property --tw-drop-shadow{syntax:"*";inherits:false}@property --tw-drop-shadow-color{syntax:"*";inherits:false}@property --tw-drop-shadow-alpha{syntax:"<percentage>";inherits:false;initial-value:100%}@property --tw-drop-shadow-size{syntax:"*";inherits:false}@property --tw-ease{syntax:"*";inherits:false}@property --tw-duration{syntax:"*";inherits:false}</style>
 
-<div class="mx-auto grid max-w-[1080px] grid-cols-1 gap-0 px-5 pb-24 font-sans text-[16px] leading-[1.65] md:grid-cols-[200px_minmax(0,1fr)] md:gap-12">
+<div id="page" class="mx-auto grid max-w-[1080px] grid-cols-1 gap-0 px-5 pb-24 font-sans text-[16px] leading-[1.65] md:grid-cols-[200px_minmax(0,1fr)] md:gap-12">
 
 <nav aria-label="Contents" class="pt-7 md:sticky md:top-0 md:max-h-screen md:self-start md:overflow-y-auto md:pb-6">
   <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">fast-<span class="text-(--accent)">pdf</span></div>
-  <div class="mb-3 font-mono text-xs text-(--muted)">v0.5.0 · Demo &amp; Guide</div>
+  <div class="mb-3 font-mono text-xs text-(--muted)">v0.6.0 · Demo &amp; Guide</div>
 
   <label class="mb-4 block">
     <span class="sr-only">Language / Sprache / 语言</span>
@@ -109,6 +181,7 @@
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
     <li><a class="nav-link" href="#templates">Templates &amp; AI skill</a></li>
+    <li><a class="nav-link" href="#changelog">Changelog</a></li>
   </ul>
   <ul data-lang="de" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">Schnellstart</a></li>
@@ -128,6 +201,7 @@
     <li><a class="nav-link" href="#performance">Performance</a></li>
     <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
     <li><a class="nav-link" href="#templates">Templates &amp; AI-Skill</a></li>
+    <li><a class="nav-link" href="#changelog">Changelog</a></li>
   </ul>
   <ul data-lang="zh" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
     <li><a class="nav-link" href="#schnellstart">快速开始</a></li>
@@ -147,6 +221,7 @@
     <li><a class="nav-link" href="#performance">性能</a></li>
     <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
     <li><a class="nav-link" href="#templates">模板与 AI 技能</a></li>
+    <li><a class="nav-link" href="#changelog">Changelog</a></li>
   </ul>
 </nav>
 
@@ -264,7 +339,12 @@ deno add npm:fast-pdf    // Deno ≥ 2 — oder direkt aus "npm:fast-pdf" import
 bun add fast-pdf         // Bun
 deno add npm:fast-pdf    // Deno ≥ 2 —— 也可直接从 "npm:fast-pdf" 导入</code></pre>
 
-<pre data-lang="en" class="code-block"><code>import { readFile } from "node:fs/promises";
+<details data-lang="en" class="fold">
+<summary><span class="fold-head">brief.ts — the complete program, 83 lines</span><span class="fold-peek"><span class="fold-peek-code">import { readFile } from "node:fs/promises";
+import { PDFDocument } from "fast-pdf";
+
+const pdf = new PDFDocument({ format: "A4", margins: 64 });</span></span></summary>
+<pre class="code-block"><code>import { readFile } from "node:fs/promises";
 import { PDFDocument } from "fast-pdf";
 
 const INK = "#101828", MUTED = "#667085", FAINT = "#e4e7ec", ACCENT = "#4f46e5";
@@ -347,7 +427,13 @@ pdf.text("Prices excluding VAT · valid for 30 days · example-software.com",
   { x: 64, y: height - 74, width: width - 128, size: 8.5, color: MUTED, align: "center" });
 
 await pdf.save("brief.pdf");</code></pre>
-<pre data-lang="de" hidden class="code-block"><code>import { readFile } from "node:fs/promises";
+</details>
+<details data-lang="de" hidden class="fold">
+<summary><span class="fold-head">brief.ts — das komplette Programm, 83 Zeilen</span><span class="fold-peek"><span class="fold-peek-code">import { readFile } from "node:fs/promises";
+import { PDFDocument } from "fast-pdf";
+
+const pdf = new PDFDocument({ format: "A4", margins: 64 });</span></span></summary>
+<pre class="code-block"><code>import { readFile } from "node:fs/promises";
 import { PDFDocument } from "fast-pdf";
 
 const INK = "#101828", MUTED = "#667085", FAINT = "#e4e7ec", ACCENT = "#4f46e5";
@@ -430,7 +516,13 @@ pdf.text("Prices excluding VAT · valid for 30 days · example-software.com",
   { x: 64, y: height - 74, width: width - 128, size: 8.5, color: MUTED, align: "center" });
 
 await pdf.save("brief.pdf");</code></pre>
-<pre data-lang="zh" hidden class="code-block"><code>import { readFile } from "node:fs/promises";
+</details>
+<details data-lang="zh" hidden class="fold">
+<summary><span class="fold-head">brief.ts — 完整程序，83 行</span><span class="fold-peek"><span class="fold-peek-code">import { readFile } from "node:fs/promises";
+import { PDFDocument } from "fast-pdf";
+
+const pdf = new PDFDocument({ format: "A4", margins: 64 });</span></span></summary>
+<pre class="code-block"><code>import { readFile } from "node:fs/promises";
 import { PDFDocument } from "fast-pdf";
 
 const INK = "#101828", MUTED = "#667085", FAINT = "#e4e7ec", ACCENT = "#4f46e5";
@@ -513,6 +605,7 @@ pdf.text("Prices excluding VAT · valid for 30 days · example-software.com",
   { x: 64, y: height - 74, width: width - 128, size: 8.5, color: MUTED, align: "center" });
 
 await pdf.save("brief.pdf");</code></pre>
+</details>
 
   <figure class="mx-auto mt-6 mb-0 max-w-[440px]">
     <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) shadow-[0_8px_28px_rgba(15,20,32,0.25)]"
@@ -1571,16 +1664,302 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
     从模板出发，并在交付前对结果进行视觉校验。</div>
 </section>
 
-<footer class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
-  <span data-lang="en">fast-pdf v0.5.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
+<!-- Changelog: bewusst nur auf Englisch — Release-Notes werden nicht übersetzt,
+     damit sie 1:1 der CHANGELOG.md des Repos entsprechen. -->
+<section id="changelog" class="doc-section">
+  <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">18</span>Changelog</h2>
+
+  <p class="text-(--muted)">Release notes, newest first — kept in English so they match
+     <code>CHANGELOG.md</code> in the repository one to one. The format follows
+     <a class="text-(--accent) no-underline hover:underline" href="https://keepachangelog.com/">Keep a Changelog</a>,
+     versioning follows <a class="text-(--accent) no-underline hover:underline" href="https://semver.org/">SemVer</a>.</p>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.6.0</b><span class="ml-auto tabular-nums">2026-08-01</span></span><span class="fold-peek"><span class="fold-peek-text">Driven almost entirely by a field report from a production application that
+      builds six CV designs, a skill matrix, invoices and CLI documents with fast-pdf — in the
+      browser, on a Node server and in scripts. Every item removes something that project had to
+      build or work around by hand.</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-note">Driven almost entirely by a field report from a production application
+         that builds six CV designs, a skill matrix, invoices and CLI documents with fast-pdf —
+         in the browser, on a Node server and in scripts. Every item removes something that
+         project had to build or work around by hand. No breaking changes: existing documents
+         render as before.</p>
+
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li><b>Measurement — <code>measureText()</code>, <code>measureBlock()</code>, <code>lastBlockHeight</code>.</b>
+            The single largest gap: absolutely positioned designs had to predict their own line
+            counts, which meant reimplementing the line breaker. <code>measureText()</code> wraps
+            through the <i>same</i> engine <code>text()</code> draws with;
+            <code>measureBlock(fn, { width })</code> lays arbitrary flow content out on a throwaway
+            page and reports its height.</li>
+        <li><b><code>fontMetrics()</code></b> → <code>{ baseline, ascent, descent, capHeight, lineGap, lineHeight }</code>
+            in points, so optical alignment no longer needs a reverse-engineered constant.</li>
+        <li><b>Browser build behind the <code>browser</code> export condition.</b>
+            <code>dist/index.browser.js</code> contains no <code>fs</code> reference at all and is
+            selected automatically — no more resolve aliases and stub modules in Vite, webpack or
+            Turbopack. Also reachable as <code>fast-pdf/browser</code>.</li>
+        <li><b>Clipping in the public API — <code>clip()</code>, <code>image({ radius, shape })</code>.</b>
+            A round avatar used to require punching alpha through a <code>&lt;canvas&gt;</code>;
+            it is now a real vector path in every runtime.</li>
+        <li><b><code>opacity</code> on every primitive</b> — <code>line</code>, <code>rect</code>,
+            <code>circle</code>, <code>ellipse</code>, <code>text</code>, <code>image</code>,
+            <code>svg</code> and <code>container</code> backgrounds.</li>
+        <li><b>Flow control for absolute layouts</b> — <code>ensureSpace()</code>,
+            <code>remainingHeight</code>, <code>keepTogether()</code>, plus <code>spacingBefore</code>
+            and <code>keepWithNext</code> on <code>text()</code>.</li>
+        <li><b><code>region({ x, y, width, height, clip }, fn)</code></b> — flow content with its own
+            cursor inside any rectangle, including inside <code>onPage()</code> decorators. Returns
+            <code>{ usedHeight, remaining, overflow }</code>, so a sidebar that no longer fits says so.</li>
+        <li><b><code>flowColumns(items, options)</code></b> — newspaper-style multi-column flow that
+            runs from column 1 into column 2 and onto the next page, with <code>balance: true</code>
+            and a <code>dropped</code> report instead of silent overflow.</li>
+        <li><b><code>pdf.x</code> and <code>pdf.width</code></b> — the active flow area's left edge and
+            width; the documented bridge between flow offsets and absolute page coordinates.</li>
+        <li><b>Rotated text</b> — <code>text({ rotate })</code> for marginalia, turned column heads and
+            spine labels.</li>
+        <li><b>Table <code>valign</code> and self-drawing cells.</b> Cells take
+            <code>valign: "top" | "middle" | "bottom"</code> and a <code>render: (doc, box) =&gt; …</code>
+            callback for progress bars, badges or logos.</li>
+        <li><b><code>language</code> document option</b> → the catalog's <code>/Lang</code>, plus
+            <code>ViewerPreferences /DisplayDocTitle</code> when a title is set.</li>
+        <li><b>Synthetic italic.</b> A family registered without an italic cut is slanted by the
+            standard 12° oblique shear instead of rendering silently upright.</li>
+        <li><b>Permissions-only encryption</b> — <code>encrypt: { permissions: {…} }</code> without
+            inventing a dummy owner password, and
+            <b><code>encrypt.onUnsupported: "throw" | "skip"</code></b> for runtimes without Web Crypto.</li>
+      </ul>
+
+      <p class="cl-h">Fixed</p>
+      <ul class="cl-list">
+        <li><b><code>widthOfText()</code> ignored <code>letterSpacing</code></b> — every letterspaced
+            heading had to be corrected by hand at the call site. It now shares one measurement
+            function with the renderer.</li>
+        <li><b>SVG arc flags were mis-parsed.</b> Minifiers run <code>large-arc-flag</code> and
+            <code>sweep-flag</code> into the following number (<code>a5 5 0 0150 0</code> means
+            <code>0, 1, 50, 0</code>), which corrupted practically every icon set using
+            <code>a</code>/<code>A</code> — Lucide, Feather, Heroicons.</li>
+        <li><b>Zero-length SVG arcs emitted <code>NaN</code></b> and poisoned the rest of the path;
+            they are now dropped, per SVG 1.1 F.6.2.</li>
+        <li><b>Line breaking only considered spaces and soft hyphens.</b> Real hyphens, dashes and
+            slashes are break opportunities now (UAX #14 classes HY/BA); digit groups such as
+            <code>2026-08-01</code> and <code>3/4</code> stay whole.</li>
+        <li>Table row heights are derived from measured content height rather than line count, so
+            rows containing rendered cells size correctly.</li>
+      </ul>
+
+      <p class="cl-h">Changed</p>
+      <ul class="cl-list">
+        <li><code>wrapLines()</code> is documented and enforced as the single line-breaking
+            implementation: drawing and measuring cannot diverge by construction.</li>
+        <li><code>Font</code> implementations expose <code>capHeight</code> and <code>lineGap</code>,
+            read from <code>OS/2</code> / <code>hhea</code> for embedded fonts.</li>
+        <li>Shapes emit colour and line-width operators <i>before</i> the path is constructed, matching
+            PDF's graphics object model. Output is visually identical, but if you hash
+            <code>deterministic: true</code> output, expect new digests for documents containing
+            <code>rect()</code>, <code>circle()</code> or <code>ellipse()</code>.</li>
+        <li><code>npm run build</code> clears <code>dist/</code> itself — tsup runs the two build
+            configs concurrently, so its own <code>clean</code> would race them.</li>
+      </ul>
+
+      <p class="cl-h">Documentation</p>
+      <ul class="cl-list">
+        <li>README: measurement, regions, multi-column flow, clipping, opacity, self-drawing table
+            cells, the browser condition, and a new <b>Limitations</b> table stating plainly what
+            fast-pdf does not do (reading/merging PDFs, tagged PDF, non-signature form fields, WOFF2,
+            shaping, gradients).</li>
+        <li>Encryption is documented for the first time, including the advisory nature of PDF
+            permissions.</li>
+        <li>The font section names <code>.ttf</code> as the required format and gives a one-line WOFF2
+            conversion command.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.5.0</b><span class="ml-auto tabular-nums">2026-07-23</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li><b>WebP images (lossless).</b> <code>image()</code> accepts the VP8L profile, decoded
+            in-house to DeviceRGB plus an 8-bit <code>/SMask</code> when the picture has transparency.
+            The decoder implements the complete VP8L feature set — the four inverse transforms, the
+            colour cache, meta-Huffman code groups and LZ77 with 2-D distance mapping — with no
+            dependency, validated bit-exact against libwebp. Lossy WebP (VP8) is rejected with
+            <code>UNSUPPORTED_IMAGE</code>.</li>
+        <li><b>GIF images.</b> First frame, composited onto the logical screen; the palette is decoded
+            to DeviceRGB and a transparent colour index becomes an <code>/SMask</code>.
+            Dependency-free LZW decoder.</li>
+        <li><b>SVG rendering.</b> <code>svg()</code> renders a practical subset as native PDF vector
+            graphics — <code>rect</code>, <code>circle</code>, <code>ellipse</code>, <code>line</code>,
+            <code>polyline</code>, <code>polygon</code>, <code>path</code>, <code>text</code>, groups
+            with fills, strokes and opacity, and the full transform list.</li>
+        <li><b>Markdown rendering.</b> <code>markdown()</code> renders a CommonMark subset — headings,
+            paragraphs, lists, tables, code blocks, blockquotes, rules, and inline emphasis, links and
+            images.</li>
+        <li><b>Digital signatures.</b> <code>signature({ sign })</code> signs with a detached
+            <b>PAdES-B (CAdES)</b> signature — RSA + SHA-256, ESS signing-certificate-v2, CMS
+            SignedData built in-house and signed via Web Crypto. Validated against
+            <code>openssl cms -verify</code> and macOS Quartz.</li>
+        <li><b>Document encryption.</b> AES-256 standard security handler (revision 6 / AESV3,
+            ISO 32000-2) with user password, owner password and granular permissions. No RC4/MD5, no
+            dependency; both strings and streams are encrypted.</li>
+        <li><b>Deterministic output.</b> The <code>deterministic</code> option produces byte-identical
+            PDFs for identical input — no wall-clock timestamp unless <code>metadata.creationDate</code>
+            is set.</li>
+        <li>Every document carries a file <code>/ID</code> derived from a 128-bit digest of the file
+            body; <code>ModDate</code> is written alongside <code>CreationDate</code>.</li>
+      </ul>
+
+      <p class="cl-h">Security</p>
+      <ul class="cl-list">
+        <li>Numeric input hardening: <code>line()</code>, <code>rect()</code>, <code>circle()</code>,
+            <code>ellipse()</code> and <code>text()</code> reject <code>NaN</code>,
+            <code>±Infinity</code> and magnitudes ≥ 1e21 at the call site with the stable
+            <code>INVALID_NUMBER</code> code.</li>
+        <li><code>fmtNumber()</code> throws a typed <code>FastPDFError</code> as a last-line-of-defence
+            guard, so no code path can emit a corrupt PDF number.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.4.0</b><span class="ml-auto tabular-nums">2026-07-19</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li>The <b><code>fast-pdf-designer</code> Claude Code skill</b> ships with the package:
+            palettes, layout recipes and a visual validation loop. Install with
+            <code>npx fast-pdf-skill</code>.</li>
+        <li>The example templates (<code>examples/*.ts</code>) are part of the npm package, linked from
+            the README as copy-and-adapt starting points.</li>
+        <li><b><code>signature()</code></b> — empty AcroForm signature fields (<code>/FT /Sig</code>)
+            for contracts: draws a signature line and optional label, participates in the flow layout,
+            auto-names fields with uniqueness enforced.</li>
+      </ul>
+
+      <p class="cl-h">Security</p>
+      <ul class="cl-list">
+        <li>Link targets reject <code>javascript:</code>, <code>vbscript:</code>, <code>data:</code> and
+            <code>file:</code> schemes — including variants disguised with control characters —
+            with <code>UNSAFE_LINK</code>.</li>
+        <li>The PNG alpha decode path is hardened against decompression bombs: IDAT size is capped at
+            the size implied by the declared dimensions, pixel count at 2²⁷ (~134 MP).</li>
+        <li>Truncated or malformed PNG/JPEG files fail with typed <code>FastPDFError</code>s
+            (<code>INVALID_IMAGE_FILE</code>, <code>IMAGE_TOO_LARGE</code>) instead of
+            <code>RangeError</code>s deep in the parser; same for corrupt fonts
+            (<code>INVALID_FONT_FILE</code>).</li>
+        <li>Numbers ≥ 1e21 are rejected instead of silently serializing in exponent notation; PDF names
+            beyond U+00FF are escaped as UTF-8 byte sequences per ISO 32000-1.</li>
+        <li>Added <code>SECURITY.md</code> (threat model, reporting) and a README security section.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.3.0</b><span class="ml-auto tabular-nums">2026-07-18</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li><b><code>objectTable(records, { columns })</code></b> — render an array of records (e.g. a
+            JSON REST response) straight into a table. Columns default to the keys of the first record,
+            or you pick order, headers, widths, alignment and a per-column <code>format()</code>.</li>
+        <li><code>examples/report.ts</code> — a design-forward two-page report showing fast-pdf beyond
+            invoices.</li>
+        <li><b><code>pageBreak({ y?, format?, landscape?, margins? })</code></b> — explicit page break
+            with a controllable start position and per-page setup.</li>
+        <li>Trilingual demo page (English/German/Chinese) with a language selector.</li>
+        <li>The package builds itself on install from GitHub (<code>prepare</code> script).</li>
+      </ul>
+
+      <p class="cl-h">Fixed</p>
+      <ul class="cl-list">
+        <li>Stroke-only shapes were always drawn in black — the requested stroke colour was reset right
+            before stroking.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.2.0</b><span class="ml-auto tabular-nums">2026-07-17</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li><b>Shapes</b> — <code>circle()</code>, <code>ellipse()</code>, rounded rectangles, plus
+            Bézier/clip/transform operators in the content stream.</li>
+        <li><b>Layout engine</b> — <code>container()</code> (padding, margin, background, border,
+            radius, minHeight), <code>columns()</code>, <code>grid()</code>, relative sizes
+            (<code>"50%"</code>), block alignment.</li>
+        <li><b>Typography</b> — underline, strikethrough, letter spacing, justified text and
+            soft-hyphen (U+00AD) hyphenation.</li>
+        <li><b>Tables</b> — footer rows, <code>colSpan</code>/<code>rowSpan</code> (span groups never
+            straddle page breaks).</li>
+        <li><b>Images</b> — <code>fit: contain | cover</code>, <code>crop</code>, <code>rotate</code>,
+            <code>align</code>.</li>
+        <li><b>Document features</b> — <code>header()</code>, <code>footer()</code>,
+            <code>pageNumbers()</code>, <code>watermark()</code>, <code>outline()</code> bookmarks, link
+            annotations and a linked table of contents via <code>toc()</code>.</li>
+        <li><code>toStream()</code> output, and <code>FastPDFError</code> with stable codes.</li>
+      </ul>
+    </div>
+  </details>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.1.0</b><span class="ml-auto tabular-nums">2026-07-14</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li>Initial engine: <code>PDFDocument</code>/<code>Page</code>, multi-page documents, page
+            formats (A3–A5, Letter, Legal), landscape, margins.</li>
+        <li>Standard-14 fonts with real AFM metrics, WinAnsi encoding, TrueType embedding with
+            subsetting.</li>
+        <li>Text with word wrap, alignment and colours; automatic page breaks; tables with header
+            repetition and zebra rows; JPEG/PNG images; vector primitives.</li>
+        <li>Output as <code>Uint8Array</code>, <code>toBuffer()</code>, <code>toBlob()</code>,
+            <code>save()</code> across Node/Bun/Deno/browser.</li>
+      </ul>
+    </div>
+  </details>
+</section>
+
+<footer id="page-footer" class="mt-12 border-t border-(--hairline) pt-5 text-[13px] text-(--muted)">
+  <span data-lang="en">fast-pdf v0.6.0 · MIT license · <span class="font-mono">npm install fast-pdf</span> ·
   <a class="text-(--accent) no-underline hover:underline" href="https://github.com/Kevinci/fast-pdf">github.com/Kevinci/fast-pdf</a></span>
-  <span data-lang="de" hidden>fast-pdf v0.5.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="de" hidden>fast-pdf v0.6.0 · MIT-Lizenz · <span class="font-mono">npm install fast-pdf</span> ·
   <a class="text-(--accent) no-underline hover:underline" href="https://github.com/Kevinci/fast-pdf">github.com/Kevinci/fast-pdf</a></span>
-  <span data-lang="zh" hidden>fast-pdf v0.5.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
+  <span data-lang="zh" hidden>fast-pdf v0.6.0 · MIT 许可证 · <span class="font-mono">npm install fast-pdf</span> ·
   <a class="text-(--accent) no-underline hover:underline" href="https://github.com/Kevinci/fast-pdf">github.com/Kevinci/fast-pdf</a></span>
 </footer>
+
+<!-- Warp-to-top: letztes Element der Seite, mittig unter dem Footer. -->
+<div class="warp-dock">
+  <button id="warp-top" type="button" title="Warp to top">
+    <svg viewBox="0 0 150 70" role="img" aria-hidden="true">
+      <!-- Silhouette eines Sternenschiffs: Untertassensektion mit Brückenkuppel,
+           Hals, Maschinenrumpf, zwei Pylone mit Warpgondeln (hintere abgesetzt). -->
+      <g opacity="0.4">
+        <path d="M80 44 L101 18 L109 18 L88 44 Z"/>
+        <rect x="97" y="10" width="51" height="8" rx="4"/>
+      </g>
+      <ellipse cx="40" cy="27" rx="34" ry="8"/>
+      <ellipse cx="40" cy="21.5" rx="12" ry="4.5"/>
+      <path d="M48 33 L66 49 L76 49 L57 32 Z"/>
+      <ellipse cx="86" cy="50" rx="24" ry="7"/>
+      <path d="M76 48 L96 29 L105 29 L86 48 Z"/>
+      <rect x="94" y="22" width="52" height="9" rx="4.5"/>
+    </svg>
+    <span data-lang="en">Warp to top</span>
+    <span data-lang="de" hidden>Warp nach oben</span>
+    <span data-lang="zh" hidden>曲速返回顶部</span>
+  </button>
+</div>
 </main>
 </div>
+
+<!-- Der Overlay bleibt außerhalb von #page: die Warp-Animation transformiert
+     #page und würde sonst einen Containing-Block für position:fixed aufmachen. -->
+<div id="warp-fx" class="warp-fx" aria-hidden="true"></div>
 
 <script>
   // Sprachumschaltung: en (Hauptsprache) / de / zh. Inaktive Sprachen tragen
@@ -1614,6 +1993,83 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
     select.addEventListener("change", function () { setLang(select.value); });
   })();
 
+  // Warp-to-top: Knopf ab Footer sichtbar, Klick = Sternenstreifen + Scroll.
+  (function () {
+    var btn = document.getElementById("warp-top");
+    var fx = document.getElementById("warp-fx");
+    var root = document.documentElement;
+    if (!btn || !fx) return;
+
+    // Der Knopf steht am Seitenende: er blendet ein, sobald er selbst im
+    // Viewport steht — also genau dann, wenn man unten angekommen ist.
+    if ("IntersectionObserver" in window) {
+      new IntersectionObserver(function (entries) {
+        btn.classList.toggle("is-visible", entries[0].isIntersecting);
+      }, { threshold: 0.9 }).observe(btn);
+    } else {
+      btn.classList.add("is-visible");
+    }
+
+    // Streifen einmal aufbauen; der goldene Winkel streut Dauer und Verzögerung
+    // gleichmäßig, ohne Zufallszahlen.
+    var COUNT = 72;
+    for (var i = 0; i < COUNT; i++) {
+      var jitter = ((i * 137.508) % 11) / 11;
+      var s = document.createElement("span");
+      s.className = "warp-streak";
+      s.style.setProperty("--a", ((i * 360) / COUNT + jitter * 6).toFixed(1) + "deg");
+      s.style.setProperty("--d", (0.55 + jitter * 0.5).toFixed(2) + "s");
+      s.style.setProperty("--t", (jitter * 0.45).toFixed(2) + "s");
+      if (i % 4 === 0) s.style.color = "#cddafd";
+      fx.appendChild(s);
+    }
+
+    function easeInOutCubic(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    btn.addEventListener("click", function () {
+      var from = window.scrollY || root.scrollTop || 0;
+      if (from <= 0) return;
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+        window.scrollTo(0, 0);
+        return;
+      }
+
+      var dur = Math.min(1500, Math.max(750, from / 3));
+      // html { scroll-behavior: smooth } würde jeden Frame einzeln animieren.
+      root.style.scrollBehavior = "auto";
+      root.style.setProperty("--warp-dur", Math.round(dur) + "ms");
+      btn.classList.add("is-launching");
+      root.classList.add("is-warping");
+      fx.classList.add("is-on");
+
+      var done = false;
+      function finish() {
+        if (done) return;
+        done = true;
+        window.scrollTo(0, 0);
+        fx.classList.remove("is-on");
+        root.classList.remove("is-warping");
+        root.style.scrollBehavior = "";
+        setTimeout(function () { btn.classList.remove("is-launching"); }, 350);
+      }
+      // Reißleine: pausiert der Browser rAF (Tabwechsel), räumt der Timer auf.
+      var guard = setTimeout(finish, dur + 500);
+
+      var start = null;
+      requestAnimationFrame(function step(now) {
+        if (done) return;
+        if (start === null) start = now;
+        var p = Math.min(1, (now - start) / dur);
+        window.scrollTo(0, from * (1 - easeInOutCubic(p)));
+        if (p < 1) { requestAnimationFrame(step); return; }
+        clearTimeout(guard);
+        finish();
+      });
+    });
+  })();
+
   // Minimaler TS-Highlighter: ein Pass, Alternativen in Prioritätsreihenfolge
   // (Kommentar > String > Keyword > Zahl) — keine Platzhalter-Kollisionen.
   const RX = new RegExp(
@@ -1625,7 +2081,7 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
     ].join("|"),
     "g",
   );
-  document.querySelectorAll("pre code").forEach((block) => {
+  document.querySelectorAll("pre code, .fold-peek-code").forEach((block) => {
     block.innerHTML = block.innerHTML.replace(RX, (m, com, str, kw) => {
       const cls = com ? "tok-c" : str ? "tok-s" : kw ? "tok-k" : "tok-n";
       return '<span class="' + cls + '">' + m + "</span>";

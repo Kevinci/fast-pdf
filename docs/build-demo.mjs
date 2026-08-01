@@ -25,7 +25,7 @@ html = html
   .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"));
 
 const page = `<!doctype html>
-<html lang="de">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
