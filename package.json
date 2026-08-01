@@ -1,5 +1,5 @@
 {
-  "name": "@fast-pdf",
+  "name": "fast-pdf",
   "version": "0.6.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
