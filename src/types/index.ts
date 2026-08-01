@@ -53,6 +53,10 @@ export interface TextStyle {
   strikethrough: boolean;
   /** Extra spacing between characters in points. */
   letterSpacing: number;
+  /** Constant alpha 0–1, or undefined for fully opaque. */
+  opacity?: number;
+  /** Slant the glyphs synthetically because the family has no italic cut. */
+  skew?: boolean;
 }
 
 export interface DocumentMetadata {

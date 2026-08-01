@@ -1,5 +1,6 @@
 import { wrapText } from "./text";
 import type { Font } from "../fonts/font";
+import type { PDFDocument } from "../document/document";
 import type { ColorInput, TextAlign } from "../types/index";
 import { FastPDFError } from "../errors";
 
@@ -12,13 +13,37 @@ import { FastPDFError } from "../errors";
 
 export type CellValue = string | number | TableCell;
 
+/** Vertical placement of a cell's content within its row. */
+export type VerticalAlign = "top" | "middle" | "bottom";
+
+/** The drawable area inside one cell, in top-left page coordinates. */
+export interface CellBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
 export interface TableCell {
-  text: string;
+  /** Cell text. Optional when `render` draws the cell instead. */
+  text?: string;
   bold?: boolean;
   italic?: boolean;
   color?: ColorInput;
   fill?: ColorInput;
   align?: TextAlign;
+  /** Vertical placement within the row. Default: the table's `valign`. */
+  valign?: VerticalAlign;
+  /**
+   * Draw the cell's content yourself instead of rendering `text` — a
+   * progress bar, a badge row, a logo. The callback receives the padded
+   * inner box; use `doc.region(box, …)` for flow content inside it.
+   * The row's height comes from `height` (or, without it, from the
+   * measured content).
+   */
+  render?: (doc: PDFDocument, box: CellBox) => void;
+  /** Fixed content height in points for a `render` cell (skips measuring). */
+  height?: number;
   /** Number of grid columns this cell spans. Default: 1. */
   colSpan?: number;
   /** Number of rows this cell spans. Default: 1. */
@@ -45,6 +70,8 @@ export interface TableOptions {
   zebraFill?: ColorInput;
   /** Per-column text alignment. */
   aligns?: TextAlign[];
+  /** Vertical placement of cell content within its row. Default: "top". */
+  valign?: VerticalAlign;
   lineHeight?: number;
 }
 
@@ -52,6 +79,7 @@ export interface MeasuredCell {
   cell: TableCell;
   lines: string[];
   align: TextAlign;
+  valign: VerticalAlign;
   /** X offset from the table's left edge. */
   x: number;
   /** Total width in points, including spanned columns. */
@@ -59,6 +87,8 @@ export interface MeasuredCell {
   rowSpan: number;
   /** Painted height: this row's height, or the sum of all spanned rows. */
   height: number;
+  /** Height of the cell's own content, excluding padding. */
+  contentHeight: number;
 }
 
 export interface MeasuredRow {
@@ -108,6 +138,9 @@ export interface MeasureTableOptions {
   lineHeight: number;
   resolveFont: (bold: boolean, italic: boolean) => Font;
   aligns?: TextAlign[];
+  valign?: VerticalAlign;
+  /** Height of a `render` cell's content, measured by the document layer. */
+  measureRender?: (cell: TableCell, innerWidth: number) => number;
 }
 
 /**
@@ -147,14 +180,20 @@ export function measureTable(
       const width = xOf[col + colSpan]! - xOf[col]!;
       const font = opts.resolveFont(cell.bold ?? (isHeader || isFooter), cell.italic ?? false);
       const innerWidth = Math.max(1, width - 2 * opts.padding);
+      const lines = cell.render ? [] : wrapText(cell.text ?? "", font, opts.fontSize, innerWidth);
+      const contentHeight = cell.render
+        ? cell.height ?? opts.measureRender?.(cell, innerWidth) ?? 0
+        : lines.length * opts.fontSize * opts.lineHeight;
       cells.push({
         cell,
-        lines: wrapText(cell.text, font, opts.fontSize, innerWidth),
+        lines,
         align: cell.align ?? opts.aligns?.[col] ?? "left",
+        valign: cell.valign ?? opts.valign ?? "top",
         x: xOf[col]!,
         width,
         rowSpan,
         height: 0,
+        contentHeight,
       });
       if (rowSpan > 1) {
         for (let c = col; c < col + colSpan; c++) occupancy[c] = rowSpan;
@@ -162,12 +201,13 @@ export function measureTable(
       col += colSpan;
     }
     // Height from cells that end in this row; spanning cells are handled below.
-    const ownLines = cells.filter((c) => c.rowSpan === 1).map((c) => c.lines.length);
-    const maxLines = Math.max(1, ...ownLines);
+    const own = cells.filter((c) => c.rowSpan === 1).map((c) => c.contentHeight);
+    const minRow = opts.fontSize * opts.lineHeight; // never collapse below one line
+    const maxContent = Math.max(minRow, ...own);
     for (let c = 0; c < columns; c++) if (occupancy[c]! > 0) occupancy[c]!--;
     measured.push({
       cells,
-      height: maxLines * opts.fontSize * opts.lineHeight + 2 * opts.padding,
+      height: maxContent + 2 * opts.padding,
       isHeader,
       isFooter,
       keepWithNext: occupancy.some((o) => o > 0),
@@ -179,7 +219,7 @@ export function measureTable(
   measured.forEach((row, i) => {
     for (const cell of row.cells) {
       if (cell.rowSpan <= 1) continue;
-      const need = cell.lines.length * opts.fontSize * opts.lineHeight + 2 * opts.padding;
+      const need = cell.contentHeight + 2 * opts.padding;
       const spanned = measured.slice(i, i + cell.rowSpan);
       const sum = spanned.reduce((a, r) => a + r.height, 0);
       if (need > sum) spanned[spanned.length - 1]!.height += need - sum;

@@ -77,6 +77,13 @@ document.querySelector("#pdf-btn")!.addEventListener("click", downloadOrdersPdf)
 same call, no branching. Prefer a Blob URL (e.g. to preview in an `<iframe>`)?
 Use `await pdf.toBlob()` and `URL.createObjectURL(blob)`.
 
+**No bundler configuration required.** fast-pdf ships a second build behind
+the `browser` export condition, in which `save()` contains no reference to
+`node:fs/promises` at all. Next.js/Turbopack, Vite and webpack pick it up
+automatically for client bundles — no `resolveAlias`, no `fs` shim, no
+"Module not found: fs" surprise on your first client build. Need it
+explicitly? `import { PDFDocument } from "fast-pdf/browser"`.
+
 ## Output — pick what fits your platform
 
 ```ts
@@ -105,6 +112,7 @@ const pdf = new PDFDocument({
   fontSize: 11,
   lineHeight: 1.25,
   compress: true,            // FlateDecode content streams
+  language: "de-DE",         // catalog /Lang — screen readers, ATS, PDF/UA
   metadata: { title: "Invoice", author: "ACME", creationDate: new Date(0) },
 });
 
@@ -114,7 +122,18 @@ pdf.pageBreak();                     // explicit page break in the flow
 pdf.pageBreak({ y: 200 });           // …and decide where the new page starts
 pdf.moveDown(2);                     // advance flow cursor
 pdf.y = 300;                         // or set it directly
+
+pdf.x;                               // left edge of the active flow area (read-only)
+pdf.width;                           // width of the active flow area
+pdf.remainingHeight;                 // room left before the bottom margin
+pdf.lastBlockHeight;                 // height the previous block consumed
+pdf.ensureSpace(120);                // break now if 120pt no longer fit → boolean
+pdf.keepTogether((d) => { … });      // measure first, move the whole block if needed
 ```
+
+`x` bridges the two coordinate modes: `text({ x })` **without** `y` is an
+offset *within* the flow area, while `text({ x, y })` and `rect(x, …)` take
+absolute page coordinates — `pdf.x + offset` converts between them.
 
 Text and tables break pages automatically; `pageBreak()` is the explicit
 counterpart — break exactly where *you* decide, optionally with a custom
@@ -134,17 +153,54 @@ pdf.text("Wrapped automatically with real font metrics — äöüß € „quote
   underline: true,                   // also: strikethrough
   letterSpacing: 0.5,                // pt between characters
   link: "https://example.com",       // or "#anchor" for internal links
+  opacity: 0.6,                      // constant alpha 0–1
+  rotate: -90,                       // clockwise around the block's top-left anchor
   spacingAfter: 8,
+  spacingBefore: 12,                 // collapses at the top of a page/column/region
+  keepWithNext: true,                // reserve room for the next 2 lines as well
 });
 
 pdf.text("Header", { y: 20, align: "right" });   // absolute position: no flow, no page break
-pdf.widthOfText("How wide is this?", { size: 12 });
+pdf.widthOfText("How wide is this?", { size: 12, letterSpacing: 1.5 });
 ```
 
-Text flows top-to-bottom and **breaks pages automatically**. Soft hyphens
-(U+00AD) mark preferred break points inside long words and render as "-"
-only when broken there. Standard fonts use WinAnsi (CP-1252): full Latin-1
-incl. umlauts/ß plus €, curly quotes, dashes.
+Text flows top-to-bottom and **breaks pages automatically**. Break
+opportunities are spaces, soft hyphens (U+00AD, rendered as "-" only when
+broken there), and real hyphens, dashes and slashes — so
+"Full-Stack-Entwickler" wraps in a narrow column instead of overflowing.
+Digit groups stay whole (`2026-08-01`, `3/4`). Standard fonts use WinAnsi
+(CP-1252): full Latin-1 incl. umlauts/ß plus €, curly quotes, dashes.
+
+#### Measuring — one engine for drawing and measuring
+
+Every layout that positions blocks absolutely needs the height *before* it
+draws. `measureText()` and `measureBlock()` run the exact code path that
+`text()` runs, so a pre-computed height can never drift from the drawn one.
+
+```ts
+const m = pdf.measureText(summary, { width: 180, size: 9 });
+m.lines;        // the lines as they will actually be drawn
+m.width;        // widest line, letterSpacing included
+m.height;       // lines.length × lineHeight
+m.baseline;     // first baseline's offset from the block top
+
+// Dry-run arbitrary flow content on a throwaway page:
+const { height } = pdf.measureBlock((d) => {
+  d.text("Profil", { bold: true, spacingAfter: 4 });
+  d.text(profile);
+}, { width: 260 });
+
+pdf.rect(x, y, 260, height + 16, { fill: "#f8fafc", radius: 6 });
+```
+
+`measureBlock()` draws nothing and rolls back any anchors, bookmarks and
+images the callback created. Font metrics are available too, so optical
+alignment no longer needs a reverse-engineered constant:
+
+```ts
+const f = pdf.fontMetrics({ size: 9 });   // { baseline, ascent, descent, capHeight, lineGap, lineHeight }
+pdf.circle(x, y + f.baseline - f.capHeight / 2, 2, { fill: accent });  // centred on the x-height
+```
 
 ### Custom fonts (TrueType, subsetted)
 
@@ -157,7 +213,22 @@ pdf.text("Full Unicode — Ελληνικά, кириллица, 中文", { font
 
 Embedded fonts are written as Type0/Identity-H with a ToUnicode CMap
 (copy/paste keeps working) and **subsetted** — only glyphs you actually use
-are embedded. Missing variants fall back to the regular cut.
+are embedded. A missing **bold** variant falls back to the regular cut; a
+missing **italic** variant is slanted synthetically (12° oblique) so italic
+text is never silently rendered upright.
+
+**Format: `.ttf` only** (or `.otf` with TrueType outlines). WOFF/WOFF2 are
+rejected with a clear error — decompressing WOFF2 needs Brotli, which would
+cost fast-pdf its zero dependencies. Google Fonts serves WOFF2, so convert
+once at build time:
+
+```sh
+npx ttf2woff2 --help                       # (the reverse direction)
+fonttools ttLib.woff2 decompress Inter.woff2   # → Inter.ttf   (pip install fonttools brotli)
+```
+
+CFF-flavoured OpenType, `.ttc` collections, kerning, ligatures and complex-script
+shaping (Arabic, Devanagari) are out of scope — see [Limitations](#limitations).
 
 ### Layout engine
 
@@ -182,6 +253,55 @@ pdf.grid(
 Containers and columns keep their content together (no page breaks inside);
 the cursor continues below the tallest column afterwards.
 
+#### Multi-column flow
+
+`columns()` places content *side by side* on one page. `flowColumns()` pours
+a sequence of items **through** the columns — into the next column when one
+fills up, onto the next page when the last one does:
+
+```ts
+const { pages, dropped } = pdf.flowColumns(
+  categories.map((c) => ({
+    render: (d) => {
+      d.text(c.name, { bold: true, spacingAfter: 3 });
+      d.text(c.skills.join(" · "));
+    },
+    spacingBefore: 12,
+    keepWithNext: true,        // never leave this heading at the foot of a column
+  })),
+  { columns: 2, gap: 24, balance: true },
+);
+```
+
+Each item is measured at column width first, so items are never split mid-way;
+one taller than a whole column is counted in `dropped` instead of overflowing
+silently. `balance: true` spreads the final page evenly (newspaper setting)
+rather than filling column 1 to the bottom.
+
+#### Regions — flow inside any rectangle
+
+A region gives arbitrary flow content its own cursor inside a fixed box —
+including inside `onPage()` decorators, where there is no document flow:
+
+```ts
+pdf.onPage((doc, info) => {
+  doc.rect(0, 0, 170, info.size.height, { fill: "#101828" });
+
+  const { overflow, usedHeight, remaining } = doc.region(
+    { x: 28, y: 56, width: 114, height: info.size.height - 110 },
+    (d) => {
+      d.text("KONTAKT", { color: "#7aa2ff", size: 8, letterSpacing: 1.5, spacingAfter: 6 });
+      d.text(contact, { color: "#e2e8f0", size: 9 });
+    },
+  );
+  if (overflow) console.warn(`sidebar short by ${-remaining}pt`);
+});
+```
+
+Regions never move the surrounding cursor and never break pages — and they
+tell you when the content did not fit instead of clipping it quietly. Pass
+`clip: true` to cut off the overflow as well.
+
 ### Tables
 
 ```ts
@@ -201,6 +321,7 @@ pdf.table(
     headerFill: "#0f172a", headerColor: "#ffffff",
     zebraFill: "#f8fafc",
     padding: 6, borderWidth: 0.5, borderColor: "#c8ccd4",
+    valign: "middle",                  // top | middle | bottom (per cell too)
   },
 );
 ```
@@ -208,6 +329,22 @@ pdf.table(
 Cells wrap, row height adapts, and long tables break across pages with the
 header re-drawn on every page. Rows chained by `rowSpan` never straddle a
 page break.
+
+A cell can also **draw itself** — a progress bar, a badge row, a logo —
+instead of rendering text. The row is sized from the measured content (or
+from an explicit `height`), and the callback gets its own cursor, so moving
+`doc.y` inside a cell cannot shift the rows below it:
+
+```ts
+["TypeScript", {
+  valign: "middle",
+  render: (d, box) => {
+    d.rect(box.x, box.y, box.width, 7, { fill: "#e2e8f0", radius: 3.5 });
+    d.rect(box.x, box.y, box.width * 0.9, 7, { fill: "#2563eb", radius: 3.5 });
+    d.y = box.y + 7;                   // report the height you used
+  },
+}]
+```
 
 **From a REST/JSON response** — `objectTable()` turns an array of records
 straight into a table, no manual row mapping:
@@ -240,12 +377,17 @@ pdf.image(logo, { x: 400, y: 30, width: 120 });          // absolute position
 pdf.image(photo, { width: 200, height: 200, fit: "cover" });  // fill | contain | cover
 pdf.image(photo, { width: 100, crop: { x: 50, y: 50, width: 400, height: 400 } });
 pdf.image(stamp, { width: 80, rotate: -15, align: "center" });
+pdf.image(avatar, { width: 120, height: 120, shape: "circle", fit: "cover" });
+pdf.image(cover, { width: 200, height: 120, radius: 12, opacity: 0.85 });
 ```
 
 - **JPEG**: embedded as-is (`DCTDecode`) — zero re-encoding, gray/RGB/CMYK.
 - **PNG**: gray/RGB/indexed embedded without re-encoding; alpha channels become a
   proper `SMask`. (Interlaced PNGs are not supported.)
 - Repeated images are embedded **once** and referenced from every page.
+- `radius` / `shape: "circle"` clip with a real vector path, so round avatars
+  work identically on a server, in an edge function and in the browser — no
+  Canvas pre-processing.
 
 ### Shapes & vector primitives
 
@@ -254,7 +396,18 @@ pdf.line(50, 100, 545, 100, { color: "#e2e8f0", width: 0.5 });
 pdf.rect(50, 120, 100, 40, { fill: "#3b82f6", radius: 8 });
 pdf.circle(100, 300, 40, { fill: "#ffd166", stroke: "#c79000" });
 pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });
+
+pdf.rect(50, 400, 495, 30, { fill: "#2563eb", opacity: 0.12 });   // any primitive
+pdf.clip({ x: 50, y: 450, width: 120, height: 120, radius: 60 }, (d) => {
+  d.image(photo, { x: 50, y: 450, width: 120, height: 120 });     // clipped to the circle
+  d.rect(50, 540, 120, 30, { fill: "#000", opacity: 0.4 });       // …and so is this
+});
 ```
+
+`opacity` (0–1) is available on `line`, `rect`, `circle`, `ellipse`, `text`,
+`image`, `svg` and `container` backgrounds. `clip()` confines everything a
+callback draws to a rectangle — rounded, or a full circle with
+`radius: height / 2`.
 
 ### Document features
 
@@ -293,10 +446,45 @@ default to `Signature1`, `Signature2`, … and must be unique. Note that the
 field is *for the recipient to sign* — fast-pdf does not cryptographically
 sign the document itself.
 
+### Encryption & permissions
+
+```ts
+new PDFDocument({ encrypt: { userPassword: "geheim" } });          // open password
+new PDFDocument({ encrypt: { permissions: { printing: false, copying: false } } });
+new PDFDocument({ encrypt: { userPassword: "x", onUnsupported: "skip" } });
+```
+
+AES-256, revision 6 (AESV3, ISO 32000-2) via the Web Crypto API — no RC4/MD5,
+no dependency. A **permissions-only** document needs no password at all: it
+opens without a prompt, and fast-pdf generates a random owner password so the
+restrictions cannot be lifted. Where Web Crypto is unavailable (an insecure
+browser context, say), `onUnsupported: "skip"` renders the document
+unencrypted instead of failing — so callers no longer have to branch on
+`supportsEncryption()` themselves. The default stays `"throw"`.
+
+Note that PDF permissions are advisory: conforming viewers honour them,
+determined users can strip them. Use a `userPassword` for actual confidentiality.
+
 ### Error handling
 
 All user-facing failures throw `FastPDFError` with a stable machine-readable
 `code` (`"UNKNOWN_FONT"`, `"INVALID_COLOR"`, `"UNSUPPORTED_IMAGE"`, …).
+
+## Limitations
+
+fast-pdf generates documents; it deliberately does not do everything. What it
+cannot do today, so you can decide before you start:
+
+| Not supported | Notes |
+|---|---|
+| Reading, merging or appending existing PDFs | Generation only. Combining several files needs a second library. |
+| Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not. |
+| Form fields other than signatures | Text fields, checkboxes and dropdowns are not implemented. |
+| WOFF/WOFF2 fonts | Needs Brotli. Convert to `.ttf` at build time (see above). |
+| Kerning, ligatures, complex-script shaping | Latin sets well; Arabic/Devanagari are *not usable*, not merely suboptimal. |
+| Gradients (`/Shading`), patterns | Flat fills and constant alpha only. |
+| CFF-flavoured OpenType, `.ttc` | Rejected with an actionable error. |
+| Lossy WebP, interlaced PNG | Rejected with `UNSUPPORTED_IMAGE`. |
 
 ## Design
 
@@ -340,6 +528,7 @@ it. Each one is a complete, designed document:
 |---|---|---|
 | [`invoice.ts`](examples/invoice.ts) | Invoice with letterhead, item table, totals block, footer | `npx tsx examples/invoice.ts` |
 | [`report.ts`](examples/report.ts) | Design-forward report: full-bleed cover, KPI cards, vector bar chart | `npx tsx examples/report.ts` |
+| [`cv.ts`](examples/cv.ts) | CV/résumé: sidebar via `region()`, circular portrait, measured panel, balanced two-column skill matrix, proficiency bars in table cells | `npx tsx examples/cv.ts` |
 | [`signature.ts`](examples/signature.ts) | Contract with clause sections and clickable AcroForm signature fields | `npx tsx examples/signature.ts` |
 | [`showcase.ts`](examples/showcase.ts) | Feature tour: TOC, outlines, watermark, cell spans, columns, links | `npx tsx examples/showcase.ts` |
 | [`basic.ts`](examples/basic.ts) | Minimal text + table starting point | `npx tsx examples/basic.ts` |

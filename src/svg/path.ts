@@ -14,34 +14,62 @@ export type PathSeg =
 
 const NUM_RE = /[+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?/g;
 
-function tokenize(d: string): (string | number)[] {
-  const tokens: (string | number)[] = [];
+/**
+ * Character scanner over path data.
+ *
+ * Arc flags need their own reader: `large-arc-flag` and `sweep-flag` are
+ * single digits that minifiers happily run into the next number, so
+ * "a5 5 0 0150 0" means (0, 1, 50, 0) and not (0, 150, 0, …). Reading them
+ * with the generic number rule is what makes `a`/`A` commands from Lucide,
+ * Feather and Heroicons render as garbage.
+ */
+function scanner(d: string) {
   let i = 0;
-  while (i < d.length) {
-    const c = d[i]!;
-    if (/[a-zA-Z]/.test(c)) {
-      tokens.push(c);
-      i++;
-    } else if (/[\s,]/.test(c)) {
-      i++;
-    } else {
+  const skip = (): void => {
+    while (i < d.length && (d[i] === " " || d[i] === "," || d[i] === "\t" || d[i] === "\n" || d[i] === "\r" || d[i] === "\f")) i++;
+  };
+  return {
+    atEnd(): boolean {
+      skip();
+      return i >= d.length;
+    },
+    /** The command letter at the cursor, or null if a parameter follows. */
+    peekCommand(): string | null {
+      skip();
+      const c = d[i];
+      return c !== undefined && /[a-zA-Z]/.test(c) ? c : null;
+    },
+    takeCommand(): string {
+      skip();
+      return d[i++]!;
+    },
+    number(): number {
+      skip();
       NUM_RE.lastIndex = i;
       const m = NUM_RE.exec(d);
       if (!m || m.index !== i) {
         i++; // skip an unexpected character
-        continue;
+        return NaN;
       }
-      tokens.push(parseFloat(m[0]));
       i = NUM_RE.lastIndex;
-    }
-  }
-  return tokens;
+      return parseFloat(m[0]);
+    },
+    /** A single-digit 0/1 arc flag, with no separator required after it. */
+    flag(): number {
+      skip();
+      const c = d[i];
+      if (c === "0" || c === "1") {
+        i++;
+        return c === "1" ? 1 : 0;
+      }
+      return NaN;
+    },
+  };
 }
 
 export function parsePath(d: string): PathSeg[] {
-  const tokens = tokenize(d);
+  const s = scanner(d);
   const segs: PathSeg[] = [];
-  let i = 0;
   let x = 0;
   let y = 0;
   let startX = 0;
@@ -51,11 +79,7 @@ export function parsePath(d: string): PathSeg[] {
   let lastQ: { x: number; y: number } | null = null;
   let cmd = "";
 
-  const num = (): number => {
-    const t = tokens[i++];
-    return typeof t === "number" ? t : NaN;
-  };
-  const hasNum = (): boolean => typeof tokens[i] === "number";
+  const num = (): number => s.number();
 
   const cubic = (x1: number, y1: number, x2: number, y2: number, ex: number, ey: number): void => {
     segs.push({ op: "C", x1, y1, x2, y2, x: ex, y: ey });
@@ -64,11 +88,10 @@ export function parsePath(d: string): PathSeg[] {
     y = ey;
   };
 
-  while (i < tokens.length) {
-    if (typeof tokens[i] === "string") {
-      cmd = tokens[i] as string;
-      i++;
-    }
+  while (!s.atEnd()) {
+    const next = s.peekCommand();
+    if (next !== null) cmd = s.takeCommand();
+    else if (cmd === "" || cmd.toUpperCase() === "Z") break; // stray numbers
     const rel = cmd === cmd.toLowerCase();
     const abs = cmd.toUpperCase();
     const dx = rel ? x : 0;
@@ -131,7 +154,10 @@ export function parsePath(d: string): PathSeg[] {
         break;
       }
       case "A": {
-        const rx = num(), ry = num(), rot = num(), large = num(), sweep = num(), ex = num() + dx, ey = num() + dy;
+        const rx = num(), ry = num(), rot = num();
+        const large = s.flag(), sweep = s.flag();
+        const ex = num() + dx, ey = num() + dy;
+        if (Number.isNaN(large) || Number.isNaN(sweep)) return segs; // malformed flags
         arc(segs, x, y, rx, ry, rot, large !== 0, sweep !== 0, ex, ey);
         x = ex;
         y = ey;
@@ -150,10 +176,6 @@ export function parsePath(d: string): PathSeg[] {
     }
     // Guard against malformed input that consumed a NaN.
     if (!Number.isFinite(x) || !Number.isFinite(y)) break;
-    if (abs !== "M" && abs !== "L" && abs !== "H" && abs !== "V" && abs !== "C" &&
-        abs !== "S" && abs !== "Q" && abs !== "T" && abs !== "A" && abs !== "Z") break;
-    // Continue with repeated coordinate sets unless the next token is a command.
-    if (abs === "Z" && !hasNum()) continue;
   }
   return segs;
 }
@@ -189,6 +211,10 @@ function arc(
     segs.push({ op: "L", x, y });
     return;
   }
+  // Coincident endpoints: the arc is dropped entirely (SVG 1.1 F.6.2).
+  // Without this the centre parameterisation divides by zero and emits NaN
+  // control points, which silently corrupt the rest of the path.
+  if (x0 === x && y0 === y) return;
   rx = Math.abs(rx);
   ry = Math.abs(ry);
   const phi = (rotDeg * Math.PI) / 180;

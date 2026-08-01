@@ -19,6 +19,7 @@ export class TTFFont {
   /** Font units. */
   readonly ascent: number;
   readonly descent: number;
+  readonly lineGap: number;
   readonly xMin: number;
   readonly yMin: number;
   readonly xMax: number;
@@ -66,6 +67,7 @@ export class TTFFont {
     const hhea = this.require("hhea");
     this.ascent = this.view.getInt16(hhea.offset + 4);
     this.descent = this.view.getInt16(hhea.offset + 6);
+    this.lineGap = this.view.getInt16(hhea.offset + 8);
     this.numberOfHMetrics = this.view.getUint16(hhea.offset + 34);
 
     this.numGlyphs = this.view.getUint16(this.require("maxp").offset + 4);

@@ -30,10 +30,23 @@ export interface DocumentPermissions {
 export interface EncryptionOptions {
   /** Password required to open the document. Empty (default) opens without a prompt. */
   userPassword?: string;
-  /** Password granting full rights (bypasses permission restrictions). Defaults to userPassword. */
+  /**
+   * Password granting full rights (bypasses permission restrictions).
+   * Defaults to `userPassword`. When only `permissions` are given and both
+   * passwords are empty, a random owner password is generated: the document
+   * opens without a prompt but its restrictions cannot be lifted — no need
+   * to invent a dummy password for a permissions-only file.
+   */
   ownerPassword?: string;
   /** Restrictions applied when opened with the user password. */
   permissions?: DocumentPermissions;
+  /**
+   * What to do in runtimes without Web Crypto (an insecure browser context,
+   * for instance): "throw" (default) fails the render with
+   * `ENCRYPTION_UNSUPPORTED`, "skip" produces an unencrypted document —
+   * so callers no longer have to branch on `supportsEncryption()`.
+   */
+  onUnsupported?: "throw" | "skip";
 }
 
 export interface SecurityHandler {
@@ -153,11 +166,20 @@ function permissionBits(p: DocumentPermissions | undefined): number {
  */
 export async function createSecurityHandler(opts: EncryptionOptions): Promise<SecurityHandler> {
   subtle(); // fail fast on unsupported runtimes
-  if ((opts.userPassword ?? "") === "" && (opts.ownerPassword ?? "") === "") {
-    throw new FastPDFError("encrypt requires a userPassword and/or ownerPassword", "INVALID_ARGUMENT");
+  let owner = opts.ownerPassword ?? opts.userPassword ?? "";
+  if ((opts.userPassword ?? "") === "" && owner === "") {
+    if (opts.permissions === undefined) {
+      throw new FastPDFError(
+        "encrypt requires a userPassword, an ownerPassword or permissions",
+        "INVALID_ARGUMENT",
+      );
+    }
+    // Permissions-only: the owner password exists solely to make the
+    // restrictions binding, so nobody needs to know (or invent) it.
+    owner = bytesToHex(randomBytes(32));
   }
   const userPw = passwordBytes(opts.userPassword ?? "");
-  const ownerPw = passwordBytes(opts.ownerPassword ?? opts.userPassword ?? "");
+  const ownerPw = passwordBytes(owner);
   const fileKey = randomBytes(32);
 
   const uvs = randomBytes(8);

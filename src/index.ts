@@ -17,10 +17,20 @@ export type {
   LineOptions,
   RectOptions,
   ShapeOptions,
+  OpacityOption,
   SizeInput,
   ContainerOptions,
   ColumnsOptions,
   GridOptions,
+  FlowItem,
+  FlowColumnsOptions,
+  FlowColumnsResult,
+  ClipRect,
+  RegionOptions,
+  RegionResult,
+  TextMeasurement,
+  BlockMeasurement,
+  FontMetricsInfo,
   PageInfo,
   PageDecorator,
   HeaderFooterOptions,
@@ -35,7 +45,13 @@ export type {
 
 export { FastPDFError, type FastPDFErrorCode } from "./errors";
 
-export type { CellValue, TableCell, TableOptions } from "./layout/table";
+export type {
+  CellValue,
+  TableCell,
+  TableOptions,
+  CellBox,
+  VerticalAlign,
+} from "./layout/table";
 
 export {
   PAGE_FORMATS,

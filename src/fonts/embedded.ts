@@ -41,6 +41,14 @@ export class EmbeddedFont implements Font {
     return this.ttf.descent * this.scale;
   }
 
+  get capHeight(): number {
+    return this.ttf.capHeight * this.scale;
+  }
+
+  get lineGap(): number {
+    return this.ttf.lineGap * this.scale;
+  }
+
   encode(text: string): string {
     let out = "";
     for (const ch of text) {

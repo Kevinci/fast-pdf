@@ -105,17 +105,29 @@ export class ContentStream {
   }
 
   /**
+   * Position the text cursor: `Td` normally, or a full text matrix when the
+   * glyphs have to be sheared (synthetic oblique for a missing italic cut).
+   * @param skew horizontal shear factor, i.e. tan(slant angle)
+   */
+  private textPos(x: number, y: number, skew: number): string {
+    return skew === 0
+      ? `${this.n(x)} ${this.n(y)} Td`
+      : `1 0 ${this.n(skew)} 1 ${this.n(x)} ${this.n(y)} Tm`;
+  }
+
+  /**
    * Show one line of text.
    * @param encoded WinAnsi-encoded bytes as a latin1 string (one char = one byte)
    * @param x,y baseline position in PDF space
    * @param charSpace extra spacing per character code in points (Tc)
+   * @param skew horizontal shear factor for synthetic oblique (0 = upright)
    */
-  text(encoded: string, x: number, y: number, fontRes: string, size: number, charSpace = 0): this {
+  text(encoded: string, x: number, y: number, fontRes: string, size: number, charSpace = 0, skew = 0): this {
     // Tc survives ET (text state is graphics state) — reset it in-block.
     const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
     const reset = charSpace !== 0 ? " 0 Tc" : "";
     this.parts.push(
-      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.n(x)} ${this.n(y)} Td (${escapeString(encoded)}) Tj${reset} ET`,
+      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} (${escapeString(encoded)}) Tj${reset} ET`,
     );
     return this;
   }
@@ -125,14 +137,22 @@ export class ContentStream {
    * adjustments in 1/1000 em (positive moves left — pass negative values
    * to widen gaps, e.g. for justified text).
    */
-  textTJ(parts: (string | number)[], x: number, y: number, fontRes: string, size: number, charSpace = 0): this {
+  textTJ(
+    parts: (string | number)[],
+    x: number,
+    y: number,
+    fontRes: string,
+    size: number,
+    charSpace = 0,
+    skew = 0,
+  ): this {
     const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
     const reset = charSpace !== 0 ? " 0 Tc" : "";
     const arr = parts
       .map((p) => (typeof p === "number" ? this.n(p) : `(${escapeString(p)})`))
       .join(" ");
     this.parts.push(
-      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.n(x)} ${this.n(y)} Td [${arr}] TJ${reset} ET`,
+      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} [${arr}] TJ${reset} ET`,
     );
     return this;
   }

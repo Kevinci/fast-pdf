@@ -1,12 +1,12 @@
 import { Name, PDFString, textString, type PDFValue, type Ref } from "../pdf/objects";
 import { PDFWriter } from "../pdf/writer";
-import { createSecurityHandler, type EncryptionOptions } from "../pdf/encrypt";
+import { createSecurityHandler, supportsEncryption, type EncryptionOptions } from "../pdf/encrypt";
 import { signaturePlaceholder, embedSignature, type SigningOptions } from "../pdf/sign";
 import { ContentStream } from "../pdf/content";
 import { deflate } from "../pdf/compress";
 import { isStandardFamily, resolveFont, styleIndex, type Font } from "../fonts/font";
 import { EmbeddedFont } from "../fonts/embedded";
-import { wrapLines, alignOffset, type WrappedLine } from "../layout/text";
+import { wrapLines, alignOffset, measureLine, type WrappedLine } from "../layout/text";
 import { columnWidths, countColumns, measureTable, type CellValue, type TableOptions, type MeasuredRow } from "../layout/table";
 import { detectFormat, toBytes, type ParsedImage } from "../images/image";
 import { parseJpeg } from "../images/jpeg";
@@ -73,10 +73,22 @@ export interface PDFDocumentOptions extends PageOptions {
    * salts and IVs). Requires the Web Crypto API.
    */
   encrypt?: EncryptionOptions;
+  /**
+   * Natural language of the document as a BCP 47 tag ("de", "en-GB"),
+   * written to the catalog's `/Lang`. Screen readers use it to pick the
+   * right pronunciation, and it is a baseline requirement of PDF/UA.
+   */
+  language?: string;
   metadata?: DocumentMetadata;
 }
 
-export interface TextOptions {
+/** Fill/stroke transparency shared by every drawing call. */
+export interface OpacityOption {
+  /** Constant alpha from 0 (invisible) to 1 (opaque). Default: 1. */
+  opacity?: number;
+}
+
+export interface TextOptions extends OpacityOption {
   /** Standard family ("helvetica" | "times" | "courier") or a family registered via registerFont(). */
   font?: FontFamily | (string & {});
   size?: number;
@@ -103,9 +115,66 @@ export interface TextOptions {
   width?: number;
   /** Extra vertical space after the text block, in points (flow mode). */
   spacingAfter?: number;
+  /**
+   * Extra vertical space *before* the block, in points (flow mode).
+   * Collapses to zero at the top of a page, column or region — which is
+   * what makes it usable for "space above a heading" in flowing documents,
+   * where `spacingAfter` alone leaves a gap in the wrong place.
+   */
+  spacingBefore?: number;
+  /**
+   * Keep the block together with what follows: reserve room for this block
+   * plus `n` further lines (default 2) before drawing, so a heading never
+   * ends up alone at the bottom of a page. Flow mode only.
+   */
+  keepWithNext?: boolean | number;
+  /**
+   * Rotate the whole block clockwise by this many degrees around its
+   * top-left anchor. A rotated block never breaks across pages.
+   */
+  rotate?: number;
 }
 
-export interface ImageOptions {
+/** What `measureText()` reports — the exact result of the drawing engine. */
+export interface TextMeasurement {
+  /** The lines as they would actually be drawn. */
+  lines: string[];
+  /** Width of the widest line, in points. */
+  width: number;
+  /** Total block height: `lines.length * lineHeight`, in points. */
+  height: number;
+  /** Distance between two baselines, in points. */
+  lineHeight: number;
+  /** Baseline offset of the first line from the block top, in points. */
+  baseline: number;
+}
+
+/** What `measureBlock()` reports. */
+export interface BlockMeasurement {
+  /** Height the block consumes in the flow, in points. */
+  height: number;
+  /** Flow width the block was measured against, in points. */
+  width: number;
+}
+
+/** Vertical font metrics at a concrete size, in points. */
+export interface FontMetricsInfo {
+  /** The size the values are scaled to. */
+  size: number;
+  /** Top of the block to the baseline — where `text()` puts the first baseline. */
+  baseline: number;
+  ascent: number;
+  /** Negative: how far descenders reach below the baseline. */
+  descent: number;
+  /** Height of a flat capital ("H") above the baseline. */
+  capHeight: number;
+  /** Extra leading the font recommends (0 for the standard 14). */
+  lineGap: number;
+  /** Distance between two baselines at the active line height. */
+  lineHeight: number;
+}
+
+export interface ImageOptions extends OpacityOption {
   /** Target width/height in points. Aspect ratio is preserved if only one is given. */
   width?: number;
   height?: number;
@@ -122,12 +191,25 @@ export interface ImageOptions {
   crop?: { x: number; y: number; width: number; height: number };
   /** Rotation in degrees, clockwise, around the box center. */
   rotate?: number;
+  /**
+   * Round the image's corners by this radius in points, clipping whatever
+   * falls outside. `radius: height / 2` on a square box yields a circle —
+   * or use `shape: "circle"`. Works in every runtime; no Canvas needed.
+   */
+  radius?: number;
+  /**
+   * Clip the image to a shape. "circle" is shorthand for a radius of half
+   * the shorter box side. Default: "rect" (no rounding).
+   */
+  shape?: "rect" | "circle";
   /** Horizontal alignment within the flow area (flow mode). Default: "left". */
   align?: "left" | "center" | "right";
   spacingAfter?: number;
+  /** Extra vertical space before the image (flow mode), collapsed at the top. */
+  spacingBefore?: number;
 }
 
-export interface SvgOptions {
+export interface SvgOptions extends OpacityOption {
   /** Target width/height in points. Aspect ratio is preserved if only one is given. */
   width?: number;
   height?: number;
@@ -145,6 +227,8 @@ export interface SvgOptions {
   /** Colour substituted for `currentColor` in the SVG. Default: black. */
   color?: ColorInput;
   spacingAfter?: number;
+  /** Extra vertical space before the drawing (flow mode), collapsed at the top. */
+  spacingBefore?: number;
 }
 
 export interface MarkdownOptions {
@@ -155,17 +239,42 @@ export interface MarkdownOptions {
   resolveImage?: (src: string) => Uint8Array | ArrayBuffer | undefined;
 }
 
-export interface LineOptions {
+export interface LineOptions extends OpacityOption {
   color?: ColorInput;
   width?: number;
 }
 
-export interface RectOptions {
+export interface RectOptions extends OpacityOption {
   fill?: ColorInput;
   stroke?: ColorInput;
   lineWidth?: number;
   /** Corner radius in points for rounded rectangles. */
   radius?: number;
+}
+
+/** A rectangular area in top-left page coordinates, optionally rounded. */
+export interface ClipRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  /** Corner radius in points. `radius: height / 2` on a square gives a circle. */
+  radius?: number;
+}
+
+export interface RegionOptions extends ClipRect {
+  /** Clip content to the region's bounds. Default: false. */
+  clip?: boolean;
+}
+
+/** What `region()` reports back about the content it laid out. */
+export interface RegionResult {
+  /** Height the content actually consumed, in points. */
+  usedHeight: number;
+  /** Unused height left in the region (negative when it overflowed). */
+  remaining: number;
+  /** True when the content did not fit — no silent clipping surprises. */
+  overflow: boolean;
 }
 
 /** Fill/stroke options for closed shapes (circles, ellipses). */
@@ -174,7 +283,7 @@ export type ShapeOptions = Omit<RectOptions, "radius">;
 /** A size in points, or a percentage of the available width ("50%"). */
 export type SizeInput = number | string;
 
-export interface ContainerOptions {
+export interface ContainerOptions extends OpacityOption {
   /** Outer width — points or percentage of the available width. Default: full width. */
   width?: SizeInput;
   /** Inner padding in points (uniform or per side). Default: 0. */
@@ -205,6 +314,48 @@ export interface GridOptions {
   gap?: number;
   /** Gap between rows in points. Default: same as `gap`. */
   rowGap?: number;
+}
+
+/**
+ * One item in a `flowColumns()` sequence. A bare function is shorthand for
+ * `{ render }`; the object form adds the spacing and keep rules that make
+ * newspaper-style flow readable.
+ */
+export type FlowItem =
+  | ((doc: PDFDocument) => void)
+  | {
+      render: (doc: PDFDocument) => void;
+      /** Space above the item, collapsed at the top of a column. */
+      spacingBefore?: number;
+      /** Space below the item. */
+      spacingAfter?: number;
+      /** Never end a column directly after this item (e.g. a category heading). */
+      keepWithNext?: boolean;
+    };
+
+export interface FlowColumnsOptions {
+  /** Number of columns. Default: 2. */
+  columns?: number;
+  /** Column widths — points or percentages. Default: equal. */
+  widths?: SizeInput[];
+  /** Gap between columns in points. Default: 18. */
+  gap?: number;
+  /**
+   * Even out the columns on the last page instead of filling the first one
+   * to the bottom — what makes a two-column list look typeset rather than
+   * merely correct. Default: false.
+   */
+  balance?: boolean;
+  /** Bottom limit in points (top-based). Default: the page's content bottom. */
+  bottom?: number;
+}
+
+/** What `flowColumns()` reports back. */
+export interface FlowColumnsResult {
+  /** Number of pages the flow occupied (1 = it fit on the current page). */
+  pages: number;
+  /** Items that could not be placed at all (each was taller than a column). */
+  dropped: number;
 }
 
 /** One column of an objectTable(): which property to show, and how. */
@@ -337,6 +488,7 @@ export class PDFDocument {
   private readonly compress: boolean;
   private readonly deterministic: boolean;
   private readonly encryption?: EncryptionOptions;
+  private readonly language?: string;
   private readonly metadata: DocumentMetadata;
   private readonly images = new Map<Uint8Array, ImageEntry>();
   /** family → [regular, bold, italic, boldItalic] embedded fonts. */
@@ -344,8 +496,17 @@ export class PDFDocument {
   private cursorY: number;
   /** Active layout frame (container/column); null = full content area. */
   private frame: { x: number; width: number } | null = null;
+  /**
+   * Top of the active flow area — the page's top margin, or where the
+   * current container/column/region starts. `spacingBefore` collapses here.
+   */
+  private frameTop = 0;
   /** > 0 while inside container()/columns(): automatic page breaks are off. */
   private suppressBreaks = 0;
+  /** Height the last flow block consumed, excluding its spacingAfter. */
+  private lastBlock = 0;
+  /** > 0 while measuring: drawing goes to a throwaway page. */
+  private measuring = 0;
   /** Page decorators, applied to every page at render time. */
   private readonly decorators: PageDecorator[] = [];
   private decorated = false;
@@ -379,6 +540,7 @@ export class PDFDocument {
     this.compress = options.compress ?? true;
     this.deterministic = options.deterministic ?? false;
     this.encryption = options.encrypt;
+    this.language = options.language;
     this.metadata = options.metadata ?? {};
     this.cursorY = 0;
     this.addPage();
@@ -398,6 +560,7 @@ export class PDFDocument {
     const page = new Page(size, normalizeMargins(merged.margins, DEFAULT_MARGIN));
     this.pages.push(page);
     this.cursorY = page.margins.top;
+    this.frameTop = page.margins.top;
     return this;
   }
 
@@ -440,6 +603,24 @@ export class PDFDocument {
     this.cursorY = value;
   }
 
+  /**
+   * Absolute left edge of the active flow area — the page's left margin, or
+   * the current container/column/region. Read-only.
+   *
+   * This is the bridge between the two coordinate modes: `text({ x })`
+   * without `y` is an offset *from* this value, while `text({ x, y })` and
+   * `rect(x, …)` take absolute page coordinates. `doc.x + offset` converts
+   * the first into the second.
+   */
+  get x(): number {
+    return this.flowX;
+  }
+
+  /** Width of the active flow area (page content width, container or column). */
+  get width(): number {
+    return this.flowWidth;
+  }
+
   private get page(): Page {
     return this.activePage ?? this.pages[this.pages.length - 1]!;
   }
@@ -448,6 +629,295 @@ export class PDFDocument {
   moveDown(lines = 1): this {
     this.cursorY += lines * this.defaults.size * this.defaults.lineHeight;
     return this;
+  }
+
+  /**
+   * Height the last flow block consumed (text, image, svg, table,
+   * container, columns, markdown, signature), excluding its `spacingAfter`.
+   *
+   * This is the cheap answer to "how tall was that?" — including for
+   * absolutely positioned blocks, where the cursor does not move at all.
+   */
+  get lastBlockHeight(): number {
+    return this.lastBlock;
+  }
+
+  /** Space left between the cursor and the bottom of the content area, in points. */
+  get remainingHeight(): number {
+    return this.page.contentBottom - this.cursorY;
+  }
+
+  /**
+   * Break to a new page unless `needed` points still fit below the cursor.
+   * Returns true when a break happened. Inside container()/columns()/grid()
+   * — where breaks are forbidden — it never breaks and returns false.
+   *
+   * This is the supported replacement for hand-rolled `reserve()` helpers
+   * around absolutely positioned blocks, which never break by themselves.
+   */
+  ensureSpace(needed: number): boolean {
+    assertFinite(needed, "ensureSpace needed");
+    if (this.suppressBreaks > 0) return false;
+    if (this.cursorY + needed > this.page.contentBottom && this.cursorY > this.page.margins.top) {
+      this.addPage();
+      return true;
+    }
+    return false;
+  }
+
+  /**
+   * Draw a block that must not be split across pages: it is measured first
+   * and moved to the next page whole if it does not fit below the cursor.
+   *
+   * The callback runs twice (once to measure, once to draw), so it must be
+   * free of side effects outside the document.
+   */
+  keepTogether(content: (doc: this) => void): this {
+    const { height } = this.measureBlock(content);
+    this.ensureSpace(height);
+    content(this);
+    return this;
+  }
+
+  // ── Measurement ──────────────────────────────────────────────────────
+
+  /**
+   * Wrap and measure text **without drawing it**, through the very same
+   * engine `text()` uses — so a pre-computed block height can never drift
+   * away from what actually lands on the page.
+   *
+   * ```ts
+   * const m = pdf.measureText(summary, { width: 180, size: 9 });
+   * pdf.rect(x, y, 180, m.height + 16, { fill: "#f4f5f7" });
+   * pdf.text(summary, { x, y: y + 8, width: 180, size: 9 });
+   * ```
+   */
+  measureText(content: string, options: TextOptions = {}): TextMeasurement {
+    const size = options.size ?? this.defaults.size;
+    const lineHeight = options.lineHeight ?? this.defaults.lineHeight;
+    const letterSpacing = options.letterSpacing ?? this.defaults.letterSpacing;
+    assertFinite(size, "text size");
+    assertFinite(lineHeight, "text lineHeight");
+    const font = this.resolveFontStyle(
+      options.font ?? this.defaults.font,
+      options.bold ?? this.defaults.bold,
+      options.italic ?? this.defaults.italic,
+    );
+    const width = this.textWidthFor(options);
+    const lines = wrapLines(content, font, size, width, letterSpacing).map((l) => l.text);
+    const step = size * lineHeight;
+    let widest = 0;
+    for (const line of lines) {
+      widest = Math.max(widest, measureLine(line, font, size, letterSpacing));
+    }
+    return {
+      lines,
+      width: widest,
+      height: lines.length * step,
+      lineHeight: step,
+      baseline: (font.ascent * size) / 1000,
+    };
+  }
+
+  /**
+   * Measure arbitrary flow content by laying it out on a throwaway page —
+   * the double-pass every "I need the height before I can draw the frame"
+   * problem asks for.
+   *
+   * ```ts
+   * const { height } = pdf.measureBlock((d) => {
+   *   d.text("Profil", { bold: true, spacingAfter: 4 });
+   *   d.text(profile);
+   * }, { width: 260 });
+   * ```
+   *
+   * The callback runs against a discarded page: nothing is drawn, and
+   * anchors, bookmarks, links and images it creates are rolled back.
+   * Automatic page breaks are off while measuring, so the reported height
+   * is the block's unbroken height.
+   */
+  measureBlock(content: (doc: this) => void, options: { width?: number } = {}): BlockMeasurement {
+    if (options.width !== undefined) assertFinite(options.width, "measureBlock width");
+    const model = this.page;
+    const scratch = new Page({ ...model.size }, { ...model.margins });
+    const saved = {
+      activePage: this.activePage,
+      cursorY: this.cursorY,
+      frame: this.frame,
+      frameTop: this.frameTop,
+      lastBlock: this.lastBlock,
+    };
+    // Everything a dry run could leak into the real document.
+    const imageKeys = new Set(this.images.keys());
+    const outlineCount = this.outlines.length;
+    const anchorKeys = new Set(this.anchors.keys());
+    const sigNames = new Set(this.sigFieldNames);
+
+    const startY = model.margins.top;
+    const width = options.width ?? this.flowWidth;
+    this.activePage = scratch;
+    this.frame = { x: this.flowX, width };
+    this.cursorY = startY;
+    this.frameTop = startY;
+    this.suppressBreaks++;
+    this.measuring++;
+    let endY = startY;
+    try {
+      content(this);
+      endY = this.cursorY;
+    } finally {
+      this.measuring--;
+      this.suppressBreaks--;
+      this.activePage = saved.activePage;
+      this.cursorY = saved.cursorY;
+      this.frame = saved.frame;
+      this.frameTop = saved.frameTop;
+      this.lastBlock = saved.lastBlock;
+      for (const key of this.images.keys()) if (!imageKeys.has(key)) this.images.delete(key);
+      this.outlines.length = outlineCount;
+      for (const key of [...this.anchors.keys()]) if (!anchorKeys.has(key)) this.anchors.delete(key);
+      for (const name of [...this.sigFieldNames]) if (!sigNames.has(name)) this.sigFieldNames.delete(name);
+    }
+    return { height: endY - startY, width };
+  }
+
+  /**
+   * Vertical metrics of a font at a concrete size, in points — so callers
+   * can align to the baseline or cap height instead of reverse-engineering
+   * how fast-pdf places text.
+   *
+   * ```ts
+   * const m = pdf.fontMetrics({ size: 9 });
+   * pdf.circle(x, y + m.baseline - m.capHeight / 2, 2, { fill: accent }); // optically centred
+   * ```
+   */
+  fontMetrics(
+    options: Pick<TextOptions, "font" | "size" | "bold" | "italic" | "lineHeight"> = {},
+  ): FontMetricsInfo {
+    const size = options.size ?? this.defaults.size;
+    assertFinite(size, "text size");
+    const lineHeight = options.lineHeight ?? this.defaults.lineHeight;
+    const font = this.resolveFontStyle(
+      options.font ?? this.defaults.font,
+      options.bold ?? this.defaults.bold,
+      options.italic ?? this.defaults.italic,
+    );
+    const per = size / 1000;
+    return {
+      size,
+      baseline: font.ascent * per,
+      ascent: font.ascent * per,
+      descent: font.descent * per,
+      capHeight: font.capHeight * per,
+      lineGap: font.lineGap * per,
+      lineHeight: size * lineHeight,
+    };
+  }
+
+  // ── Regions ──────────────────────────────────────────────────────────
+
+  /**
+   * Lay out flow content inside an arbitrary rectangle, with its own cursor
+   * — including inside `onPage()` decorators, where there is no document
+   * flow at all. Reports honestly whether the content fit.
+   *
+   * ```ts
+   * pdf.onPage((doc, info) => {
+   *   doc.rect(0, 0, 160, info.size.height, { fill: "#101828" });
+   *   const { overflow } = doc.region({ x: 24, y: 56, width: 112, height: 700 }, (d) => {
+   *     d.text("KONTAKT", { color: "#fff", size: 8, letterSpacing: 1.5, spacingAfter: 6 });
+   *     d.text(contact, { color: "#cbd5e1", size: 9 });
+   *   });
+   *   if (overflow) console.warn("sidebar content truncated");
+   * });
+   * ```
+   *
+   * The region does not move the surrounding flow cursor; page breaks are
+   * off inside it (a region is a fixed box by definition).
+   */
+  region(rect: RegionOptions, content: (doc: this) => void): RegionResult {
+    assertFinite(rect.x, "region x");
+    assertFinite(rect.y, "region y");
+    assertFinite(rect.width, "region width");
+    assertFinite(rect.height, "region height");
+    const saved = {
+      cursorY: this.cursorY,
+      frame: this.frame,
+      frameTop: this.frameTop,
+      lastBlock: this.lastBlock,
+    };
+    const clip = rect.clip ?? false;
+    const page = this.page;
+    if (clip) {
+      page.content.save();
+      buildRectPath(page.content, rect.x, page.ty(rect.y), rect.width, rect.height, clipRadius(rect));
+      page.content.clip();
+    }
+    this.frame = { x: rect.x, width: rect.width };
+    this.cursorY = rect.y;
+    this.frameTop = rect.y;
+    this.suppressBreaks++;
+    let usedHeight = 0;
+    try {
+      content(this);
+      usedHeight = this.cursorY - rect.y;
+    } finally {
+      this.suppressBreaks--;
+      if (clip) page.content.restore();
+      this.cursorY = saved.cursorY;
+      this.frame = saved.frame;
+      this.frameTop = saved.frameTop;
+      this.lastBlock = saved.lastBlock;
+    }
+    this.lastBlock = usedHeight;
+    return {
+      usedHeight,
+      remaining: rect.height - usedHeight,
+      overflow: usedHeight > rect.height + 0.01,
+    };
+  }
+
+  /**
+   * Clip everything the callback draws to a rectangle — rounded, or a full
+   * circle with `radius: height / 2`. The renderer already clipped
+   * internally for `container()` and `image({ fit: "cover" })`; this makes
+   * it available directly, so a shape no longer has to be constructed to
+   * fit its frame by hand.
+   */
+  clip(rect: ClipRect, content: (doc: this) => void): this {
+    assertFinite(rect.x, "clip x");
+    assertFinite(rect.y, "clip y");
+    assertFinite(rect.width, "clip width");
+    assertFinite(rect.height, "clip height");
+    const page = this.page;
+    page.content.save();
+    buildRectPath(page.content, rect.x, page.ty(rect.y), rect.width, rect.height, clipRadius(rect));
+    page.content.clip();
+    try {
+      content(this);
+    } finally {
+      page.content.restore();
+    }
+    return this;
+  }
+
+  /** Run `fn` with a constant alpha applied to fills and strokes. */
+  private withAlpha<T>(opacity: number | undefined, fn: () => T): T {
+    if (opacity === undefined || opacity >= 1) return fn();
+    const content = this.page.content;
+    content.save().setGState(this.page.gsRes(clampAlpha(opacity)));
+    try {
+      return fn();
+    } finally {
+      content.restore();
+    }
+  }
+
+  /** Apply a collapsing `spacingBefore` in flow mode. */
+  private applySpacingBefore(spacing: number | undefined): void {
+    if (spacing === undefined || spacing === 0) return;
+    assertFinite(spacing, "spacingBefore");
+    if (this.cursorY > this.frameTop + 0.01) this.cursorY += spacing;
   }
 
   private breakPageIfNeeded(blockHeight: number): void {
@@ -496,14 +966,17 @@ export class PDFDocument {
     const page = this.page;
     const mark = page.content.mark();
     const prevFrame = this.frame;
+    const prevFrameTop = this.frameTop;
     this.frame = { x: outerX + padding.left, width: innerWidth };
     this.cursorY = startY + padding.top;
+    this.frameTop = this.cursorY;
     this.suppressBreaks++;
     try {
       content(this);
     } finally {
       this.suppressBreaks--;
       this.frame = prevFrame;
+      this.frameTop = prevFrameTop;
     }
 
     let height = this.cursorY + padding.bottom - startY;
@@ -513,6 +986,8 @@ export class PDFDocument {
       // Painted onto a detached stream, then inserted *before* the content:
       // the height was unknown when the content started drawing.
       const bg = new ContentStream();
+      const alpha = options.opacity !== undefined && options.opacity < 1;
+      if (alpha) bg.save().setGState(page.gsRes(clampAlpha(options.opacity!)));
       const radius = Math.min(options.radius ?? 0, outerWidth / 2, height / 2);
       buildRectPath(bg, outerX, page.ty(startY), outerWidth, height, radius);
       const fill = options.background !== undefined ? parseColor(options.background) : undefined;
@@ -522,10 +997,12 @@ export class PDFDocument {
       if (fill && stroke) bg.fillAndStroke();
       else if (fill) bg.fill();
       else if (stroke) bg.stroke();
+      if (alpha) bg.restore();
       page.content.insertAt(mark, bg);
     }
 
     this.cursorY = startY + height + margin.bottom;
+    this.lastBlock = height + margin.top + margin.bottom;
     return this;
   }
 
@@ -556,6 +1033,7 @@ export class PDFDocument {
     this.breakPageIfNeeded(this.defaults.size * this.defaults.lineHeight);
     const startY = this.cursorY;
     const prevFrame = this.frame;
+    const prevFrameTop = this.frameTop;
     let x = this.flowX;
     let endY = startY;
     this.suppressBreaks++;
@@ -563,6 +1041,7 @@ export class PDFDocument {
       for (let i = 0; i < builders.length; i++) {
         this.frame = { x, width: widths[i]! };
         this.cursorY = startY;
+        this.frameTop = startY;
         builders[i]!(this);
         endY = Math.max(endY, this.cursorY);
         x += widths[i]! + gap;
@@ -570,8 +1049,10 @@ export class PDFDocument {
     } finally {
       this.suppressBreaks--;
       this.frame = prevFrame;
+      this.frameTop = prevFrameTop;
     }
     this.cursorY = endY;
+    this.lastBlock = endY - startY;
     return this;
   }
 
@@ -592,6 +1073,179 @@ export class PDFDocument {
       if (i + cols < cells.length) this.cursorY += rowGap;
     }
     return this;
+  }
+
+  /**
+   * Newspaper-style flow: a sequence of items is poured into N columns,
+   * continuing into the next column when one is full and onto the next page
+   * when the last column is full — the piece `columns()` (side-by-side,
+   * single page) and `grid()` (row-wise) cannot do.
+   *
+   * ```ts
+   * pdf.flowColumns(categories.map((c) => ({
+   *   render: (d) => { d.text(c.name, { bold: true, spacingAfter: 3 }); d.text(c.skills.join(" · ")); },
+   *   spacingBefore: 10,
+   *   keepWithNext: true,
+   * })), { columns: 2, gap: 24, balance: true });
+   * ```
+   *
+   * Each item is measured at column width first (via `measureBlock()`), so
+   * items are never split; an item taller than a whole column is reported
+   * in `dropped` rather than silently overflowing. With `balance: true` the
+   * items on the final page are spread evenly instead of packing the left
+   * column to the bottom.
+   */
+  flowColumns(items: FlowItem[], options: FlowColumnsOptions = {}): FlowColumnsResult {
+    const count = options.columns ?? options.widths?.length ?? 2;
+    if (!Number.isInteger(count) || count < 1) {
+      throw new FastPDFError(`flowColumns() needs a positive integer "columns" (got ${count})`, "INVALID_ARGUMENT");
+    }
+    if (this.suppressBreaks > 0) {
+      throw new FastPDFError(
+        "flowColumns() spans pages and cannot run inside container()/columns()/grid()/region()",
+        "INVALID_ARGUMENT",
+      );
+    }
+    if (items.length === 0) return { pages: 1, dropped: 0 };
+
+    const gap = options.gap ?? 18;
+    const total = this.flowWidth - gap * (count - 1);
+    let widths: number[];
+    if (options.widths) {
+      if (options.widths.length !== count) {
+        throw new FastPDFError(
+          `flowColumns() got ${count} columns but ${options.widths.length} widths`,
+          "INVALID_ARGUMENT",
+        );
+      }
+      widths = options.widths.map((w) => resolveSize(w, total));
+      const sum = widths.reduce((a, b) => a + b, 0);
+      if (sum > total) widths = widths.map((w) => (w * total) / sum);
+    } else {
+      widths = new Array<number>(count).fill(total / count);
+    }
+    const narrowest = Math.min(...widths);
+
+    // Measure once, at the narrowest column width so an item fits wherever
+    // it lands. Measuring is the whole point: nothing is drawn twice blind.
+    const measured = items.map((item) => {
+      const spec = typeof item === "function" ? { render: item } : item;
+      const { height } = this.measureBlock((d) => spec.render(d as PDFDocument), { width: narrowest });
+      return {
+        render: spec.render,
+        height,
+        spacingBefore: spec.spacingBefore ?? 0,
+        spacingAfter: spec.spacingAfter ?? 0,
+        keepWithNext: spec.keepWithNext ?? false,
+      };
+    });
+
+    const bottom = options.bottom ?? this.page.contentBottom;
+    const startX = this.flowX;
+    const columnTop = this.cursorY;
+    let limit = bottom;
+    let pages = 1;
+    let dropped = 0;
+
+    /** Greedily pack items into `count` columns of at most `limit` height. */
+    const pack = (from: number, top: number, height: number): { columns: number[][]; next: number } => {
+      const columns: number[][] = [];
+      let i = from;
+      for (let c = 0; c < count; c++) {
+        const bucket: number[] = [];
+        let y = top;
+        while (i < measured.length) {
+          const item = measured[i]!;
+          const lead = bucket.length === 0 ? 0 : item.spacingBefore;
+          const needed = lead + item.height + item.spacingAfter;
+          // Keep a flagged item with its successor: both must fit, or neither.
+          const partner = item.keepWithNext ? measured[i + 1] : undefined;
+          const withPartner = partner ? needed + partner.spacingBefore + partner.height : needed;
+          if (bucket.length > 0 && y - top + withPartner > height + 0.01) break;
+          if (bucket.length === 0 && item.height > height + 0.01) {
+            dropped++; // taller than a whole column: it can never be placed
+            i++;
+            continue;
+          }
+          bucket.push(i);
+          y += needed;
+          i++;
+        }
+        columns.push(bucket);
+        if (i >= measured.length) break;
+      }
+      return { columns, next: i };
+    };
+
+    const draw = (columns: number[][], top: number): void => {
+      let x = startX;
+      columns.forEach((bucket, c) => {
+        let y = top;
+        bucket.forEach((index, position) => {
+          const item = measured[index]!;
+          if (position > 0) y += item.spacingBefore;
+          this.region({ x, y, width: widths[c]!, height: item.height }, (d) =>
+            item.render(d as PDFDocument),
+          );
+          y += item.height + item.spacingAfter;
+        });
+        x += widths[c]! + gap;
+      });
+    };
+
+    let index = 0;
+    let top = columnTop;
+    for (;;) {
+      let height = limit - top;
+      let { columns, next } = pack(index, top, height);
+      const lastPage = next >= measured.length;
+
+      if (lastPage && options.balance) {
+        // Shrink the column height until the remainder no longer fits in
+        // fewer columns — the classic binary search for even columns.
+        const rest = measured.slice(index);
+        const contentHeight = rest.reduce((a, it, i) => a + it.height + it.spacingAfter + (i > 0 ? it.spacingBefore : 0), 0);
+        let lo = Math.max(...rest.map((it) => it.height));
+        let hi = height;
+        let best = height;
+        for (let step = 0; step < 24 && lo <= hi; step++) {
+          const mid = (lo + hi) / 2;
+          const trial = pack(index, top, mid);
+          if (trial.next >= measured.length) {
+            best = mid;
+            hi = mid - 0.5;
+          } else {
+            lo = mid + 0.5;
+          }
+        }
+        // Never balance below the average — that would only add whitespace.
+        height = Math.max(best, contentHeight / count);
+        ({ columns, next } = pack(index, top, height));
+      }
+
+      draw(columns, top);
+      index = next;
+      if (index >= measured.length) {
+        const used = Math.max(
+          ...columns.map((bucket) =>
+            bucket.reduce((y, i, position) => {
+              const item = measured[i]!;
+              return y + (position > 0 ? item.spacingBefore : 0) + item.height + item.spacingAfter;
+            }, 0),
+          ),
+          0,
+        );
+        this.cursorY = top + used;
+        this.lastBlock = used;
+        break;
+      }
+      if (columns.every((bucket) => bucket.length === 0)) break; // nothing placeable
+      this.addPage();
+      pages++;
+      top = this.cursorY;
+      limit = options.bottom ?? this.page.contentBottom;
+    }
+    return { pages, dropped };
   }
 
   // ── Fonts ────────────────────────────────────────────────────────────
@@ -659,6 +1313,7 @@ export class PDFDocument {
       underline: options.underline ?? this.defaults.underline,
       strikethrough: options.strikethrough ?? this.defaults.strikethrough,
       letterSpacing: options.letterSpacing ?? this.defaults.letterSpacing,
+      opacity: options.opacity,
     };
     assertFinite(style.size, "text size");
     assertFinite(style.lineHeight, "text lineHeight");
@@ -667,9 +1322,12 @@ export class PDFDocument {
     if (options.y !== undefined) assertFinite(options.y, "text y");
     if (options.width !== undefined) assertFinite(options.width, "text width");
     if (options.spacingAfter !== undefined) assertFinite(options.spacingAfter, "text spacingAfter");
+    if (options.rotate !== undefined) assertFinite(options.rotate, "text rotate");
 
     const font = this.resolveFontStyle(style.font, style.bold, style.italic);
+    style.skew = this.syntheticItalic(style.font, style.bold, style.italic);
     const lineStep = style.size * style.lineHeight;
+    const rotate = options.rotate ?? 0;
 
     if (options.link !== undefined) checkLinkTarget(options.link);
 
@@ -677,39 +1335,125 @@ export class PDFDocument {
       // Absolute positioning: draw where told, leave the flow cursor alone.
       const x = options.x ?? this.page.margins.left;
       const width = options.width ?? this.page.size.width - this.page.margins.right - x;
-      let y = options.y;
-      for (const line of wrapLines(content, font, style.size, width, style.letterSpacing)) {
-        const drawn = this.drawTextLine(line, font, style, x, y, width);
-        if (drawn && options.link !== undefined) {
-          this.page.links.push({ x: drawn.x, y, width: drawn.width, height: lineStep, target: options.link });
+      const lines = wrapLines(content, font, style.size, width, style.letterSpacing);
+      this.paintRotated(rotate, x, options.y, () => {
+        let y = options.y!;
+        for (const line of lines) {
+          const drawn = this.drawTextLine(line, font, style, x, y, width);
+          // A rotated block's link rectangle would no longer cover the glyphs.
+          if (drawn && options.link !== undefined && rotate === 0) {
+            this.page.links.push({ x: drawn.x, y, width: drawn.width, height: lineStep, target: options.link });
+          }
+          y += lineStep;
         }
-        y += lineStep;
-      }
+      });
+      this.lastBlock = lines.length * lineStep;
       return this;
     }
 
+    this.applySpacingBefore(options.spacingBefore);
     const x = this.flowX + (options.x ?? 0);
     const width = options.width ?? this.flowX + this.flowWidth - x;
-    for (const line of wrapLines(content, font, style.size, width, style.letterSpacing)) {
+    const lines = wrapLines(content, font, style.size, width, style.letterSpacing);
+    const blockHeight = lines.length * lineStep;
+
+    if (rotate !== 0) {
+      // Rotated blocks are atomic: they cannot be split across pages.
+      this.breakPageIfNeeded(blockHeight);
+      const top = this.cursorY;
+      this.paintRotated(rotate, x, top, () => {
+        let y = top;
+        for (const line of lines) {
+          this.drawTextLine(line, font, style, x, y, width);
+          y += lineStep;
+        }
+      });
+      this.cursorY = top + blockHeight + (options.spacingAfter ?? 0);
+      this.lastBlock = blockHeight;
+      return this;
+    }
+
+    if (options.keepWithNext !== undefined && options.keepWithNext !== false) {
+      const extra = typeof options.keepWithNext === "number" ? options.keepWithNext : 2;
+      this.breakPageIfNeeded(blockHeight + extra * lineStep);
+    }
+
+    const startY = this.cursorY;
+    let pageBreaks = 0;
+    for (const line of lines) {
+      const before = this.cursorY;
       this.breakPageIfNeeded(lineStep);
+      if (this.cursorY < before) pageBreaks++;
       const drawn = this.drawTextLine(line, font, style, x, this.cursorY, width);
       if (drawn && options.link !== undefined) {
         this.page.links.push({ x: drawn.x, y: this.cursorY, width: drawn.width, height: lineStep, target: options.link });
       }
       this.cursorY += lineStep;
     }
+    this.lastBlock = pageBreaks > 0 ? blockHeight : this.cursorY - startY;
     this.cursorY += options.spacingAfter ?? 0;
     return this;
   }
 
-  /** Measure text width in points with the current (or given) style. */
-  widthOfText(content: string, options: Pick<TextOptions, "font" | "size" | "bold" | "italic"> = {}): number {
+  /**
+   * Measure text width in points with the current (or given) style.
+   * For a wrapped block use `measureText()`, which also reports the height.
+   */
+  widthOfText(
+    content: string,
+    options: Pick<TextOptions, "font" | "size" | "bold" | "italic" | "letterSpacing"> = {},
+  ): number {
     const font = this.resolveFontStyle(
       options.font ?? this.defaults.font,
       options.bold ?? this.defaults.bold,
       options.italic ?? this.defaults.italic,
     );
-    return font.widthOf(content, options.size ?? this.defaults.size);
+    return measureLine(
+      content,
+      font,
+      options.size ?? this.defaults.size,
+      options.letterSpacing ?? this.defaults.letterSpacing,
+    );
+  }
+
+  /** Width a `text()` call would wrap against, given the same options. */
+  private textWidthFor(options: TextOptions): number {
+    if (options.width !== undefined) return options.width;
+    if (options.y !== undefined) {
+      const x = options.x ?? this.page.margins.left;
+      return this.page.size.width - this.page.margins.right - x;
+    }
+    return this.flowWidth - (options.x ?? 0);
+  }
+
+  /** Rotate the drawing in `paint` clockwise around a top-left anchor. */
+  private paintRotated(degrees: number, x: number, yTop: number, paint: () => void): void {
+    if (degrees === 0) {
+      paint();
+      return;
+    }
+    const rad = (-degrees * Math.PI) / 180;
+    const cos = Math.cos(rad);
+    const sin = Math.sin(rad);
+    const py = this.page.ty(yTop);
+    const content = this.page.content;
+    content.save().transform(cos, sin, -sin, cos, x - cos * x + sin * py, py - sin * x - cos * py);
+    try {
+      paint();
+    } finally {
+      content.restore();
+    }
+  }
+
+  /**
+   * True when italic was asked for but the family has no italic cut, so the
+   * glyphs must be slanted synthetically. Without this, italic text in a
+   * family registered with only a regular file renders silently upright.
+   */
+  private syntheticItalic(family: string, bold: boolean, italic: boolean): boolean {
+    if (!italic) return false;
+    const variants = this.customFonts.get(family.toLowerCase());
+    return variants !== undefined && variants[styleIndex(bold, true)] === undefined;
   }
 
   private drawTextLine(
@@ -723,46 +1467,49 @@ export class PDFDocument {
     if (line.text === "") return null;
     const size = style.size;
     const spacing = style.letterSpacing;
-    const chars = [...line.text].length;
-    const naturalWidth = font.widthOf(line.text, size) + (chars > 1 ? (chars - 1) * spacing : 0);
+    const naturalWidth = measureLine(line.text, font, size, spacing);
     const justify = style.align === "justify" && !line.paragraphEnd && line.text.includes(" ");
     const offset = justify ? 0 : alignOffset(naturalWidth, boxWidth, style.align);
     const baselineTop = yTop + (font.ascent * size) / 1000;
     const baseline = this.page.ty(baselineTop);
     const fontRes = this.page.fontRes(font);
-    const content = this.page.content.fillColor(style.color);
+    // Missing italic cuts are slanted by the standard 12° oblique shear.
+    const skew = style.skew ? Math.tan((12 * Math.PI) / 180) : 0;
 
     let drawnWidth = naturalWidth;
-    if (justify) {
-      // Distribute the leftover width over the gaps via TJ adjustments
-      // (works for WinAnsi and Identity-H alike, unlike the Tw operator).
-      const words = line.text.split(" ");
-      const gaps = words.length - 1;
-      const extra = (boxWidth - naturalWidth) / gaps;
-      const adj = -(extra * 1000) / size;
-      const parts: (string | number)[] = [];
-      words.forEach((word, i) => {
-        parts.push(font.encode(i < gaps ? word + " " : word));
-        if (i < gaps) parts.push(adj);
-      });
-      content.textTJ(parts, x, baseline, fontRes, size, spacing);
-      drawnWidth = boxWidth;
-    } else {
-      content.text(font.encode(line.text), x + offset, baseline, fontRes, size, spacing);
-    }
+    this.withAlpha(style.opacity, () => {
+      const content = this.page.content.fillColor(style.color);
+      if (justify) {
+        // Distribute the leftover width over the gaps via TJ adjustments
+        // (works for WinAnsi and Identity-H alike, unlike the Tw operator).
+        const words = line.text.split(" ");
+        const gaps = words.length - 1;
+        const extra = (boxWidth - naturalWidth) / gaps;
+        const adj = -(extra * 1000) / size;
+        const parts: (string | number)[] = [];
+        words.forEach((word, i) => {
+          parts.push(font.encode(i < gaps ? word + " " : word));
+          if (i < gaps) parts.push(adj);
+        });
+        content.textTJ(parts, x, baseline, fontRes, size, spacing, skew);
+        drawnWidth = boxWidth;
+      } else {
+        content.text(font.encode(line.text), x + offset, baseline, fontRes, size, spacing, skew);
+      }
 
-    if (style.underline || style.strikethrough) {
-      const thickness = Math.max(0.5, size * 0.05);
-      content.strokeColor(style.color).lineWidth(thickness);
-      if (style.underline) {
-        const uy = this.page.ty(baselineTop + size * 0.1);
-        content.moveTo(x + offset, uy).lineTo(x + offset + drawnWidth, uy).stroke();
+      if (style.underline || style.strikethrough) {
+        const thickness = Math.max(0.5, size * 0.05);
+        content.strokeColor(style.color).lineWidth(thickness);
+        if (style.underline) {
+          const uy = this.page.ty(baselineTop + size * 0.1);
+          content.moveTo(x + offset, uy).lineTo(x + offset + drawnWidth, uy).stroke();
+        }
+        if (style.strikethrough) {
+          const sy = this.page.ty(baselineTop - size * 0.25);
+          content.moveTo(x + offset, sy).lineTo(x + offset + drawnWidth, sy).stroke();
+        }
       }
-      if (style.strikethrough) {
-        const sy = this.page.ty(baselineTop - size * 0.25);
-        content.moveTo(x + offset, sy).lineTo(x + offset + drawnWidth, sy).stroke();
-      }
-    }
+    });
     return { x: x + offset, width: drawnWidth };
   }
 
@@ -795,6 +1542,18 @@ export class PDFDocument {
       lineHeight,
       resolveFont: resolve,
       aligns: options.aligns,
+      valign: options.valign,
+      // Custom cells are measured with the same double pass as measureBlock().
+      // The probe box starts at the dry run's own cursor, so a callback that
+      // reports its height by advancing `doc.y` measures correctly.
+      measureRender: (cell, innerWidth) =>
+        Math.max(
+          0,
+          this.measureBlock(
+            (d) => cell.render!(d, { x: d.x, y: d.y, width: innerWidth, height: 0 }),
+            { width: innerWidth },
+          ).height,
+        ),
     });
     const header = hasHeader ? measured[0]! : null;
     const tableX = this.flowX;
@@ -820,7 +1579,22 @@ export class PDFDocument {
           ? parseColor(mc.cell.color)
           : row.isHeader ? headerColor : this.defaults.color;
         const innerWidth = mc.width - 2 * padding;
-        let lineY = yTop + padding;
+        // Vertical placement inside the (possibly taller) cell box.
+        const slack = Math.max(0, mc.height - 2 * padding - mc.contentHeight);
+        const vShift = mc.valign === "middle" ? slack / 2 : mc.valign === "bottom" ? slack : 0;
+        if (mc.cell.render) {
+          const box = {
+            x: x + padding,
+            y: yTop + padding + vShift,
+            width: innerWidth,
+            height: mc.contentHeight,
+          };
+          // Run through region(): the callback gets its own cursor and frame,
+          // so moving `doc.y` inside a cell cannot shift the rows below it.
+          this.region(box, () => mc.cell.render!(this, box));
+          continue;
+        }
+        let lineY = yTop + padding + vShift;
         for (const line of mc.lines) {
           if (line !== "") {
             const offset = alignOffset(font.widthOf(line, fontSize), innerWidth, mc.align);
@@ -849,6 +1623,7 @@ export class PDFDocument {
 
     // Group rows chained by rowSpans so a span never straddles a page break.
     const body = hasHeader ? measured.slice(1) : measured;
+    const tableTop = this.cursorY;
     if (header) {
       ensureSpace(header.height + (body[0]?.height ?? 0));
       drawRow(header, false);
@@ -865,6 +1640,7 @@ export class PDFDocument {
       }
       i = end + 1;
     }
+    this.lastBlock = this.cursorY - tableTop;
     return this;
   }
 
@@ -969,39 +1745,54 @@ export class PDFDocument {
       clip = options.fit === "cover";
     }
 
+    // A radius (or shape: "circle") rounds the box and clips the overflow —
+    // real vector clipping, so it works identically on a server and in a
+    // browser, with no Canvas pre-processing.
+    if (options.radius !== undefined) assertFinite(options.radius, "image radius");
+    const requested =
+      options.shape === "circle" ? Math.min(boxW, boxH) / 2 : options.radius ?? 0;
+    const radius = Math.max(0, Math.min(requested, boxW / 2, boxH / 2));
+    if (radius > 0) clip = true;
+
     const draw = (x: number, yTop: number): void => {
-      const c = this.page.content;
-      const rotate = options.rotate ?? 0;
-      const wrap = clip || rotate !== 0;
-      if (wrap) {
-        c.save();
-        if (rotate !== 0) {
-          // Rotate clockwise around the box center (PDF rotates CCW → negate).
-          const rad = (-rotate * Math.PI) / 180;
-          const cos = Math.cos(rad);
-          const sin = Math.sin(rad);
-          const cx = x + boxW / 2;
-          const cy = this.page.ty(yTop + boxH / 2);
-          c.transform(cos, sin, -sin, cos, cx - cos * cx + sin * cy, cy - sin * cx - cos * cy);
+      this.withAlpha(options.opacity, () => {
+        const c = this.page.content;
+        const rotate = options.rotate ?? 0;
+        const wrap = clip || rotate !== 0;
+        if (wrap) {
+          c.save();
+          if (rotate !== 0) {
+            // Rotate clockwise around the box center (PDF rotates CCW → negate).
+            const rad = (-rotate * Math.PI) / 180;
+            const cos = Math.cos(rad);
+            const sin = Math.sin(rad);
+            const cx = x + boxW / 2;
+            const cy = this.page.ty(yTop + boxH / 2);
+            c.transform(cos, sin, -sin, cos, cx - cos * cx + sin * cy, cy - sin * cx - cos * cy);
+          }
+          if (clip) {
+            buildRectPath(c, x, this.page.ty(yTop), boxW, boxH, radius);
+            c.clip();
+          }
         }
-        if (clip) {
-          c.rect(x, this.page.ty(yTop + boxH), boxW, boxH).clip();
-        }
-      }
-      c.image(this.page.imageRes(entry), x + dx, this.page.ty(yTop + dy + dh), dw, dh);
-      if (wrap) c.restore();
+        c.image(this.page.imageRes(entry), x + dx, this.page.ty(yTop + dy + dh), dw, dh);
+        if (wrap) c.restore();
+      });
     };
 
     if (options.y !== undefined) {
       draw(options.x ?? this.page.margins.left, options.y);
+      this.lastBlock = boxH;
       return this;
     }
 
+    this.applySpacingBefore(options.spacingBefore);
     this.breakPageIfNeeded(boxH);
     const free = this.flowWidth - boxW;
     const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
     draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
     this.cursorY += boxH + (options.spacingAfter ?? 0);
+    this.lastBlock = boxH;
     return this;
   }
 
@@ -1052,7 +1843,7 @@ export class PDFDocument {
 
     const currentColor = options.color !== undefined ? parseColor(options.color) : BLACK;
 
-    const draw = (boxX: number, boxTop: number): void => {
+    const paint = (boxX: number, boxTop: number): void => {
       const pageH = this.page.size.height;
       const base: Mat = [
         sx, 0, 0, -sy,
@@ -1075,16 +1866,22 @@ export class PDFDocument {
       renderSvg(svg, base, ctx);
       if (clip) this.page.content.restore();
     };
+    const draw = (boxX: number, boxTop: number): void => {
+      this.withAlpha(options.opacity, () => paint(boxX, boxTop));
+    };
 
     if (options.y !== undefined) {
       draw(options.x ?? this.page.margins.left, options.y);
+      this.lastBlock = boxH;
       return this;
     }
+    this.applySpacingBefore(options.spacingBefore);
     this.breakPageIfNeeded(boxH);
     const free = this.flowWidth - boxW;
     const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
     draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
     this.cursorY += boxH + (options.spacingAfter ?? 0);
+    this.lastBlock = boxH;
     return this;
   }
 
@@ -1346,12 +2143,14 @@ export class PDFDocument {
     assertFinite(y1, "line y1");
     assertFinite(x2, "line x2");
     assertFinite(y2, "line y2");
-    this.page.content
-      .strokeColor(options.color !== undefined ? parseColor(options.color) : BLACK)
-      .lineWidth(options.width ?? 1)
-      .moveTo(x1, this.page.ty(y1))
-      .lineTo(x2, this.page.ty(y2))
-      .stroke();
+    this.withAlpha(options.opacity, () => {
+      this.page.content
+        .strokeColor(options.color !== undefined ? parseColor(options.color) : BLACK)
+        .lineWidth(options.width ?? 1)
+        .moveTo(x1, this.page.ty(y1))
+        .lineTo(x2, this.page.ty(y2))
+        .stroke();
+    });
     return this;
   }
 
@@ -1361,8 +2160,9 @@ export class PDFDocument {
     assertFinite(width, "rect width");
     assertFinite(height, "rect height");
     const r = Math.min(options.radius ?? 0, width / 2, height / 2);
-    buildRectPath(this.page.content, x, this.page.ty(y), width, height, r);
-    return this.paintPath(options);
+    return this.paintShape(options, () =>
+      buildRectPath(this.page.content, x, this.page.ty(y), width, height, r),
+    );
   }
 
   /** Circle with center (cx, cy) and radius r (top-left coordinates). */
@@ -1379,30 +2179,44 @@ export class PDFDocument {
     if (rx <= 0 || ry <= 0) {
       throw new FastPDFError(`Ellipse radii must be positive (got ${rx}, ${ry})`, "INVALID_ARGUMENT");
     }
-    const c = this.page.content;
-    const y = this.page.ty(cy);
-    const kx = KAPPA * rx;
-    const ky = KAPPA * ry;
-    c.moveTo(cx + rx, y)
-      .curveTo(cx + rx, y + ky, cx + kx, y + ry, cx, y + ry)
-      .curveTo(cx - kx, y + ry, cx - rx, y + ky, cx - rx, y)
-      .curveTo(cx - rx, y - ky, cx - kx, y - ry, cx, y - ry)
-      .curveTo(cx + kx, y - ry, cx + rx, y - ky, cx + rx, y)
-      .closePath();
-    return this.paintPath(options);
+    return this.paintShape(options, () => {
+      const c = this.page.content;
+      const y = this.page.ty(cy);
+      const kx = KAPPA * rx;
+      const ky = KAPPA * ry;
+      c.moveTo(cx + rx, y)
+        .curveTo(cx + rx, y + ky, cx + kx, y + ry, cx, y + ry)
+        .curveTo(cx - kx, y + ry, cx - rx, y + ky, cx - rx, y)
+        .curveTo(cx - rx, y - ky, cx - kx, y - ry, cx, y - ry)
+        .curveTo(cx + kx, y - ry, cx + rx, y - ky, cx + rx, y)
+        .closePath();
+    });
   }
 
-  /** Paint the current path according to fill/stroke options. */
-  private paintPath(options: ShapeOptions): this {
+  /**
+   * Build a path and paint it according to fill/stroke options.
+   *
+   * The alpha state is set *before* the path is constructed and undone with
+   * `Q` after painting: PDF's graphics object model only allows path
+   * construction and painting operators between the two, so a `gs` wedged
+   * in front of the paint operator would be out of place.
+   */
+  private paintShape(options: ShapeOptions, buildPath: () => void): this {
+    const alpha = options.opacity !== undefined && options.opacity < 1;
     const c = this.page.content;
     const fill = options.fill !== undefined ? parseColor(options.fill) : undefined;
     const stroke = options.stroke !== undefined ? parseColor(options.stroke) : undefined;
+    if (alpha) c.save().setGState(this.page.gsRes(clampAlpha(options.opacity!)));
+    // Colour and line width are graphics-state operators too: set them at
+    // page-description level, before the path object begins.
     if (fill) c.fillColor(fill);
     if (stroke) c.strokeColor(stroke).lineWidth(options.lineWidth ?? 1);
+    if (!fill && !stroke) c.strokeColor(BLACK).lineWidth(options.lineWidth ?? 1);
+    buildPath();
     if (fill && stroke) c.fillAndStroke();
     else if (fill) c.fill();
-    else if (stroke) c.stroke(); // stroke color already set above — don't reset it
-    else c.strokeColor(BLACK).lineWidth(options.lineWidth ?? 1).stroke();
+    else c.stroke(); // stroke colour (explicit or the black default) is already set
+    if (alpha) c.restore();
     return this;
   }
 
@@ -1827,6 +2641,11 @@ export class PDFDocument {
       Pages: pagesRef,
       Outlines: outlinesRef,
       PageMode: outlinesRef ? new Name("UseOutlines") : undefined,
+      // Natural language, for screen readers and PDF/UA conformance.
+      Lang: this.language !== undefined ? textString(this.language) : undefined,
+      // With a title present, tell viewers to show it instead of the filename.
+      ViewerPreferences:
+        this.metadata.title !== undefined ? { DisplayDocTitle: true } : undefined,
       // SigFlags: bit 1 = SignaturesExist. A real signature also sets bit 2
       // (AppendOnly, value 3) so viewers preserve the signed bytes.
       AcroForm:
@@ -1834,6 +2653,12 @@ export class PDFDocument {
     });
     const infoRef = writer.add(this.buildInfo());
 
+    if (this.encryption !== undefined && !supportsEncryption() && this.encryption.onUnsupported === "skip") {
+      // Explicitly opted in to an unencrypted fallback (e.g. an insecure
+      // browser context): render the document rather than failing the export.
+      const plain = await writer.finalize(catalogRef, infoRef);
+      return signState !== undefined ? embedSignature(plain, signState) : plain;
+    }
     if (this.encryption !== undefined) {
       const handler = await createSecurityHandler(this.encryption);
       const encryptRef = writer.add(handler.dict);
@@ -2007,6 +2832,11 @@ export class PDFDocument {
 
 function clampAlpha(a: number): number {
   return a < 0 ? 0 : a > 1 ? 1 : a;
+}
+
+/** Corner radius of a clip rectangle, capped at half its shorter side. */
+function clipRadius(rect: ClipRect): number {
+  return Math.max(0, Math.min(rect.radius ?? 0, rect.width / 2, rect.height / 2));
 }
 
 /**

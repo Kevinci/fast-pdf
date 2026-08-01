@@ -21,6 +21,10 @@ export interface Font {
   readonly ascent: number;
   /** Descent in 1/1000 em (negative). */
   readonly descent: number;
+  /** Height of a flat capital in 1/1000 em. */
+  readonly capHeight: number;
+  /** Recommended extra leading between lines, in 1/1000 em. */
+  readonly lineGap: number;
   /** Encode text for a content stream (latin1 string, one char = one byte). */
   encode(text: string): string;
   /** Width of the given text at the given size, in points. */
@@ -45,6 +49,15 @@ export class StandardFont implements Font {
 
   get descent(): number {
     return this.metrics.descent;
+  }
+
+  get capHeight(): number {
+    return this.metrics.capHeight;
+  }
+
+  /** The standard 14 fonts define no line gap; leading comes from lineHeight. */
+  get lineGap(): number {
+    return 0;
   }
 
   encode(text: string): string {

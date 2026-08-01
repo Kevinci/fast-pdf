@@ -81,8 +81,10 @@ describe("PDFDocument", () => {
     expect(text).toContain("1 0 0 RG");
     expect(text).toContain("0 1 0 rg");
     expect(text).toContain(" re");
-    expect(text).toContain("1 w\nB"); // fill + stroke
-
+    // Colour and line width are graphics-state operators, so they precede the
+    // path object; only construction and painting live between `re` and `B`.
+    expect(text).toContain("1 w\n"); // stroke width
+    expect(text).toMatch(/ re\nB/); // fill + stroke paints the rect
   });
 
   it("returns Buffer and Blob outputs", async () => {

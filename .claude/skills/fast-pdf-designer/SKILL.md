@@ -17,6 +17,7 @@ Don't start from a blank file. Copy the closest example and adapt:
 |---|---|
 | `examples/invoice.ts` | Invoices, quotes, order confirmations — letterhead, item table, totals block |
 | `examples/report.ts` | Design-forward reports — full-bleed cover, KPI cards, vector bar chart, dark theme |
+| `examples/cv.ts` | CVs, profiles, datasheets — full-height sidebar, circular portrait, measured panels, balanced multi-column flow |
 | `examples/signature.ts` | Contracts & agreements — clause sections, side-by-side AcroForm signature fields |
 | `examples/showcase.ts` | Feature reference — TOC, outlines, watermark, spans, columns, links |
 | `examples/basic.ts` | Minimal starting point |
@@ -108,6 +109,45 @@ pdf.signature({ name: "contractor", label: "Contractor · place, date", x: 325, 
 **Footer** — hairline + centered 8 pt meta, via absolute y near page bottom
 (single page) or `pdf.footer()` (every page).
 
+**Panel sized to its text** — measure first, then draw the box behind it.
+Never guess a line count:
+```ts
+const m = pdf.measureText(quote, { width: 300, size: 10, lineHeight: 1.5 });
+pdf.rect(50, y, 324, m.height + 24, { fill: PANEL, radius: 8 });
+pdf.text(quote, { x: 62, y: y + 12, width: 300, size: 10, lineHeight: 1.5 });
+```
+For mixed content use `pdf.measureBlock((d) => …, { width })`.
+
+**Sidebar on every page** — `region()` inside a decorator, not manual `y`:
+```ts
+pdf.onPage((doc, info) => {
+  doc.rect(0, 0, 170, info.size.height, { fill: INK });
+  doc.image(photo, { x: 35, y: 44, width: 100, height: 100, shape: "circle", fit: "cover" });
+  const { overflow } = doc.region({ x: 28, y: 170, width: 114, height: info.size.height - 220 }, (d) => {
+    d.text("KONTAKT", { color: ACCENT, size: 8, bold: true, letterSpacing: 1.5, spacingAfter: 6 });
+    d.text(contact, { color: "#e2e8f0", size: 9 });
+  });
+  if (overflow) console.warn("sidebar content truncated");
+});
+```
+
+**Two-column list that continues across pages** — `flowColumns()`, not
+`columns()` (which is side-by-side, single page):
+```ts
+pdf.flowColumns(categories.map((c) => ({
+  render: (d) => { d.text(c.name, { bold: true, spacingAfter: 3 }); d.text(c.items.join(" · ")); },
+  spacingBefore: 12,
+  keepWithNext: true,
+})), { columns: 2, gap: 24, balance: true });
+```
+
+**Optically centred bullet** — from real metrics, never a magic constant:
+```ts
+const f = pdf.fontMetrics({ size: 9 });
+pdf.circle(pdf.x + 2, pdf.y + f.baseline - f.capHeight / 2, 1.8, { fill: ACCENT });
+pdf.text(label, { x: 10, size: 9 });
+```
+
 ## 4 · Validation loop (mandatory)
 
 Generate → look at it → fix. Repeat until it looks right:
@@ -129,11 +169,30 @@ question to page 1 temporarily.
 - Coordinates are **top-left based, in points**; A4 = 595.28 × 841.89.
 - Passing `y` to text/image/signature switches to **absolute mode**: no flow,
   no cursor movement, no page breaks. Omit `y` to flow.
-- `pdf.y` reads/sets the flow cursor; `pdf.pageSize` gives `{ width, height }`.
-- `pageBreak()` throws inside `container()` / `columns()` / `grid()` — those
-  blocks guarantee one-page content.
+- `x` means two different things: **without** `y` it is an offset inside the
+  flow area, **with** `y` it is an absolute page coordinate. `pdf.x` is the
+  flow area's absolute left edge — use `pdf.x + offset` to convert.
+- `pdf.y` reads/sets the flow cursor; `pdf.pageSize` gives `{ width, height }`;
+  `pdf.width` / `pdf.remainingHeight` give the active area's width and the
+  room left below the cursor.
+- **Never reimplement line breaking.** `measureText()` / `measureBlock()` run
+  the exact engine `text()` draws with; a hand-rolled wrapper will drift and
+  blocks will overlap.
+- Absolute blocks never page-break themselves. Use `ensureSpace(n)` before
+  them, or `keepTogether(fn)` to move a whole group — don't hand-roll a
+  `reserve()` helper.
+- `spacingAfter` alone is wrong for flowing documents: the gap survives at the
+  top of the next page or column. Use `spacingBefore`, which collapses there.
+- `pageBreak()` throws inside `container()` / `columns()` / `grid()` / `region()`
+  — those blocks guarantee one-page content. `flowColumns()` throws inside them
+  too, since it spans pages by design.
+- Round images: `image({ shape: "circle" })` — real vector clipping, works
+  server-side. Do **not** pre-punch alpha with `<canvas>`; that is browser-only.
 - `toc()` must be the **last** call before saving.
 - `signature()` names must be unique per document; omit `name` for auto-numbering.
 - Full-bleed backgrounds need `margins: 0` (report.ts) or absolute `rect()`s.
-- Custom fonts: register every variant you use (`bold: true` etc.); missing
-  variants silently fall back to regular.
+- Custom fonts: `.ttf` only (convert WOFF2 first). Register every **bold**
+  variant you use — a missing bold silently falls back to regular. A missing
+  italic is slanted synthetically, which is visibly worse than a real cut.
+- Set `language: "de-DE"` on the document — one line, and screen readers and
+  ATS parsers both use it.

@@ -19,6 +19,8 @@ export interface FontMetrics {
   fallback: number;
   ascent: number;
   descent: number;
+  /** Height of a flat capital (e.g. "H") in 1/1000 em. */
+  capHeight: number;
 }
 
 // prettier-ignore
@@ -137,9 +139,10 @@ function makeMetrics(
   extras: Record<number, number>,
   ascent: number,
   descent: number,
+  capHeight: number,
 ): FontMetrics {
   extras[0xa0] = ascii[0]!; // nbsp = space
-  return { ascii, extras, fallback: ascii[0]!, ascent, descent };
+  return { ascii, extras, fallback: ascii[0]!, ascent, descent, capHeight };
 }
 
 /** Width in 1/1000 em for one WinAnsi byte. */
@@ -161,43 +164,43 @@ export const METRICS = {
     quoteSingle: 222, quoteDouble: 333, quoteLow: 222, quoteDblLow: 333,
     trademark: 1000, guilSingle: 333, guilDouble: 556, degree: 400,
     middot: 278, germandbls: 611, ae: 889, AE: 1000, oe: 944, OE: 1000,
-  }), 718, -207),
+  }), 718, -207, 718),
   "Helvetica-Bold": makeMetrics(HELVETICA_BOLD_ASCII, typographicExtras({
     euro: 556, ellipsis: 1000, bullet: 350, endash: 556, emdash: 1000,
     quoteSingle: 278, quoteDouble: 500, quoteLow: 278, quoteDblLow: 500,
     trademark: 1000, guilSingle: 333, guilDouble: 556, degree: 400,
     middot: 278, germandbls: 611, ae: 889, AE: 1000, oe: 944, OE: 1000,
-  }), 718, -207),
+  }), 718, -207, 718),
   "Times-Roman": makeMetrics(TIMES_ASCII, typographicExtras({
     euro: 500, ellipsis: 1000, bullet: 350, endash: 500, emdash: 1000,
     quoteSingle: 333, quoteDouble: 444, quoteLow: 333, quoteDblLow: 444,
     trademark: 980, guilSingle: 333, guilDouble: 500, degree: 400,
     middot: 250, germandbls: 500, ae: 667, AE: 889, oe: 722, OE: 889,
-  }), 683, -217),
+  }), 683, -217, 662),
   "Times-Bold": makeMetrics(TIMES_BOLD_ASCII, typographicExtras({
     euro: 500, ellipsis: 1000, bullet: 350, endash: 500, emdash: 1000,
     quoteSingle: 333, quoteDouble: 500, quoteLow: 333, quoteDblLow: 500,
     trademark: 1000, guilSingle: 333, guilDouble: 500, degree: 400,
     middot: 250, germandbls: 556, ae: 722, AE: 1000, oe: 722, OE: 1000,
-  }), 683, -217),
+  }), 683, -217, 676),
   "Times-Italic": makeMetrics(TIMES_ITALIC_ASCII, typographicExtras({
     euro: 500, ellipsis: 889, bullet: 350, endash: 500, emdash: 889,
     quoteSingle: 333, quoteDouble: 556, quoteLow: 333, quoteDblLow: 556,
     trademark: 980, guilSingle: 333, guilDouble: 500, degree: 400,
     middot: 250, germandbls: 500, ae: 667, AE: 889, oe: 667, OE: 944,
-  }), 683, -217),
+  }), 683, -217, 653),
   "Times-BoldItalic": makeMetrics(TIMES_BOLD_ITALIC_ASCII, typographicExtras({
     euro: 500, ellipsis: 1000, bullet: 350, endash: 500, emdash: 1000,
     quoteSingle: 333, quoteDouble: 500, quoteLow: 333, quoteDblLow: 500,
     trademark: 1000, guilSingle: 333, guilDouble: 500, degree: 400,
     middot: 250, germandbls: 500, ae: 722, AE: 944, oe: 722, OE: 944,
-  }), 683, -217),
+  }), 683, -217, 669),
   Courier: makeMetrics(COURIER_ASCII, typographicExtras({
     euro: 600, ellipsis: 600, bullet: 600, endash: 600, emdash: 600,
     quoteSingle: 600, quoteDouble: 600, quoteLow: 600, quoteDblLow: 600,
     trademark: 600, guilSingle: 600, guilDouble: 600, degree: 600,
     middot: 600, germandbls: 600, ae: 600, AE: 600, oe: 600, OE: 600,
-  }), 629, -157),
+  }), 629, -157, 562),
 } as const;
 
 export type StandardFontName =

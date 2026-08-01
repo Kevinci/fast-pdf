@@ -6,6 +6,145 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [0.6.0] — 2026-08-01
+
+Driven almost entirely by a field report from a production application that
+builds six CV designs, a skill matrix, invoices and CLI documents with
+fast-pdf — in the browser, on a Node server and in scripts. Every item below
+removes something that project had to build or work around by hand.
+
+No breaking changes: existing documents render as before.
+
+### Added
+
+- **Measurement — `measureText()`, `measureBlock()`, `lastBlockHeight`.**
+  The single largest gap: `text()` returned `this`, and with `y` set the
+  cursor did not move at all, so any absolutely positioned design had to
+  predict its own line counts. Applications ended up reimplementing the line
+  breaker — two greedy implementations that must agree exactly or blocks
+  overlap.
+
+  `measureText(content, options)` wraps through the *same* engine `text()`
+  draws with and returns `{ lines, width, height, lineHeight, baseline }`.
+  `measureBlock(fn, { width })` lays arbitrary flow content out on a
+  throwaway page and reports its height, rolling back anchors, bookmarks and
+  images the dry run created. `lastBlockHeight` reports what the previous
+  block consumed — including for absolute blocks, where the cursor stands
+  still. Together they make a duplicate layout engine unnecessary.
+- **`fontMetrics({ font, size, … })`** → `{ baseline, ascent, descent,
+  capHeight, lineGap, lineHeight }` in points. Optical alignment (centring a
+  bullet against a text line) no longer needs a reverse-engineered constant.
+- **Browser build behind the `browser` export condition.** `save()` used a
+  dynamic `import("node:fs/promises")` guarded by a runtime check. Bundlers
+  resolve imports statically, so Turbopack, Vite and webpack still pulled a
+  Node resolution into client builds and broke them — every browser user paid
+  for it with a resolve alias plus a stub module. `dist/index.browser.js`
+  contains no `fs` reference at all and is selected automatically; also
+  reachable as `fast-pdf/browser`.
+- **Clipping in the public API — `clip()`, `image({ radius, shape })`.**
+  The renderer clipped internally for `container()` and `image({fit:"cover"})`
+  but exposed none of it, so a round avatar could only be produced by punching
+  alpha through a `<canvas>` — impossible on a server or in an edge function.
+  `image({ shape: "circle" })` and `image({ radius })` clip with a real vector
+  path in every runtime; `clip({ x, y, width, height, radius }, fn)` does the
+  same for arbitrary drawing.
+- **`opacity` on every primitive** — `line`, `rect`, `circle`, `ellipse`,
+  `text`, `image`, `svg` and `container` backgrounds. The `ExtGState` alpha
+  machinery existed for watermarks and SVG but was unreachable, so a
+  translucent overlay or a greyed-out preview could not be built.
+- **Flow control for absolute layouts** — `ensureSpace(needed)`,
+  `remainingHeight`, `keepTogether(fn)`, plus `spacingBefore` and
+  `keepWithNext` on `text()`. Absolute blocks never break by themselves, which
+  had every template hand-rolling its own `reserve()` helper with its own idea
+  of the bottom edge. `spacingBefore` collapses at the top of a page, column
+  or region — the behaviour `spacingAfter` cannot express in flowing documents.
+- **`region({ x, y, width, height, clip }, fn)`** — flow content with its own
+  cursor inside any rectangle, *including inside `onPage()` decorators*, where
+  no flow cursor exists. Returns `{ usedHeight, remaining, overflow }`, so a
+  sidebar that no longer fits says so instead of quietly dropping blocks.
+- **`flowColumns(items, options)`** — newspaper-style multi-column flow.
+  `columns()` places content side by side on one page and `grid()` works
+  row-wise; neither can let content run from column 1 into column 2 and onto
+  the next page. Items are measured at column width first (never split),
+  support `spacingBefore`/`keepWithNext`, and `balance: true` evens out the
+  final page. Items taller than a whole column are reported in `dropped`
+  rather than overflowing silently.
+- **`pdf.x` and `pdf.width`** — the active flow area's left edge and width.
+  `x` is the documented bridge between the two coordinate modes: `text({ x })`
+  is a flow offset, `text({ x, y })` and `rect(x, …)` are absolute page
+  coordinates, and `pdf.x + offset` converts between them.
+- **Rotated text** — `text({ rotate })` for vertical marginalia, turned column
+  heads and spine labels. Previously only `watermark()` could rotate.
+- **Table `valign` and self-drawing cells.** Cells take `valign: "top" |
+  "middle" | "bottom"` (per cell or per table) and a `render: (doc, box) => …`
+  callback for progress bars, badges or logos. The row is sized from the
+  measured content or an explicit `height`, and the callback runs with its own
+  cursor, so moving `doc.y` inside a cell cannot shift the rows below it.
+- **`language` document option** → the catalog's `/Lang`, plus
+  `ViewerPreferences /DisplayDocTitle` when a title is set. Screen readers,
+  ATS parsers and PDF/UA baselines all want it; it is one line.
+- **Synthetic italic.** A family registered without an italic cut used to
+  render italic text silently upright. Missing italics are now slanted by the
+  standard 12° oblique shear. Bold still falls back to the regular cut.
+- **Permissions-only encryption.** `encrypt: { permissions: {…} }` no longer
+  requires inventing a dummy owner password: the document opens without a
+  prompt and fast-pdf generates a random owner password so the restrictions
+  stay binding.
+- **`encrypt.onUnsupported: "throw" | "skip"`.** Callers in runtimes without
+  Web Crypto (insecure browser contexts) had to branch on
+  `supportsEncryption()` themselves; `"skip"` now falls back to an unencrypted
+  document. Default remains `"throw"`.
+
+### Fixed
+
+- **`widthOfText()` ignored `letterSpacing`.** The option pick was
+  `font | size | bold | italic` while the wrapper measured with letter
+  spacing internally, so every letterspaced heading had to be corrected by
+  hand at the call site. It is now part of the signature and shares one
+  measurement function with the renderer.
+- **SVG arc flags were mis-parsed.** `large-arc-flag` and `sweep-flag` are
+  single digits that minifiers run into the following number (`a5 5 0 0150 0`
+  means `0, 1, 50, 0`). Reading them with the generic number rule corrupted
+  practically every icon set that uses `a`/`A` — Lucide, Feather, Heroicons —
+  which is why those icons had to be rebuilt from `circle`/`path` by hand.
+  Arc parameters now have a dedicated flag reader.
+- **Zero-length SVG arcs emitted `NaN`.** An arc whose endpoints coincide
+  divided by zero in the centre parameterisation and poisoned the rest of the
+  path. Such arcs are now dropped, per SVG 1.1 F.6.2.
+- **Line breaking only considered spaces and soft hyphens.** Real hyphens,
+  dashes and slashes are break opportunities now (UAX #14 classes HY/BA), so
+  "Full-Stack-Entwickler" wraps inside a 104pt column instead of running over
+  the edge. Digit groups are protected: `2026-08-01` and `3/4` stay whole.
+- Table row heights are derived from measured content height rather than line
+  count, so rows containing rendered cells size correctly.
+
+### Changed
+
+- `wrapLines()` is documented and enforced as the single line-breaking
+  implementation: drawing and measuring cannot diverge by construction.
+- `Font` implementations expose `capHeight` and `lineGap`; real cap heights
+  are recorded for the standard 14 fonts and read from `OS/2` / `hhea` for
+  embedded ones.
+- Shapes emit their colour and line-width operators *before* the path is
+  constructed, matching PDF's graphics object model (only construction and
+  painting operators belong between `re`/`m` and `f`/`S`/`B`). Rendered
+  output is visually identical, but the operator order inside content
+  streams changed — if you hash `deterministic: true` output, expect new
+  digests for documents containing `rect()`, `circle()` or `ellipse()`.
+- `npm run build` clears `dist/` itself — tsup runs the two build configs
+  concurrently, so its own `clean` would race them.
+
+### Documentation
+
+- README: measurement, regions, multi-column flow, clipping, opacity,
+  self-drawing table cells, the browser condition, and a new **Limitations**
+  table stating plainly what fast-pdf does not do (reading/merging PDFs,
+  tagged PDF, non-signature form fields, WOFF2, shaping, gradients).
+- Encryption is documented for the first time, including the advisory nature
+  of PDF permissions.
+- The font section now names `.ttf` as the required format and gives a
+  one-line WOFF2 conversion command.
+
 ## [0.5.0] — 2026-07-23
 
 ### Added

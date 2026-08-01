@@ -1,6 +1,6 @@
 {
-  "name": "fast-pdf",
-  "version": "0.5.0",
+  "name": "@fast-pdf",
+  "version": "0.6.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
   "author": "Kevin Imig <kevinci.coding@gmail.com>",
@@ -17,10 +17,17 @@
   "main": "./dist/index.js",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "browser": "./dist/index.browser.js",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "browser": "./dist/index.browser.js",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.browser.js"
     },
     "./package.json": "./package.json"
   },
@@ -52,8 +59,8 @@
     "table"
   ],
   "scripts": {
-    "build": "tsup",
-    "prepare": "tsup",
+    "build": "rm -rf dist && tsup",
+    "prepare": "rm -rf dist && tsup",
     "prepublishOnly": "npm run typecheck && npm test && npm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
@@ -63,6 +70,7 @@
     "example": "tsx examples/invoice.ts",
     "showcase": "tsx examples/showcase.ts",
     "report": "tsx examples/report.ts",
+    "cv": "tsx examples/cv.ts",
     "docs:demo": "tailwindcss -i docs/demo.input.css -o docs/demo.tw.css --minify && node docs/build-demo.mjs"
   },
   "devDependencies": {
