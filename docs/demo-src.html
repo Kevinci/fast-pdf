@@ -232,15 +232,19 @@
      <code>table()</code> and <code>image()</code>, then save — that’s the whole workflow.
      Content flows down the page like in a word processor, and a new page starts
      automatically when space runs out. Positions are measured <b>from the top-left corner,
-     in points</b> (1&nbsp;pt = 1/72″).</p>
+     in points</b> (1&nbsp;pt = 1/72″). The one-pager below is the complete program —
+     vector graphics, type, an image, a watermark and a table, no other library involved:</p>
   <p data-lang="de" hidden>Du erstellst ein <code>PDFDocument</code>, fügst Inhalte mit Aufrufen wie <code>text()</code>,
      <code>table()</code> und <code>image()</code> hinzu und speicherst — das ist der ganze Workflow.
      Inhalte laufen wie in einer Textverarbeitung von oben nach unten über die Seite;
      ist kein Platz mehr, beginnt automatisch eine neue Seite. Positioniert wird
-     <b>ab der linken oberen Ecke, in Punkt</b> (1&nbsp;pt = 1/72″).</p>
+     <b>ab der linken oberen Ecke, in Punkt</b> (1&nbsp;pt = 1/72″). Der One-Pager unten ist
+     das komplette Programm — Vektorgrafik, Typo, Bild, Wasserzeichen und Tabelle,
+     ohne weitere Bibliothek:</p>
   <p data-lang="zh" hidden>创建一个 <code>PDFDocument</code>，用 <code>text()</code>、<code>table()</code>、<code>image()</code>
      等调用添加内容，最后保存——整个流程就是这么简单。内容像在文字处理器中一样自上而下排布，
-     空间不够时会自动开始新的一页。定位<b>从页面左上角算起，单位为点</b>（1&nbsp;pt = 1/72 英寸）。</p>
+     空间不够时会自动开始新的一页。定位<b>从页面左上角算起，单位为点</b>（1&nbsp;pt = 1/72 英寸）。
+     下面这份单页文档就是完整程序——矢量图形、文字排版、图片、水印和表格，不依赖任何其他库：</p>
 
 <pre data-lang="en" class="code-block"><code>npm install fast-pdf     // Node ≥ 18
 bun add fast-pdf         // Bun
@@ -255,145 +259,257 @@ deno add npm:fast-pdf    // Deno ≥ 2 —— 也可直接从 "npm:fast-pdf" 导
 <pre data-lang="en" class="code-block"><code>import { readFile } from "node:fs/promises";
 import { PDFDocument } from "fast-pdf";
 
+const INK = "#101828", MUTED = "#667085", FAINT = "#e4e7ec", ACCENT = "#4f46e5";
+
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
-  margins: 50,
+  margins: 64,
   font: "helvetica",       // standard 14: helvetica | times | courier
   metadata: { title: "Product Brief", author: "Example Software" },
 });
+const { width, height } = pdf.pageSize;
 
-pdf.watermark("DRAFT", { color: "#1d4ed8", opacity: 0.07 });   // on every page
+// Vector graphics — points, measured from the page's top-left corner. A page
+// is transparent until painted, so lay down a white ground first.
+pdf.rect(0, 0, width, height, { fill: "#ffffff" });
+pdf.rect(0, 0, width, 5, { fill: ACCENT });                // full-bleed accent bar
+pdf.watermark("DRAFT", { color: ACCENT, opacity: 0.05 });   // on every page
 
-// Vector graphics — coordinates in points, measured from the page's top-left
-// corner. A PDF page is transparent until something paints it, so start with
-// a white ground, then the dark header band and an accent ring.
-pdf.rect(0, 0, 595.28, 841.89, { fill: "#ffffff" });
-pdf.rect(0, 0, 595.28, 104, { fill: "#0f172a" });
-pdf.circle(545, 52, 30, { stroke: "#38bdf8", lineWidth: 1.5 });
+// Image, clipped to a circle — real vector clipping, no Canvas needed
+pdf.image(await readFile("logo.png"), { x: width - 112, y: 62, width: 48, shape: "circle" });
 
-// Image and titles, placed absolutely inside the band
-pdf.image(await readFile("logo.png"), { x: 50, y: 30, width: 44 });
-pdf.text("Product Brief", { x: 108, y: 34, size: 25, bold: true, color: "#f8fafc" });
-pdf.text("Q3 2026 · Example Software", { x: 109, y: 68, size: 11, color: "#94a3b8" });
+// Title block: eyebrow label, display type, meta line, hairline
+pdf.text("PRODUCT BRIEF", { x: 64, y: 66, size: 9.5, bold: true, color: ACCENT, letterSpacing: 3 });
+pdf.text("Nimbus Workstation", { x: 62, y: 88, size: 33, bold: true, color: INK });
+pdf.text("Q3 2026 · Example Software", { x: 64, y: 132, size: 10, color: MUTED });
+pdf.line(64, 168, width - 64, 168, { color: FAINT, width: 0.5 });
 
-// From here on content flows down the page — starting below the band
-pdf.y = 150;
-pdf.text("Hello world", { size: 20, bold: true, spacingAfter: 10 });
-pdf.text("Text wraps inside the margins, and a new page starts automatically " +
-         "when the space runs out — no manual line or page bookkeeping.",
-  { size: 11, color: "#475569", lineHeight: 1.55, spacingAfter: 22 });
+// From here content flows down the page and breaks pages on its own
+pdf.y = 196;
+pdf.text("A workstation configured for build farms: sixteen cores, 64 GB of " +
+         "memory and a chassis that stays quiet under sustained load.",
+  { width: 360, size: 11, color: "#334155", lineHeight: 1.6, spacingAfter: 34 });
 
+// Three stats — an accent tick, a label, a number. No charting library.
+pdf.grid([
+  ["CORES", "16"], ["MEMORY", "64 GB"], ["WARRANTY", "36 mo"],
+].map(([label, value]) => (d) => {
+  d.rect(d.x, d.y, 26, 2, { fill: ACCENT });
+  d.y += 16;
+  d.text(label, { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.6 });
+  d.text(value, { size: 21, bold: true, color: INK });
+}), { columns: 3, gap: 18 });
+
+pdf.moveDown(1.5);
 pdf.table([
-  ["Product", "Qty", "Price"],
-  ["Laptop 14”", "1", "999 €"],
-  ["Docking station", "2", "298 €"],
-  ["USB-C cable", "3", "57 €"],
-  ["Total", "", "1.354 €"],
+  ["Item", "Qty", "Unit", "Amount"],
+  ["Nimbus Workstation", "1", "999 €", "999 €"],
+  ["Docking station", "2", "149 €", "298 €"],
+  ["USB-C cable, 2 m", "3", "19 €", "57 €"],
 ], {
-  headerFill: "#0f172a", headerColor: "#f8fafc", zebraFill: "#f1f5f9",
-  footer: true, borderColor: "#cbd5e1", aligns: ["left", "right", "right"],
+  widths: [227, 50, 90, 100], aligns: ["left", "right", "right", "right"],
+  headerFill: "#f8f9fc", headerColor: MUTED, borderColor: FAINT, borderWidth: 0.5,
+  padding: 9,
+});
+pdf.table([["Total, net", "1.354 €"]], {          // totals block: a borderless table
+  header: false, widths: [367, 100], aligns: ["right", "right"],
+  borderWidth: 0, fontSize: 12,
 });
 
-pdf.text("Prices excluding VAT · valid for 30 days",
-  { size: 9.5, color: "#94a3b8", spacingBefore: 14 });
+// A short list — bullets centred from real font metrics, not a magic constant
+pdf.moveDown(1.4);
+pdf.text("IN THE BOX", { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.6, spacingAfter: 9 });
+for (const item of ["Workstation, assembled and burned in for 48 h",
+                    "Two docking stations, firmware pre-flashed",
+                    "Three USB-C cables, 2 m, e-marked",
+                    "On-site swap within one business day, 36 months"]) {
+  const m = pdf.fontMetrics({ size: 10 });
+  pdf.circle(pdf.x + 2, pdf.y + m.baseline - m.capHeight / 2, 1.8, { fill: ACCENT });
+  pdf.text(item, { x: 13, size: 10, color: "#334155", spacingAfter: 6 });
+}
+
+// Full-bleed call-to-action strip and a footer, both absolute
+pdf.rect(0, height - 188, width, 68, { fill: INK });
+pdf.text("Ready to order?", { x: 64, y: height - 168, size: 13.5, bold: true, color: "#ffffff" });
+pdf.text("Reply to this brief by 30 Sep 2026 · sales@example-software.com",
+  { x: 64, y: height - 146, size: 9.5, color: "#98a2b3" });
+
+pdf.line(64, height - 84, width - 64, height - 84, { color: FAINT, width: 0.5 });
+pdf.text("Prices excluding VAT · valid for 30 days · example-software.com",
+  { x: 64, y: height - 74, width: width - 128, size: 8.5, color: MUTED, align: "center" });
 
 await pdf.save("brief.pdf");</code></pre>
 <pre data-lang="de" hidden class="code-block"><code>import { readFile } from "node:fs/promises";
 import { PDFDocument } from "fast-pdf";
 
+const INK = "#101828", MUTED = "#667085", FAINT = "#e4e7ec", ACCENT = "#4f46e5";
+
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
-  margins: 50,
+  margins: 64,
   font: "helvetica",       // Standard-14: helvetica | times | courier
   metadata: { title: "Product Brief", author: "Example Software" },
 });
+const { width, height } = pdf.pageSize;
 
-pdf.watermark("DRAFT", { color: "#1d4ed8", opacity: 0.07 });   // auf jeder Seite
+// Vektorgrafik — Punkt, gemessen ab der linken oberen Ecke. Eine Seite ist
+// transparent, solange sie niemand füllt: also zuerst der weiße Grund.
+pdf.rect(0, 0, width, height, { fill: "#ffffff" });
+pdf.rect(0, 0, width, 5, { fill: ACCENT });                // randlose Akzentleiste
+pdf.watermark("DRAFT", { color: ACCENT, opacity: 0.05 });   // auf jeder Seite
 
-// Vektorgrafik — Koordinaten in Punkt, gemessen ab der linken oberen Ecke.
-// Eine PDF-Seite ist transparent, solange sie niemand füllt: erst der weiße
-// Grund, dann das dunkle Kopfband und ein Akzent-Ring.
-pdf.rect(0, 0, 595.28, 841.89, { fill: "#ffffff" });
-pdf.rect(0, 0, 595.28, 104, { fill: "#0f172a" });
-pdf.circle(545, 52, 30, { stroke: "#38bdf8", lineWidth: 1.5 });
+// Bild, auf einen Kreis geclippt — echtes Vektor-Clipping, ohne Canvas
+pdf.image(await readFile("logo.png"), { x: width - 112, y: 62, width: 48, shape: "circle" });
 
-// Bild und Titel, absolut im Kopfband positioniert
-pdf.image(await readFile("logo.png"), { x: 50, y: 30, width: 44 });
-pdf.text("Product Brief", { x: 108, y: 34, size: 25, bold: true, color: "#f8fafc" });
-pdf.text("Q3 2026 · Example Software", { x: 109, y: 68, size: 11, color: "#94a3b8" });
+// Titelblock: Eyebrow-Label, Display-Typo, Meta-Zeile, Haarlinie
+pdf.text("PRODUCT BRIEF", { x: 64, y: 66, size: 9.5, bold: true, color: ACCENT, letterSpacing: 3 });
+pdf.text("Nimbus Workstation", { x: 62, y: 88, size: 33, bold: true, color: INK });
+pdf.text("Q3 2026 · Example Software", { x: 64, y: 132, size: 10, color: MUTED });
+pdf.line(64, 168, width - 64, 168, { color: FAINT, width: 0.5 });
 
-// Ab hier fließt der Inhalt die Seite hinunter — beginnend unter dem Band
-pdf.y = 150;
-pdf.text("Hello world", { size: 20, bold: true, spacingAfter: 10 });
-pdf.text("Text wraps inside the margins, and a new page starts automatically " +
-         "when the space runs out — no manual line or page bookkeeping.",
-  { size: 11, color: "#475569", lineHeight: 1.55, spacingAfter: 22 });
+// Ab hier fließt der Inhalt die Seite hinunter und bricht Seiten selbst um
+pdf.y = 196;
+pdf.text("A workstation configured for build farms: sixteen cores, 64 GB of " +
+         "memory and a chassis that stays quiet under sustained load.",
+  { width: 360, size: 11, color: "#334155", lineHeight: 1.6, spacingAfter: 34 });
 
+// Drei Kennzahlen — Akzentstrich, Label, Zahl. Ohne Chart-Bibliothek.
+pdf.grid([
+  ["CORES", "16"], ["MEMORY", "64 GB"], ["WARRANTY", "36 mo"],
+].map(([label, value]) => (d) => {
+  d.rect(d.x, d.y, 26, 2, { fill: ACCENT });
+  d.y += 16;
+  d.text(label, { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.6 });
+  d.text(value, { size: 21, bold: true, color: INK });
+}), { columns: 3, gap: 18 });
+
+pdf.moveDown(1.5);
 pdf.table([
-  ["Product", "Qty", "Price"],
-  ["Laptop 14”", "1", "999 €"],
-  ["Docking station", "2", "298 €"],
-  ["USB-C cable", "3", "57 €"],
-  ["Total", "", "1.354 €"],
+  ["Item", "Qty", "Unit", "Amount"],
+  ["Nimbus Workstation", "1", "999 €", "999 €"],
+  ["Docking station", "2", "149 €", "298 €"],
+  ["USB-C cable, 2 m", "3", "19 €", "57 €"],
 ], {
-  headerFill: "#0f172a", headerColor: "#f8fafc", zebraFill: "#f1f5f9",
-  footer: true, borderColor: "#cbd5e1", aligns: ["left", "right", "right"],
+  widths: [227, 50, 90, 100], aligns: ["left", "right", "right", "right"],
+  headerFill: "#f8f9fc", headerColor: MUTED, borderColor: FAINT, borderWidth: 0.5,
+  padding: 9,
+});
+pdf.table([["Total, net", "1.354 €"]], {          // Summenblock: rahmenlose Tabelle
+  header: false, widths: [367, 100], aligns: ["right", "right"],
+  borderWidth: 0, fontSize: 12,
 });
 
-pdf.text("Prices excluding VAT · valid for 30 days",
-  { size: 9.5, color: "#94a3b8", spacingBefore: 14 });
+// Kurze Liste — Bullets aus echten Font-Metriken zentriert, keine Konstante
+pdf.moveDown(1.4);
+pdf.text("IN THE BOX", { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.6, spacingAfter: 9 });
+for (const item of ["Workstation, assembled and burned in for 48 h",
+                    "Two docking stations, firmware pre-flashed",
+                    "Three USB-C cables, 2 m, e-marked",
+                    "On-site swap within one business day, 36 months"]) {
+  const m = pdf.fontMetrics({ size: 10 });
+  pdf.circle(pdf.x + 2, pdf.y + m.baseline - m.capHeight / 2, 1.8, { fill: ACCENT });
+  pdf.text(item, { x: 13, size: 10, color: "#334155", spacingAfter: 6 });
+}
+
+// Randloser Call-to-Action-Streifen und eine Fußzeile, beide absolut
+pdf.rect(0, height - 188, width, 68, { fill: INK });
+pdf.text("Ready to order?", { x: 64, y: height - 168, size: 13.5, bold: true, color: "#ffffff" });
+pdf.text("Reply to this brief by 30 Sep 2026 · sales@example-software.com",
+  { x: 64, y: height - 146, size: 9.5, color: "#98a2b3" });
+
+pdf.line(64, height - 84, width - 64, height - 84, { color: FAINT, width: 0.5 });
+pdf.text("Prices excluding VAT · valid for 30 days · example-software.com",
+  { x: 64, y: height - 74, width: width - 128, size: 8.5, color: MUTED, align: "center" });
 
 await pdf.save("brief.pdf");</code></pre>
 <pre data-lang="zh" hidden class="code-block"><code>import { readFile } from "node:fs/promises";
 import { PDFDocument } from "fast-pdf";
 
+const INK = "#101828", MUTED = "#667085", FAINT = "#e4e7ec", ACCENT = "#4f46e5";
+
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
-  margins: 50,
+  margins: 64,
   font: "helvetica",       // 标准 14 字体：helvetica | times | courier
   metadata: { title: "Product Brief", author: "Example Software" },
 });
+const { width, height } = pdf.pageSize;
 
-pdf.watermark("DRAFT", { color: "#1d4ed8", opacity: 0.07 });   // 每一页都会绘制
+// 矢量图形——单位为点，从页面左上角算起。PDF 页面在被绘制之前是透明的，
+// 所以先铺一层白色底。
+pdf.rect(0, 0, width, height, { fill: "#ffffff" });
+pdf.rect(0, 0, width, 5, { fill: ACCENT });                // 满版强调色横条
+pdf.watermark("DRAFT", { color: ACCENT, opacity: 0.05 });   // 每一页都会绘制
 
-// 矢量图形——坐标单位为点，从页面左上角算起。PDF 页面在被绘制之前
-// 是透明的，所以先铺白色底，再画深色顶部色带和装饰圆环。
-pdf.rect(0, 0, 595.28, 841.89, { fill: "#ffffff" });
-pdf.rect(0, 0, 595.28, 104, { fill: "#0f172a" });
-pdf.circle(545, 52, 30, { stroke: "#38bdf8", lineWidth: 1.5 });
+// 图片裁切成圆形——真正的矢量裁切，无需 Canvas
+pdf.image(await readFile("logo.png"), { x: width - 112, y: 62, width: 48, shape: "circle" });
 
-// 图片与标题，绝对定位在色带内
-pdf.image(await readFile("logo.png"), { x: 50, y: 30, width: 44 });
-pdf.text("Product Brief", { x: 108, y: 34, size: 25, bold: true, color: "#f8fafc" });
-pdf.text("Q3 2026 · Example Software", { x: 109, y: 68, size: 11, color: "#94a3b8" });
+// 标题区：小标签、大字标题、元信息行、细分隔线
+pdf.text("PRODUCT BRIEF", { x: 64, y: 66, size: 9.5, bold: true, color: ACCENT, letterSpacing: 3 });
+pdf.text("Nimbus Workstation", { x: 62, y: 88, size: 33, bold: true, color: INK });
+pdf.text("Q3 2026 · Example Software", { x: 64, y: 132, size: 10, color: MUTED });
+pdf.line(64, 168, width - 64, 168, { color: FAINT, width: 0.5 });
 
-// 从这里开始内容自上而下排布 —— 起点在色带下方
-pdf.y = 150;
-pdf.text("Hello world", { size: 20, bold: true, spacingAfter: 10 });
-pdf.text("Text wraps inside the margins, and a new page starts automatically " +
-         "when the space runs out — no manual line or page bookkeeping.",
-  { size: 11, color: "#475569", lineHeight: 1.55, spacingAfter: 22 });
+// 从这里开始内容自上而下排布，并自动分页
+pdf.y = 196;
+pdf.text("A workstation configured for build farms: sixteen cores, 64 GB of " +
+         "memory and a chassis that stays quiet under sustained load.",
+  { width: 360, size: 11, color: "#334155", lineHeight: 1.6, spacingAfter: 34 });
 
+// 三个指标——强调色短线、标签、数字。无需任何图表库。
+pdf.grid([
+  ["CORES", "16"], ["MEMORY", "64 GB"], ["WARRANTY", "36 mo"],
+].map(([label, value]) => (d) => {
+  d.rect(d.x, d.y, 26, 2, { fill: ACCENT });
+  d.y += 16;
+  d.text(label, { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.6 });
+  d.text(value, { size: 21, bold: true, color: INK });
+}), { columns: 3, gap: 18 });
+
+pdf.moveDown(1.5);
 pdf.table([
-  ["Product", "Qty", "Price"],
-  ["Laptop 14”", "1", "999 €"],
-  ["Docking station", "2", "298 €"],
-  ["USB-C cable", "3", "57 €"],
-  ["Total", "", "1.354 €"],
+  ["Item", "Qty", "Unit", "Amount"],
+  ["Nimbus Workstation", "1", "999 €", "999 €"],
+  ["Docking station", "2", "149 €", "298 €"],
+  ["USB-C cable, 2 m", "3", "19 €", "57 €"],
 ], {
-  headerFill: "#0f172a", headerColor: "#f8fafc", zebraFill: "#f1f5f9",
-  footer: true, borderColor: "#cbd5e1", aligns: ["left", "right", "right"],
+  widths: [227, 50, 90, 100], aligns: ["left", "right", "right", "right"],
+  headerFill: "#f8f9fc", headerColor: MUTED, borderColor: FAINT, borderWidth: 0.5,
+  padding: 9,
+});
+pdf.table([["Total, net", "1.354 €"]], {          // 合计区：一张无边框表格
+  header: false, widths: [367, 100], aligns: ["right", "right"],
+  borderWidth: 0, fontSize: 12,
 });
 
-pdf.text("Prices excluding VAT · valid for 30 days",
-  { size: 9.5, color: "#94a3b8", spacingBefore: 14 });
+// 短列表——圆点位置由真实字体度量算出，而不是写死的常数
+pdf.moveDown(1.4);
+pdf.text("IN THE BOX", { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.6, spacingAfter: 9 });
+for (const item of ["Workstation, assembled and burned in for 48 h",
+                    "Two docking stations, firmware pre-flashed",
+                    "Three USB-C cables, 2 m, e-marked",
+                    "On-site swap within one business day, 36 months"]) {
+  const m = pdf.fontMetrics({ size: 10 });
+  pdf.circle(pdf.x + 2, pdf.y + m.baseline - m.capHeight / 2, 1.8, { fill: ACCENT });
+  pdf.text(item, { x: 13, size: 10, color: "#334155", spacingAfter: 6 });
+}
+
+// 满版行动号召条和页脚，均为绝对定位
+pdf.rect(0, height - 188, width, 68, { fill: INK });
+pdf.text("Ready to order?", { x: 64, y: height - 168, size: 13.5, bold: true, color: "#ffffff" });
+pdf.text("Reply to this brief by 30 Sep 2026 · sales@example-software.com",
+  { x: 64, y: height - 146, size: 9.5, color: "#98a2b3" });
+
+pdf.line(64, height - 84, width - 64, height - 84, { color: FAINT, width: 0.5 });
+pdf.text("Prices excluding VAT · valid for 30 days · example-software.com",
+  { x: 64, y: height - 74, width: width - 128, size: 8.5, color: MUTED, align: "center" });
 
 await pdf.save("brief.pdf");</code></pre>
 
   <figure class="mx-auto mt-6 mb-0 max-w-[440px]">
     <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) shadow-[0_8px_28px_rgba(15,20,32,0.25)]"
          src="data:image/png;base64,__QUICKSTART_B64__"
-         alt="Rendered A4 page: dark header band with logo and Product Brief title, Hello world heading, a price table and a diagonal DRAFT watermark" loading="lazy">
+         alt="Rendered A4 one-pager: indigo accent bar, circular logo, Nimbus Workstation display headline, three stat columns, a hairline price table, a bulleted list, a dark call-to-action strip and a faint diagonal DRAFT watermark" loading="lazy">
     <figcaption data-lang="en" class="mt-2 text-center text-[12.5px] text-(--muted)">The output of exactly this snippet — <code>brief.pdf</code>, page 1, rendered with macOS Quartz.</figcaption>
     <figcaption data-lang="de" hidden class="mt-2 text-center text-[12.5px] text-(--muted)">Die Ausgabe genau dieses Snippets — <code>brief.pdf</code>, Seite 1, gerendert mit macOS Quartz.</figcaption>
     <figcaption data-lang="zh" hidden class="mt-2 text-center text-[12.5px] text-(--muted)">上面这段代码的实际输出——<code>brief.pdf</code> 第 1 页，由 macOS Quartz 渲染。</figcaption>
