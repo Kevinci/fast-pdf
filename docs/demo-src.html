@@ -252,45 +252,152 @@ deno add npm:fast-pdf    // Deno ≥ 2 — oder direkt aus "npm:fast-pdf" import
 bun add fast-pdf         // Bun
 deno add npm:fast-pdf    // Deno ≥ 2 —— 也可直接从 "npm:fast-pdf" 导入</code></pre>
 
-<pre data-lang="en" class="code-block"><code>import { PDFDocument } from "fast-pdf";
+<pre data-lang="en" class="code-block"><code>import { readFile } from "node:fs/promises";
+import { PDFDocument } from "fast-pdf";
 
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
   margins: 50,
   font: "helvetica",       // standard 14: helvetica | times | courier
-  metadata: { title: "Demo", author: "Example Software" },
+  metadata: { title: "Product Brief", author: "Example Software" },
 });
 
-pdf.text("Hello world", { size: 24, bold: true });
-pdf.table([["Product", "Price"], ["Laptop", "999 €"]]);
+pdf.watermark("DRAFT", { color: "#1d4ed8", opacity: 0.07 });   // on every page
 
-await pdf.save("demo.pdf");</code></pre>
-<pre data-lang="de" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+// Vector graphics — coordinates in points, measured from the page's top-left
+// corner. A PDF page is transparent until something paints it, so start with
+// a white ground, then the dark header band and an accent ring.
+pdf.rect(0, 0, 595.28, 841.89, { fill: "#ffffff" });
+pdf.rect(0, 0, 595.28, 104, { fill: "#0f172a" });
+pdf.circle(545, 52, 30, { stroke: "#38bdf8", lineWidth: 1.5 });
+
+// Image and titles, placed absolutely inside the band
+pdf.image(await readFile("logo.png"), { x: 50, y: 30, width: 44 });
+pdf.text("Product Brief", { x: 108, y: 34, size: 25, bold: true, color: "#f8fafc" });
+pdf.text("Q3 2026 · Example Software", { x: 109, y: 68, size: 11, color: "#94a3b8" });
+
+// From here on content flows down the page — starting below the band
+pdf.y = 150;
+pdf.text("Hello world", { size: 20, bold: true, spacingAfter: 10 });
+pdf.text("Text wraps inside the margins, and a new page starts automatically " +
+         "when the space runs out — no manual line or page bookkeeping.",
+  { size: 11, color: "#475569", lineHeight: 1.55, spacingAfter: 22 });
+
+pdf.table([
+  ["Product", "Qty", "Price"],
+  ["Laptop 14”", "1", "999 €"],
+  ["Docking station", "2", "298 €"],
+  ["USB-C cable", "3", "57 €"],
+  ["Total", "", "1.354 €"],
+], {
+  headerFill: "#0f172a", headerColor: "#f8fafc", zebraFill: "#f1f5f9",
+  footer: true, borderColor: "#cbd5e1", aligns: ["left", "right", "right"],
+});
+
+pdf.text("Prices excluding VAT · valid for 30 days",
+  { size: 9.5, color: "#94a3b8", spacingBefore: 14 });
+
+await pdf.save("brief.pdf");</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>import { readFile } from "node:fs/promises";
+import { PDFDocument } from "fast-pdf";
 
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
   margins: 50,
   font: "helvetica",       // Standard-14: helvetica | times | courier
-  metadata: { title: "Demo", author: "Example Software" },
+  metadata: { title: "Product Brief", author: "Example Software" },
 });
 
-pdf.text("Hallo Welt", { size: 24, bold: true });
-pdf.table([["Produkt", "Preis"], ["Laptop", "999 €"]]);
+pdf.watermark("DRAFT", { color: "#1d4ed8", opacity: 0.07 });   // auf jeder Seite
 
-await pdf.save("demo.pdf");</code></pre>
-<pre data-lang="zh" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+// Vektorgrafik — Koordinaten in Punkt, gemessen ab der linken oberen Ecke.
+// Eine PDF-Seite ist transparent, solange sie niemand füllt: erst der weiße
+// Grund, dann das dunkle Kopfband und ein Akzent-Ring.
+pdf.rect(0, 0, 595.28, 841.89, { fill: "#ffffff" });
+pdf.rect(0, 0, 595.28, 104, { fill: "#0f172a" });
+pdf.circle(545, 52, 30, { stroke: "#38bdf8", lineWidth: 1.5 });
+
+// Bild und Titel, absolut im Kopfband positioniert
+pdf.image(await readFile("logo.png"), { x: 50, y: 30, width: 44 });
+pdf.text("Product Brief", { x: 108, y: 34, size: 25, bold: true, color: "#f8fafc" });
+pdf.text("Q3 2026 · Example Software", { x: 109, y: 68, size: 11, color: "#94a3b8" });
+
+// Ab hier fließt der Inhalt die Seite hinunter — beginnend unter dem Band
+pdf.y = 150;
+pdf.text("Hello world", { size: 20, bold: true, spacingAfter: 10 });
+pdf.text("Text wraps inside the margins, and a new page starts automatically " +
+         "when the space runs out — no manual line or page bookkeeping.",
+  { size: 11, color: "#475569", lineHeight: 1.55, spacingAfter: 22 });
+
+pdf.table([
+  ["Product", "Qty", "Price"],
+  ["Laptop 14”", "1", "999 €"],
+  ["Docking station", "2", "298 €"],
+  ["USB-C cable", "3", "57 €"],
+  ["Total", "", "1.354 €"],
+], {
+  headerFill: "#0f172a", headerColor: "#f8fafc", zebraFill: "#f1f5f9",
+  footer: true, borderColor: "#cbd5e1", aligns: ["left", "right", "right"],
+});
+
+pdf.text("Prices excluding VAT · valid for 30 days",
+  { size: 9.5, color: "#94a3b8", spacingBefore: 14 });
+
+await pdf.save("brief.pdf");</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>import { readFile } from "node:fs/promises";
+import { PDFDocument } from "fast-pdf";
 
 const pdf = new PDFDocument({
   format: "A4",            // A3 | A4 | A5 | Letter | Legal | { width, height }
   margins: 50,
   font: "helvetica",       // 标准 14 字体：helvetica | times | courier
-  metadata: { title: "Demo", author: "Example Software" },
+  metadata: { title: "Product Brief", author: "Example Software" },
 });
 
-pdf.text("你好，世界", { size: 24, bold: true });
-pdf.table([["产品", "价格"], ["笔记本电脑", "999 €"]]);
+pdf.watermark("DRAFT", { color: "#1d4ed8", opacity: 0.07 });   // 每一页都会绘制
 
-await pdf.save("demo.pdf");</code></pre>
+// 矢量图形——坐标单位为点，从页面左上角算起。PDF 页面在被绘制之前
+// 是透明的，所以先铺白色底，再画深色顶部色带和装饰圆环。
+pdf.rect(0, 0, 595.28, 841.89, { fill: "#ffffff" });
+pdf.rect(0, 0, 595.28, 104, { fill: "#0f172a" });
+pdf.circle(545, 52, 30, { stroke: "#38bdf8", lineWidth: 1.5 });
+
+// 图片与标题，绝对定位在色带内
+pdf.image(await readFile("logo.png"), { x: 50, y: 30, width: 44 });
+pdf.text("Product Brief", { x: 108, y: 34, size: 25, bold: true, color: "#f8fafc" });
+pdf.text("Q3 2026 · Example Software", { x: 109, y: 68, size: 11, color: "#94a3b8" });
+
+// 从这里开始内容自上而下排布 —— 起点在色带下方
+pdf.y = 150;
+pdf.text("Hello world", { size: 20, bold: true, spacingAfter: 10 });
+pdf.text("Text wraps inside the margins, and a new page starts automatically " +
+         "when the space runs out — no manual line or page bookkeeping.",
+  { size: 11, color: "#475569", lineHeight: 1.55, spacingAfter: 22 });
+
+pdf.table([
+  ["Product", "Qty", "Price"],
+  ["Laptop 14”", "1", "999 €"],
+  ["Docking station", "2", "298 €"],
+  ["USB-C cable", "3", "57 €"],
+  ["Total", "", "1.354 €"],
+], {
+  headerFill: "#0f172a", headerColor: "#f8fafc", zebraFill: "#f1f5f9",
+  footer: true, borderColor: "#cbd5e1", aligns: ["left", "right", "right"],
+});
+
+pdf.text("Prices excluding VAT · valid for 30 days",
+  { size: 9.5, color: "#94a3b8", spacingBefore: 14 });
+
+await pdf.save("brief.pdf");</code></pre>
+
+  <figure class="mx-auto mt-6 mb-0 max-w-[440px]">
+    <img class="h-auto w-full max-w-full rounded-md border border-(--hairline) shadow-[0_8px_28px_rgba(15,20,32,0.25)]"
+         src="data:image/png;base64,__QUICKSTART_B64__"
+         alt="Rendered A4 page: dark header band with logo and Product Brief title, Hello world heading, a price table and a diagonal DRAFT watermark" loading="lazy">
+    <figcaption data-lang="en" class="mt-2 text-center text-[12.5px] text-(--muted)">The output of exactly this snippet — <code>brief.pdf</code>, page 1, rendered with macOS Quartz.</figcaption>
+    <figcaption data-lang="de" hidden class="mt-2 text-center text-[12.5px] text-(--muted)">Die Ausgabe genau dieses Snippets — <code>brief.pdf</code>, Seite 1, gerendert mit macOS Quartz.</figcaption>
+    <figcaption data-lang="zh" hidden class="mt-2 text-center text-[12.5px] text-(--muted)">上面这段代码的实际输出——<code>brief.pdf</code> 第 1 页，由 macOS Quartz 渲染。</figcaption>
+  </figure>
 </section>
 
 <section id="ausgabe" class="doc-section">

@@ -20,6 +20,7 @@ html = html.replace(/<title>[\s\S]*?<\/title>\s*/, "");
 
 html = html
   .replace("__TW_CSS__", () => css)
+  .replace("__QUICKSTART_B64__", () => read("assets/demo-quickstart.png").toString("base64"))
   .replace("__COVER_B64__", () => read("assets/demo-cover.png").toString("base64"))
   .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"));
 
