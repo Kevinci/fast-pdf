@@ -24,12 +24,25 @@ html = html
   .replace("__COVER_B64__", () => read("assets/demo-cover.png").toString("base64"))
   .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"));
 
+// Favicon: weißes Blatt mit Eselsohr und Akzent-Blitz auf der Akzentfarbe.
+// Drei Formen, mehr überlebt 16 px nicht; der Blitz bleibt vollständig
+// innerhalb des Blatts. Als data-URI, damit die Seite eine Datei bleibt.
+const favicon =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">' +
+  '<rect width="32" height="32" rx="7" fill="#2e5ce6"/>' +
+  '<path d="M9 5h8.5L24 11.5V25a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2z" fill="#fff"/>' +
+  '<path d="M17.5 5L24 11.5h-6.5z" fill="#9bb4f5"/>' +
+  '<path d="M17.4 11.5l-6.6 8.1h4.1l-1.2 5.4 6.7-8.6h-4.2z" fill="#2e5ce6"/>' +
+  "</svg>";
+
 const page = `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${title}</title>
+<link rel="icon" href="data:image/svg+xml,${encodeURIComponent(favicon)}">
+<meta name="theme-color" content="#2e5ce6">
 </head>
 <body>
 ${html}
