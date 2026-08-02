@@ -4,7 +4,24 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [Unreleased] — 0.7.0, planned for the end of August 2026
+
+### Added
+
+- **`button(label, options)`** — a clickable button: a filled (optionally
+  bordered) rounded box with an optically centred label, covered by a link
+  annotation. `link`, `fill`, `borderColor`, `borderWidth`, `color`, `width`
+  (points or `"60%"`), `height`, `radius`, `paddingX`/`paddingY`, `font`,
+  `size`, `bold`, `letterSpacing`, `textAlign`, `align`, `opacity`,
+  `x`/`y`, `spacingBefore`/`spacingAfter`.
+
+  Flows by default and breaks the page when it no longer fits; `y` switches
+  to absolute placement. Without `width` the box sizes itself to the label;
+  a label wider than the box is truncated with an ellipsis rather than
+  allowed to spill out. Deliberately a link annotation and not an AcroForm
+  `/Btn` widget: it needs no form support, renders in every viewer and can
+  do nothing but follow its target. Targets go through the same
+  `UNSAFE_LINK` check as `link()`.
 
 ## [0.6.0] — 2026-08-01
 

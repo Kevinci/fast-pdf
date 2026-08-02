@@ -37,6 +37,7 @@ export type {
   PageNumberOptions,
   WatermarkOptions,
   SignatureOptions,
+  ButtonOptions,
   OutlineOptions,
   TOCOptions,
   ObjectTableColumn,

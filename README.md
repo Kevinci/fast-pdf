@@ -425,6 +425,41 @@ pdf.toc({ title: "Contents" });           // call last: builds linked TOC pages
                                           // from outline entries, inserts at front
 ```
 
+### Links & buttons
+
+```ts
+pdf.text("kevinci.github.io/fast-pdf", {   // inline link, style it yourself
+  link: "https://kevinci.github.io/fast-pdf/",
+  color: "#4f46e5", underline: true,
+});
+
+pdf.link(50, 50, 200, 20, "#details");     // bare clickable area (URL or anchor)
+
+pdf.button("Open the demo", {              // filled, bordered, clickable box
+  link: "https://kevinci.github.io/fast-pdf/",
+  fill: "#4f46e5",
+  borderColor: "#3730a3",                  // borderWidth defaults to 1 when set
+  color: "#ffffff",                        // label colour (default: white)
+  width: 200,                              // points or "60%"; default: fits the label
+  radius: 6,
+  align: "center",                         // placement in the flow area
+});
+
+pdf.button("Ghost", {                      // outline style: no fill, dark label
+  link: "#details", fill: "#ffffff", borderColor: "#e4e7ec", color: "#101828",
+});
+
+pdf.button("Sidebar CTA", { link: "…", x: 40, y: 700, width: 120 });  // absolute
+```
+
+Buttons flow like text (and break the page when they no longer fit); passing
+`y` switches to absolute placement. A label wider than the box is truncated
+with an ellipsis instead of spilling out. Under the hood a button is a
+rectangle plus a link annotation — no AcroForm widget, no JavaScript, so it
+works in every viewer and can do nothing but follow its target. Unsafe
+schemes (`javascript:`, `vbscript:`, `data:`, `file:`) are rejected with
+`UNSAFE_LINK`.
+
 ### Signature fields (contracts)
 
 ```ts

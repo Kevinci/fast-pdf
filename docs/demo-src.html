@@ -1348,6 +1348,104 @@ pdf.toc({ title: "目录" });      // 最后调用：生成带链接的目录页
                                  // 并插入到文档最前面——
                                  // 页码会自动正确偏移</code></pre>
 
+  <h3 data-lang="en" class="doc-h3">Clickable buttons<span class="chip">0.7.0</span></h3>
+  <h3 data-lang="de" hidden class="doc-h3">Anklickbare Buttons<span class="chip">0.7.0</span></h3>
+  <h3 data-lang="zh" hidden class="doc-h3">可点击按钮<span class="chip">0.7.0</span></h3>
+
+  <p data-lang="en">A link does not have to be underlined text. <code>button()</code> draws a filled,
+     optionally bordered box with an optically centred label and puts the link annotation on top.
+     It flows like text and breaks the page when it no longer fits; passing <code>y</code> places it
+     absolutely. Without <code>width</code> the box sizes itself to its label:</p>
+  <p data-lang="de" hidden>Ein Link muss kein unterstrichener Text sein. <code>button()</code> zeichnet einen
+     gefüllten, optional gerahmten Kasten mit optisch zentrierter Beschriftung und legt die
+     Link-Annotation darüber. Er fließt wie Text und bricht die Seite um, wenn er nicht mehr passt;
+     mit <code>y</code> wird er absolut gesetzt. Ohne <code>width</code> passt sich der Kasten
+     seiner Beschriftung an:</p>
+  <p data-lang="zh" hidden>链接不一定要是带下划线的文字。<code>button()</code> 会绘制一个带填充、可选边框的方框，
+     标签在视觉上居中，并在其上方放置链接注释。它像文本一样参与排版流，放不下时自动分页；
+     传入 <code>y</code> 则改为绝对定位。不指定 <code>width</code> 时，方框会自动适配标签宽度：</p>
+
+<pre data-lang="en" class="code-block"><code>pdf.button("Open the demo", {
+  link: "https://kevinci.github.io/fast-pdf/",  // URL or "#anchor"
+  fill: "#4f46e5",           // button colour
+  borderColor: "#3730a3",    // borderWidth defaults to 1 once set
+  color: "#ffffff",          // label colour
+  width: 200,                // points or "60%" — omit to fit the label
+  radius: 6,
+  align: "center",           // placement in the flow area
+});
+
+pdf.button("Ghost", {        // outline style: light box, dark label
+  link: "#details", fill: "#ffffff", borderColor: "#e4e7ec", color: "#101828",
+});
+
+pdf.button("Sidebar CTA", { link: "…", x: 40, y: 700, width: 120 });  // absolute
+
+pdf.link(50, 50, 200, 20, "#details");   // bare clickable area, draws nothing</code></pre>
+<pre data-lang="de" hidden class="code-block"><code>pdf.button("Zur Demo", {
+  link: "https://kevinci.github.io/fast-pdf/",  // URL oder "#anker"
+  fill: "#4f46e5",           // Buttonfarbe
+  borderColor: "#3730a3",    // borderWidth ist dann automatisch 1
+  color: "#ffffff",          // Textfarbe
+  width: 200,                // Punkte oder "60%" — ohne Angabe: passt sich dem Text an
+  radius: 6,
+  align: "center",           // Platzierung im Flussbereich
+});
+
+pdf.button("Ghost", {        // Umriss-Variante: heller Kasten, dunkle Schrift
+  link: "#details", fill: "#ffffff", borderColor: "#e4e7ec", color: "#101828",
+});
+
+pdf.button("Sidebar CTA", { link: "…", x: 40, y: 700, width: 120 });  // absolut
+
+pdf.link(50, 50, 200, 20, "#details");   // reine Klickfläche, zeichnet nichts</code></pre>
+<pre data-lang="zh" hidden class="code-block"><code>pdf.button("打开演示", {
+  link: "https://kevinci.github.io/fast-pdf/",  // URL 或 "#锚点"
+  fill: "#4f46e5",           // 按钮底色
+  borderColor: "#3730a3",    // 设置后 borderWidth 默认为 1
+  color: "#ffffff",          // 标签颜色
+  width: 200,                // 点值或 "60%" —— 省略则自动适配标签
+  radius: 6,
+  align: "center",           // 在排版区域中的位置
+});
+
+pdf.button("Ghost", {        // 描边样式：浅色方框，深色标签
+  link: "#details", fill: "#ffffff", borderColor: "#e4e7ec", color: "#101828",
+});
+
+pdf.button("Sidebar CTA", { link: "…", x: 40, y: 700, width: 120 });  // 绝对定位
+
+pdf.link(50, 50, 200, 20, "#details");   // 纯点击区域，不绘制任何内容</code></pre>
+
+  <div data-lang="en" class="hint"><b class="text-(--accent)">Under the hood:</b> a rectangle plus a link
+    annotation — deliberately <em>not</em> an AcroForm <code>/Btn</code> widget. It needs no form support,
+    renders in every viewer and can do nothing but follow its target. A label wider than the box is
+    truncated with an ellipsis instead of spilling out, and unsafe schemes
+    (<code>javascript:</code>, <code>vbscript:</code>, <code>data:</code>, <code>file:</code>) are rejected
+    with <code>UNSAFE_LINK</code> — the same check <code>link()</code> and <code>text({ link })</code> use.</div>
+  <div data-lang="de" hidden class="hint"><b class="text-(--accent)">Unter der Haube:</b> ein Rechteck plus
+    Link-Annotation — bewusst <em>keine</em> AcroForm-Schaltfläche (<code>/Btn</code>). Sie braucht keine
+    Formular-Unterstützung, wird in jedem Viewer dargestellt und kann nichts anderes als ihr Ziel öffnen.
+    Eine zu breite Beschriftung wird gekürzt statt überzulaufen, und gefährliche Schemata
+    (<code>javascript:</code>, <code>vbscript:</code>, <code>data:</code>, <code>file:</code>) werden mit
+    <code>UNSAFE_LINK</code> abgewiesen — dieselbe Prüfung wie bei <code>link()</code> und
+    <code>text({ link })</code>.</div>
+  <div data-lang="zh" hidden class="hint"><b class="text-(--accent)">实现原理：</b>一个矩形加一个链接注释——
+    有意<em>不</em>使用 AcroForm 的 <code>/Btn</code> 控件。它无需阅读器支持表单，在任何阅读器中都能显示，
+    并且只能打开自己的目标。标签超出方框时会以省略号截断而不会溢出；不安全的协议
+    （<code>javascript:</code>、<code>vbscript:</code>、<code>data:</code>、<code>file:</code>）会以
+    <code>UNSAFE_LINK</code> 拒绝——与 <code>link()</code> 和 <code>text({ link })</code> 使用同一套检查。</div>
+
+  <p data-lang="en" class="text-[14px] text-(--muted)"><b class="text-(--ink)">Availability:</b>
+     <code>button()</code> ships with <b>version 0.7.0</b> at the end of August 2026.
+     <code>link()</code>, <code>anchor()</code> and <code>text({ link })</code> work today in 0.6.0.</p>
+  <p data-lang="de" hidden class="text-[14px] text-(--muted)"><b class="text-(--ink)">Verfügbarkeit:</b>
+     <code>button()</code> kommt mit <b>Version 0.7.0</b> Ende August 2026.
+     <code>link()</code>, <code>anchor()</code> und <code>text({ link })</code> funktionieren schon heute in 0.6.0.</p>
+  <p data-lang="zh" hidden class="text-[14px] text-(--muted)"><b class="text-(--ink)">可用性：</b>
+     <code>button()</code> 将随 <b>0.7.0 版本</b>于 2026 年 8 月底发布。
+     <code>link()</code>、<code>anchor()</code> 和 <code>text({ link })</code> 在 0.6.0 中已经可用。</p>
+
   <h3 data-lang="en" class="doc-h3">Signature fields</h3>
   <h3 data-lang="de" hidden class="doc-h3">Signaturfelder</h3>
   <h3 data-lang="zh" hidden class="doc-h3">签名字段</h3>
@@ -1665,6 +1763,32 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
      <code>CHANGELOG.md</code> in the repository one to one. The format follows
      <a class="text-(--accent) no-underline hover:underline" href="https://keepachangelog.com/">Keep a Changelog</a>,
      versioning follows <a class="text-(--accent) no-underline hover:underline" href="https://semver.org/">SemVer</a>.</p>
+
+  <details class="fold">
+    <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.7.0</b><span class="ml-auto tabular-nums">planned · end of August 2026</span></span><span class="fold-peek"><span class="fold-peek-text">Unreleased. Clickable buttons: a filled, optionally bordered box with a
+      centred label, covered by a link annotation.</span></span></summary>
+    <div class="cl-body">
+      <p class="cl-note">Unreleased — in <code>main</code>, shipping at the end of August 2026.</p>
+
+      <p class="cl-h">Added</p>
+      <ul class="cl-list">
+        <li><b><code>button(label, options)</code></b> — a clickable button: a filled (optionally
+            bordered) rounded box with an optically centred label, covered by a link annotation.
+            <code>link</code>, <code>fill</code>, <code>borderColor</code>, <code>borderWidth</code>,
+            <code>color</code>, <code>width</code> (points or <code>"60%"</code>), <code>height</code>,
+            <code>radius</code>, <code>paddingX</code>/<code>paddingY</code>, <code>font</code>,
+            <code>size</code>, <code>bold</code>, <code>letterSpacing</code>, <code>textAlign</code>,
+            <code>align</code>, <code>opacity</code>, <code>x</code>/<code>y</code>,
+            <code>spacingBefore</code>/<code>spacingAfter</code>.
+            Flows by default and breaks the page when it no longer fits; <code>y</code> switches to
+            absolute placement. Without <code>width</code> the box sizes itself to the label; a label
+            wider than the box is truncated with an ellipsis rather than allowed to spill out.
+            Deliberately a link annotation and not an AcroForm <code>/Btn</code> widget: no form
+            support needed, renders in every viewer, and it can do nothing but follow its target.
+            Targets go through the same <code>UNSAFE_LINK</code> check as <code>link()</code>.</li>
+      </ul>
+    </div>
+  </details>
 
   <details class="fold">
     <summary><span class="fold-head"><b class="text-[13px] text-(--ink)">0.6.0</b><span class="ml-auto tabular-nums">2026-08-01</span></span><span class="fold-peek"><span class="fold-peek-text">Driven almost entirely by a field report from a production application that

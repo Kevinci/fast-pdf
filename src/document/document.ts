@@ -19,7 +19,7 @@ import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
-import { assertFinite } from "../validate";
+import { assertFinite, assertNonNegative } from "../validate";
 import {
   BLACK,
   PAGE_FORMATS,
@@ -443,6 +443,48 @@ export interface SignatureOptions {
    * detached PAdES-B (CAdES) signature. At most one signed field per document.
    */
   sign?: SigningOptions;
+}
+
+export interface ButtonOptions {
+  /** Where the button leads: a URL or an anchor reference ("#name"). */
+  link: string;
+  /** Background colour. Default: the document's text colour. */
+  fill?: ColorInput;
+  /** Border colour. Default: no border. */
+  borderColor?: ColorInput;
+  /** Border width in points. Default: 1 when `borderColor` is set, else 0. */
+  borderWidth?: number;
+  /** Label colour. Default: "#ffffff". */
+  color?: ColorInput;
+  /** Outer width — points or a percentage of the available width. Default: label plus padding. */
+  width?: SizeInput;
+  /** Outer height in points. Default: label line height plus padding. */
+  height?: number;
+  /** Corner radius in points. Default: 4. */
+  radius?: number;
+  /** Horizontal padding around the label. Default: 16. */
+  paddingX?: number;
+  /** Vertical padding around the label. Default: 8. */
+  paddingY?: number;
+  /** Label font family. Default: the document default. */
+  font?: FontFamily | (string & {});
+  /** Label size in points. Default: the document default. */
+  size?: number;
+  /** Bold label. Default: true. */
+  bold?: boolean;
+  letterSpacing?: number;
+  /** Label placement inside the button. Default: "center". */
+  textAlign?: "left" | "center" | "right";
+  /** Button placement within the flow area (flow mode). Default: "left". */
+  align?: "left" | "center" | "right";
+  /** Constant alpha for background and border, from 0 to 1. Default: 1. */
+  opacity?: number;
+  /** Absolute x position, or a left offset within the flow area. */
+  x?: number;
+  /** Providing `y` switches to absolute positioning (no cursor movement). */
+  y?: number;
+  spacingBefore?: number;
+  spacingAfter?: number;
 }
 
 export interface OutlineOptions {
@@ -2334,6 +2376,110 @@ export class PDFDocument {
   link(x: number, y: number, width: number, height: number, target: string): this {
     checkLinkTarget(target);
     this.page.links.push({ x, y, width, height, target });
+    return this;
+  }
+
+  /**
+   * A clickable button: a filled (optionally bordered) box with a centred
+   * label, covered by a link annotation.
+   *
+   * ```ts
+   * pdf.button("Zur Demo", {
+   *   link: "https://kevinci.github.io/fast-pdf/",
+   *   fill: "#4f46e5",
+   *   borderColor: "#3730a3",
+   *   width: 180,
+   * });
+   * ```
+   *
+   * Flows by default (and breaks the page when it no longer fits); passing
+   * `y` switches to absolute positioning. A label wider than the box is
+   * truncated with an ellipsis rather than allowed to spill out.
+   *
+   * This is a link annotation, not an AcroForm `/Btn` widget: it works in
+   * every viewer, needs no form support and executes nothing — the only
+   * thing it can do is follow its target.
+   */
+  button(label: string, options: ButtonOptions): this {
+    const size = options.size ?? this.defaults.size;
+    const paddingX = options.paddingX ?? 16;
+    const paddingY = options.paddingY ?? 8;
+    const letterSpacing = options.letterSpacing ?? 0;
+    const bold = options.bold ?? true;
+    assertFinite(size, "button size");
+    assertNonNegative(paddingX, "button paddingX");
+    assertNonNegative(paddingY, "button paddingY");
+    assertFinite(letterSpacing, "button letterSpacing");
+    if (options.x !== undefined) assertFinite(options.x, "button x");
+    if (options.y !== undefined) assertFinite(options.y, "button y");
+    if (options.height !== undefined) assertNonNegative(options.height, "button height");
+    if (options.borderWidth !== undefined) assertNonNegative(options.borderWidth, "button borderWidth");
+    checkLinkTarget(options.link);
+
+    const font = this.resolveFontStyle(options.font ?? this.defaults.font, bold, false);
+    const labelWidth = measureLine(label, font, size, letterSpacing);
+    const lineStep = size * this.defaults.lineHeight;
+
+    // The flow area is the reference for percentages, both modes alike.
+    const available = this.flowWidth;
+    const width =
+      options.width !== undefined
+        ? resolveSize(options.width, available)
+        : labelWidth + 2 * paddingX;
+    assertNonNegative(width, "button width");
+    const height = options.height ?? lineStep + 2 * paddingY;
+    const radius = options.radius ?? 4;
+
+    const borderWidth = options.borderWidth ?? (options.borderColor !== undefined ? 1 : 0);
+    const stroke = borderWidth > 0 ? (options.borderColor ?? "#000000") : undefined;
+
+    const draw = (x: number, yTop: number): void => {
+      this.rect(x, yTop, width, height, {
+        fill: options.fill ?? this.defaults.color,
+        stroke,
+        lineWidth: borderWidth,
+        radius,
+        opacity: options.opacity,
+      });
+      const innerWidth = Math.max(0, width - 2 * paddingX);
+      let text = label;
+      if (measureLine(text, font, size, letterSpacing) > innerWidth) {
+        while (text.length > 0 && measureLine(`${text}…`, font, size, letterSpacing) > innerWidth) {
+          text = text.slice(0, -1);
+        }
+        text += "…";
+      }
+      // Optical centring: the cap height sits in the middle of the box, so
+      // the label looks centred rather than mathematically centred.
+      const capHeight = (font.capHeight * size) / 1000;
+      const ascent = (font.ascent * size) / 1000;
+      this.text(text, {
+        x: x + paddingX,
+        y: yTop + (height + capHeight) / 2 - ascent,
+        width: innerWidth,
+        align: options.textAlign ?? "center",
+        font: options.font,
+        size,
+        bold,
+        letterSpacing,
+        color: options.color ?? "#ffffff",
+      });
+      this.link(x, yTop, width, height, options.link);
+    };
+
+    if (options.y !== undefined) {
+      draw(options.x ?? this.page.margins.left, options.y);
+      this.lastBlock = height;
+      return this;
+    }
+
+    this.applySpacingBefore(options.spacingBefore);
+    this.breakPageIfNeeded(height);
+    const free = Math.max(0, available - width);
+    const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
+    draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
+    this.cursorY += height + (options.spacingAfter ?? 0);
+    this.lastBlock = height;
     return this;
   }
 
