@@ -1,0 +1,319 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>fast-pdf · append() im Browser testen</title>
+<style>
+  :root {
+    color-scheme: light dark;
+    --bg: #f6f7f9;
+    --panel: #ffffff;
+    --ink: #101828;
+    --muted: #667085;
+    --line: #e4e7ec;
+    --accent: #2e5ce6;
+    --bad: #b42318;
+    --ok: #067647;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117;
+      --panel: #161b22;
+      --ink: #e6edf3;
+      --muted: #8b949e;
+      --line: #30363d;
+      --accent: #6e8ff5;
+      --bad: #ff7b72;
+      --ok: #3fb950;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font: 15px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+  }
+  main { max-width: 1180px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--accent); margin: 0 0 12px; }
+  p.lead { color: var(--muted); margin: 0 0 28px; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+  .grid { display: grid; grid-template-columns: minmax(320px, 400px) 1fr; gap: 20px; align-items: start; }
+  @media (max-width: 880px) { .grid { grid-template-columns: 1fr; } }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 20px; }
+  .drop {
+    border: 1.5px dashed var(--line);
+    border-radius: 10px;
+    padding: 24px 16px;
+    text-align: center;
+    color: var(--muted);
+    cursor: pointer;
+    transition: border-color .15s, background .15s;
+  }
+  .drop:hover, .drop.over { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  .drop strong { color: var(--ink); display: block; margin-bottom: 2px; }
+  ul.files { list-style: none; margin: 16px 0 0; padding: 0; display: grid; gap: 8px; }
+  ul.files li {
+    display: flex; align-items: baseline; gap: 8px;
+    border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; font-size: 13.5px;
+  }
+  ul.files .name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ul.files .meta { color: var(--muted); font-size: 12.5px; margin-left: auto; white-space: nowrap; }
+  ul.files .drop-btn { border: 0; background: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; padding: 0 2px; }
+  ul.files .drop-btn:hover { color: var(--bad); }
+  fieldset { border: 0; margin: 22px 0 0; padding: 0; }
+  label.row { display: flex; align-items: center; gap: 8px; margin: 9px 0; font-size: 14px; }
+  label.row span.hint { color: var(--muted); font-size: 12.5px; }
+  input[type="text"], input[type="number"], select {
+    font: inherit; font-size: 14px; padding: 5px 8px; border-radius: 7px;
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+  }
+  input[type="text"] { width: 100%; }
+  input[type="number"] { width: 76px; }
+  button.go {
+    margin-top: 22px; width: 100%; font: inherit; font-weight: 600; font-size: 15px;
+    padding: 11px; border: 0; border-radius: 9px; background: var(--accent); color: #fff; cursor: pointer;
+  }
+  button.go:disabled { opacity: .5; cursor: default; }
+  .status { margin-top: 14px; font-size: 13.5px; min-height: 1.4em; color: var(--muted); }
+  .status.err { color: var(--bad); }
+  .status.ok { color: var(--ok); }
+  .status code { background: color-mix(in srgb, currentColor 12%, transparent); padding: 1px 5px; border-radius: 4px; }
+  iframe { width: 100%; height: 78vh; min-height: 520px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
+  .empty {
+    height: 78vh; min-height: 520px; display: grid; place-items: center;
+    border: 1.5px dashed var(--line); border-radius: 10px; color: var(--muted); text-align: center; padding: 24px;
+  }
+  .bar { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .bar a { color: var(--accent); font-size: 14px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
+  footer code { background: var(--panel); border: 1px solid var(--line); padding: 1px 5px; border-radius: 4px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>append() ausprobieren</h1>
+  <p class="lead">
+    Läuft komplett im Browser gegen <code>dist/index.browser.js</code> — kein Server, keine Uploads
+    verlassen die Seite. Lege ein oder mehrere PDFs ab; sie werden an einen generierten Lebenslauf angehängt.
+  </p>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>1 · Anlagen</h2>
+      <div class="drop" id="drop">
+        <strong>PDF hier ablegen</strong>
+        oder klicken zum Auswählen
+      </div>
+      <input type="file" id="picker" accept="application/pdf,.pdf" multiple hidden>
+      <ul class="files" id="files"></ul>
+
+      <fieldset>
+        <h2 style="margin-top:22px">2 · Optionen</h2>
+        <label class="row">
+          <span>fit</span>
+          <select id="fit">
+            <option value="keep">keep — Originalgröße, 1:1</option>
+            <option value="page">page — auf A4 einpassen</option>
+          </select>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="overlay">
+          <span>overlay <span class="hint">— Seitenzahlen/Fußzeile auch auf den Anlagen</span></span>
+        </label>
+        <label class="row">
+          <span>pages</span>
+          <input type="text" id="pages" placeholder="alle — oder z. B. 1,3 oder 2">
+        </label>
+        <label class="row" id="padRow">
+          <span>padding</span>
+          <input type="number" id="padding" value="0" min="0" max="200" step="4">
+          <span class="hint">pt, nur bei fit: "page"</span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="numbers" checked>
+          <span>pageNumbers() aufs ganze Dokument</span>
+        </label>
+        <label class="row">
+          <input type="checkbox" id="mark">
+          <span>watermark("ANLAGE")</span>
+        </label>
+      </fieldset>
+
+      <button class="go" id="go" disabled>PDF erzeugen</button>
+      <div class="status" id="status"></div>
+    </div>
+
+    <div>
+      <div class="bar">
+        <h2 style="margin:0">Ergebnis</h2>
+        <a id="download" href="#" download="bewerbung.pdf" hidden>herunterladen</a>
+      </div>
+      <div class="empty" id="empty">Noch kein Ergebnis — links Anlagen wählen und erzeugen.</div>
+      <iframe id="preview" title="Ergebnis" hidden></iframe>
+    </div>
+  </div>
+
+  <footer>
+    Lokal starten: <code>npm run build</code>, dann <code>python3 -m http.server 8080</code> im
+    Projektwurzelverzeichnis und <code>http://localhost:8080/docs/append-playground.html</code> öffnen.
+    Ein <code>file://</code>-Aufruf scheitert an der CORS-Regel für ES-Module.
+  </footer>
+</main>
+
+<script type="module">
+import { PDFDocument, pdfInfo, FastPDFError } from "../dist/index.browser.js";
+
+const el = (id) => document.getElementById(id);
+const status = el("status");
+const list = el("files");
+
+/** Uploaded files with their parsed info: { name, bytes, info } */
+const attachments = [];
+let previewUrl = null;
+
+function say(message, kind = "") {
+  status.className = `status ${kind}`;
+  status.innerHTML = message;
+}
+
+function render() {
+  list.innerHTML = "";
+  for (const [i, file] of attachments.entries()) {
+    const li = document.createElement("li");
+    const size = file.info.pageSizes[0];
+    li.innerHTML =
+      `<span class="name"></span>` +
+      `<span class="meta"></span>` +
+      `<button class="drop-btn" title="entfernen">×</button>`;
+    li.querySelector(".name").textContent = file.name;
+    li.querySelector(".meta").textContent = file.info.encrypted
+      ? "verschlüsselt — nicht anhängbar"
+      : `PDF ${file.info.version} · ${file.info.pageCount} S. · ` +
+        `${Math.round(size.width)}×${Math.round(size.height)} pt`;
+    if (file.info.encrypted) li.style.borderColor = "var(--bad)";
+    li.querySelector("button").onclick = () => {
+      attachments.splice(i, 1);
+      render();
+    };
+    list.appendChild(li);
+  }
+  el("go").disabled = attachments.length === 0;
+}
+
+async function add(fileList) {
+  for (const file of fileList) {
+    try {
+      const bytes = new Uint8Array(await file.arrayBuffer());
+      // pdfInfo() first: page count, sizes and whether it is encrypted —
+      // exactly the pre-flight check a real upload form wants.
+      attachments.push({ name: file.name, bytes, info: await pdfInfo(bytes) });
+      say("");
+    } catch (error) {
+      report(error, `${file.name} konnte nicht gelesen werden`);
+    }
+  }
+  render();
+}
+
+function report(error, prefix) {
+  const code = error instanceof FastPDFError ? ` <code>${error.code}</code>` : "";
+  say(`${prefix}: ${error.message}${code}`, "err");
+  console.error(error);
+}
+
+/** "1,3" → [1, 3]; "2" → 2; "" → undefined */
+function parsePages(raw) {
+  const parts = raw.split(/[,\s]+/).filter(Boolean).map(Number);
+  if (parts.length === 0) return undefined;
+  if (parts.some((n) => !Number.isInteger(n) || n < 1)) {
+    throw new FastPDFError("pages: nur positive ganze Zahlen", "INVALID_ARGUMENT");
+  }
+  return parts.length === 1 ? parts[0] : parts;
+}
+
+async function build() {
+  const started = performance.now();
+  say("erzeuge …");
+  try {
+    const pages = parsePages(el("pages").value);
+    const options = {
+      fit: el("fit").value,
+      overlay: el("overlay").checked,
+      padding: Number(el("padding").value) || 0,
+      ...(pages !== undefined ? { pages } : {}),
+    };
+
+    const pdf = new PDFDocument({
+      language: "de-DE",
+      metadata: { title: "Bewerbung (append-Test)" },
+    });
+    pdf.rect(0, 0, pdf.pageSize.width, 6, { fill: "#2e5ce6" });
+    pdf.text("Erika Mustermann", { size: 26, bold: true });
+    pdf.text("Senior Frontend Engineer · Berlin", { size: 12, color: "#667085", spacingAfter: 24 });
+    pdf.text("Anlagen", { size: 13, bold: true, color: "#2e5ce6", spacingAfter: 8 });
+    for (const [i, file] of attachments.entries()) {
+      pdf.text(`${i + 1}. ${file.name} (${file.info.pageCount} Seiten)`);
+    }
+
+    if (el("numbers").checked) {
+      pdf.pageNumbers({ format: (n, total) => `Seite ${n} von ${total}`, size: 9, color: "#98a2b3" });
+    }
+    if (el("mark").checked) pdf.watermark("ANLAGE");
+
+    for (const file of attachments) {
+      await pdf.append(file.bytes, options);
+    }
+
+    const blob = await pdf.toBlob();
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    previewUrl = URL.createObjectURL(blob);
+    el("preview").src = previewUrl;
+    el("preview").hidden = false;
+    el("empty").hidden = true;
+    const link = el("download");
+    link.href = previewUrl;
+    link.hidden = false;
+
+    const ms = Math.round(performance.now() - started);
+    say(
+      `${pdf.pageCount} Seiten · ${(blob.size / 1024).toFixed(1)} KB · ${ms} ms`,
+      "ok",
+    );
+  } catch (error) {
+    report(error, "Fehlgeschlagen");
+  }
+}
+
+el("drop").onclick = () => el("picker").click();
+el("picker").onchange = (e) => add(e.target.files);
+el("go").onclick = build;
+el("fit").onchange = () => {
+  // fit: "page" always draws on its own pages, so the flag is implied there.
+  const scaled = el("fit").value === "page";
+  el("overlay").disabled = scaled;
+  el("overlay").checked = scaled || el("overlay").checked;
+  el("padding").disabled = !scaled;
+};
+el("fit").onchange();
+
+for (const type of ["dragenter", "dragover"]) {
+  el("drop").addEventListener(type, (e) => {
+    e.preventDefault();
+    el("drop").classList.add("over");
+  });
+}
+for (const type of ["dragleave", "drop"]) {
+  el("drop").addEventListener(type, () => el("drop").classList.remove("over"));
+}
+el("drop").addEventListener("drop", (e) => {
+  e.preventDefault();
+  add(e.dataTransfer.files);
+});
+window.addEventListener("dragover", (e) => e.preventDefault());
+window.addEventListener("drop", (e) => e.preventDefault());
+</script>
+</body>
+</html>

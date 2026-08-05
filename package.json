@@ -1,6 +1,6 @@
 {
   "name": "fast-pdf",
-  "version": "0.6.0",
+  "version": "0.7.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
   "author": "Kevin Imig <kevinci.coding@gmail.com>",
@@ -71,6 +71,7 @@
     "showcase": "tsx examples/showcase.ts",
     "report": "tsx examples/report.ts",
     "cv": "tsx examples/cv.ts",
+    "append": "tsx examples/append.ts",
     "docs:demo": "tailwindcss -i docs/demo.input.css -o docs/demo.tw.css --minify && node docs/build-demo.mjs"
   },
   "devDependencies": {

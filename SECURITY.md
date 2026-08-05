@@ -14,10 +14,15 @@ security reports. You will get a response within a few days.
 
 ## Threat model
 
-fast-pdf generates PDFs; it never parses or executes untrusted PDF files.
-The generated output is **passive by design**: no JavaScript actions, no
-embedded files, no forms, no launch actions and no external content — only
-text, vector graphics, images, links, bookmarks and metadata.
+fast-pdf generates PDFs. It never *executes* anything, and the generated output
+is **passive by design**: no JavaScript actions, no embedded files, no forms, no
+launch actions and no external content — only text, vector graphics, images,
+links, bookmarks and metadata.
+
+Since 0.7.0 there is one place where the library reads a file it did not write:
+`append()` and `pdfInfo()` parse an existing PDF, which in a typical application
+is a user upload. See **Importing PDFs** below for what that parser does and
+does not let through.
 
 What the library guarantees:
 
@@ -34,6 +39,37 @@ What the library guarantees:
   decode path (the only path that decompresses data) caps decompressed size
   against the declared dimensions — a crafted "zlib bomb" fails fast instead
   of exhausting memory — and caps total pixels at 2²⁷ (~134 MP).
+
+### Importing PDFs (`append()`, `pdfInfo()`)
+
+An imported page's content streams are copied **verbatim**, without being
+decoded or executed — a content stream is drawing instructions, and fast-pdf
+does not interpret them. What could turn a copied page into something active is
+the *structure* around it, so the import is filtered rather than cloned
+wholesale:
+
+- **The page dictionary is whitelisted**, not blocklisted. Only geometry,
+  resources, contents and the transparency group come over. Page-level actions
+  (`/AA`), tagged-structure links and application-private data are left behind.
+- **Annotations are restricted to markup subtypes** — links, notes, highlights,
+  shapes. Dropped outright: `/Widget` (form fields), and `/FileAttachment`,
+  `/Sound`, `/Movie`, `/RichMedia` and `/3D`, which carry payloads.
+- **Actions must be a plain web link or a jump inside the imported pages.**
+  `/Launch`, `/JavaScript`, `/SubmitForm` and friends are dropped, `/AA` is
+  never copied, and a surviving `/URI` goes through the same scheme check as
+  `link()`.
+- **Parsing is bounded.** Decompression is capped at 64 MB per stream and object
+  nesting at 128 levels, so neither a compression bomb nor a deeply nested
+  object can exhaust memory. Reference cycles — a page pointing at its parent
+  pointing back — terminate rather than recurse.
+- **Encrypted files are rejected** (`ENCRYPTED_PDF`) instead of being guessed at.
+- A damaged cross-reference table is recovered by scanning the file. This is a
+  robustness feature for real-world uploads, not a security boundary: it only
+  changes *which* objects are found, never what they are allowed to contain.
+
+Still yours to decide: **apply an upload size and page-count limit.** `pdfInfo()`
+exists for exactly that — check `pageCount` before calling `append()`. A 5,000-page
+upload is a resource problem no library-side default can solve for you.
 
 Trust boundaries you are responsible for:
 

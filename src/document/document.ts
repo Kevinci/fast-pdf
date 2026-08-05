@@ -1,5 +1,18 @@
-import { Name, PDFString, textString, type PDFValue, type Ref } from "../pdf/objects";
+import { Name, PDFString, latin1Bytes, textString, type PDFValue, type Ref } from "../pdf/objects";
 import { PDFWriter } from "../pdf/writer";
+import { PDFReader, type PDFDict, type SourcePage } from "../pdf/reader";
+import {
+  ObjectCopier,
+  concatMatrix,
+  displayMatrix,
+  importAnnots,
+  importAsForm,
+  importPageDict,
+  overlayMatrix,
+  resourcesWithOverlay,
+  transformRect,
+  type Matrix,
+} from "../pdf/import";
 import { createSecurityHandler, supportsEncryption, type EncryptionOptions } from "../pdf/encrypt";
 import { signaturePlaceholder, embedSignature, type SigningOptions } from "../pdf/sign";
 import { ContentStream } from "../pdf/content";
@@ -19,7 +32,7 @@ import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
-import { assertFinite, assertNonNegative } from "../validate";
+import { assertFinite, assertNonNegative, blockedUriScheme } from "../validate";
 import {
   BLACK,
   PAGE_FORMATS,
@@ -47,6 +60,77 @@ export interface PageOptions {
 export interface PageBreakOptions extends PageOptions {
   /** Vertical start position on the new page (top-based, in points). Default: top margin. */
   y?: number;
+}
+
+/** How `append()` places the pages of an existing PDF. */
+export interface AppendOptions extends PageOptions {
+  /**
+   * Which pages to take, as 1-based numbers in the order given.
+   * Default: every page of the source.
+   */
+  pages?: number | number[];
+  /**
+   * `"keep"` (default) — appended pages keep their original size and are
+   * copied unchanged, including their own rotation and annotations. This is
+   * the faithful option: a scan stays exactly as it was scanned.
+   *
+   * `"page"` — pages are scaled to fit this document's page format, so a
+   * Letter-sized certificate lines up with an A4 document.
+   */
+  fit?: "keep" | "page";
+  /**
+   * Allow drawing on the appended pages — `header()`, `footer()`,
+   * `pageNumbers()`, `watermark()`, `onPage()` and anything drawn after the
+   * `append()` call itself. The imported content stays untouched underneath.
+   *
+   * Default: `false` with `fit: "keep"` (nothing is drawn over a document
+   * someone else signed unless asked), always on with `fit: "page"`.
+   */
+  overlay?: boolean;
+  /** With `fit: "page"`: inset from the page edge, in points. Default: 0. */
+  padding?: number;
+  /**
+   * With `fit: "page"`: give the target page the orientation of the source
+   * page, so a landscape certificate is not shrunk into a portrait frame.
+   * Default: true.
+   */
+  autoRotate?: boolean;
+}
+
+/** State shared by all pages appended from one file, so objects are copied once. */
+interface ImportGroup {
+  reader: PDFReader;
+  /** Object numbers of the source pages that made it into this document. */
+  imported: Set<number>;
+}
+
+/** A page whose content comes from an appended PDF. */
+interface ImportedPage {
+  group: ImportGroup;
+  source: SourcePage;
+  /** `keep` copies the source page dictionary; `form` draws it as an XObject. */
+  mode: "keep" | "form";
+  overlay: boolean;
+  /** `form` only: where the scaled page lands on ours. */
+  placement?: Matrix;
+}
+
+/** What the import contributes to one page at render time. */
+interface ImportedParts {
+  /** `keep`: the copied page dictionary, minus /Parent and /Annots. */
+  pageDict?: PDFDict;
+  /** `form`: the imported page as a form XObject, plus its resource name. */
+  form?: { res: string; ref: Ref };
+  /** `form`: a content stream that draws `form`, to run before our own. */
+  contentPrefix?: Ref;
+  /** Annotations carried over from the source page. */
+  annots: Ref[];
+  /**
+   * `keep`: maps our top-left drawing space onto the source page's coordinates.
+   * Link and signature rectangles have to go through it — the copied page keeps
+   * the source's /Rotate and box offset, which annotations are subject to.
+   */
+  annotTransform?: Matrix;
 }
 
 export interface PDFDocumentOptions extends PageOptions {
@@ -560,6 +644,8 @@ export class PDFDocument {
   private readonly sigFieldNames = new Set<string>();
   /** Non-null while decorators run: overrides the "current page". */
   private activePage: Page | null = null;
+  /** Pages whose content comes from an appended PDF, resolved at render time. */
+  private readonly imported = new Map<Page, ImportedPage>();
 
   constructor(options: PDFDocumentOptions = {}) {
     this.pageDefaults = {
@@ -625,6 +711,88 @@ export class PDFDocument {
     const { y, ...pageOptions } = options;
     this.addPage(pageOptions);
     if (y !== undefined) this.cursorY = y;
+    return this;
+  }
+
+  /**
+   * Append the pages of an existing PDF — a certificate, a reference letter, a
+   * scan the user uploaded — to this document.
+   *
+   * ```ts
+   * const pdf = new PDFDocument();
+   * pdf.text("Curriculum Vitae", { size: 24 });
+   * await pdf.append(certificateBytes);                  // as it was
+   * await pdf.append(letterBytes, { fit: "page" });      // scaled to A4
+   * await pdf.append(scanBytes, { pages: [1, 2] });      // a selection
+   * await pdf.save("application.pdf");
+   * ```
+   *
+   * Pages are copied, not re-rendered: their content streams, fonts and images
+   * move over byte-for-byte, so an appended page looks exactly like the
+   * original and stays as small as it was. Objects shared by several pages of
+   * one file are written once.
+   *
+   * The flow cursor continues *after* the appended pages: unless `overlay` is
+   * set, the next `text()` starts on a fresh page rather than on top of
+   * someone else's document. Use `pdfInfo()` to check a file's page count
+   * before appending it.
+   *
+   * Not supported: encrypted source files (`ENCRYPTED_PDF` — remove the
+   * protection first). Form fields, bookmarks and the tagged-content structure
+   * of the source are not carried over. Annotations are, but only markup ones
+   * (links, notes, highlights, shapes) and only with a plain web link or a jump
+   * inside the imported pages — the source is an upload, and it must not be
+   * able to smuggle a file attachment or a `/JavaScript` action into the output.
+   */
+  async append(source: Uint8Array | ArrayBuffer, options: AppendOptions = {}): Promise<this> {
+    const reader = await PDFReader.open(toBytes(source));
+    const selected = selectSourcePages(await reader.pages(), options.pages);
+    if (selected.length === 0) return this;
+
+    const fit = options.fit ?? "keep";
+    // Scaled pages are ours to lay out, so drawing on them is always allowed;
+    // a 1:1 copy is left alone unless the caller asks for an overlay.
+    const overlay = fit === "page" ? true : (options.overlay ?? false);
+    const padding = assertNonNegative(options.padding ?? 0, "append padding");
+    const group: ImportGroup = {
+      reader,
+      imported: new Set(selected.map((page) => page.ref.num)),
+    };
+
+    for (const sourcePage of selected) {
+      if (fit === "keep") {
+        const target = new Page(
+          { ...sourcePage.size },
+          normalizeMargins(options.margins ?? this.pageDefaults.margins, DEFAULT_MARGIN),
+        );
+        this.pages.push(target);
+        this.imported.set(target, { group, source: sourcePage, mode: "keep", overlay });
+        continue;
+      }
+      const pageOptions: PageOptions = {
+        landscape: (options.autoRotate ?? true)
+          ? sourcePage.size.width > sourcePage.size.height
+          : (options.landscape ?? this.pageDefaults.landscape),
+      };
+      if (options.format !== undefined) pageOptions.format = options.format;
+      if (options.margins !== undefined) pageOptions.margins = options.margins;
+      this.addPage(pageOptions);
+      const target = this.pages[this.pages.length - 1]!;
+      this.imported.set(target, {
+        group,
+        source: sourcePage,
+        mode: "form",
+        overlay: true,
+        placement: containMatrix(sourcePage.size, target.size, padding),
+      });
+    }
+
+    const last = this.pages[this.pages.length - 1]!;
+    this.frameTop = last.margins.top;
+    // Without an overlay the cursor is parked below the content area, so the
+    // next flow block breaks to a new page instead of landing on top of the
+    // imported one.
+    this.cursorY = overlay ? last.margins.top : last.contentBottom + 1;
     return this;
   }
 
@@ -2705,6 +2873,11 @@ export class PDFDocument {
     const refOf = new Map<Page, Ref>();
     this.pages.forEach((page, i) => refOf.set(page, pageRefs[i]!));
 
+    // Appended PDFs: clone their object graphs into this file. One pass before
+    // the page loop, so a link inside an imported file can be pointed at the
+    // page we are about to write rather than at a second copy of it.
+    const imports = await this.buildImports(writer, refOf, fontRefs, imageRefs, gsRefs);
+
     // Signature field widgets, collected for the document-level /AcroForm.
     const acroFields: Ref[] = [];
     // Signing options of the (at most one) cryptographically signed field.
@@ -2712,21 +2885,12 @@ export class PDFDocument {
 
     for (let i = 0; i < this.pages.length; i++) {
       const page = this.pages[i]!;
-      const raw = page.content.toBytes();
-      const compressed = this.compress ? await deflate(raw) : null;
-      const contentRef = writer.addStream(
-        { Filter: compressed ? new Name("FlateDecode") : undefined },
-        compressed ?? raw,
+      const parts = imports.get(page);
+      const annotTransform = parts?.annotTransform;
+
+      const annots = page.links.map((link) =>
+        writer.add(this.buildLinkAnnot(link, page, refOf, annotTransform)),
       );
-
-      const fontDict: Record<string, PDFValue> = {};
-      for (const { font, res } of page.fontsUsed.values()) fontDict[res] = fontRefs.get(font.key)!;
-      const xobjectDict: Record<string, PDFValue> = {};
-      for (const { entry, res } of page.imagesUsed.values()) xobjectDict[res] = imageRefs.get(entry.id)!;
-      const gsDict: Record<string, PDFValue> = {};
-      for (const [key, { res }] of page.extGStatesUsed) gsDict[res] = gsRefs.get(key)!;
-
-      const annots = page.links.map((link) => writer.add(this.buildLinkAnnot(link, page, refOf)));
       for (const field of page.sigFields) {
         // Widgets need an appearance stream (empty — viewers render their
         // own "sign here" affordance; the visible line is page content).
@@ -2751,13 +2915,19 @@ export class PDFDocument {
           sigValueRef = writer.add(signaturePlaceholder(field.sign));
           signState = field.sign;
         }
+        const box: [number, number, number, number] = [
+          field.x,
+          page.ty(field.y + field.height),
+          field.x + field.width,
+          page.ty(field.y),
+        ];
         const widgetRef = writer.add({
           Type: new Name("Annot"),
           Subtype: new Name("Widget"),
           FT: new Name("Sig"),
           T: textString(field.name),
           V: sigValueRef,
-          Rect: [field.x, page.ty(field.y + field.height), field.x + field.width, page.ty(field.y)],
+          Rect: annotTransform !== undefined ? transformRect(annotTransform, box) : box,
           F: 4, // print
           P: pageRefs[i],
           AP: { N: apRef },
@@ -2765,18 +2935,34 @@ export class PDFDocument {
         acroFields.push(widgetRef);
         annots.push(widgetRef);
       }
+      if (parts !== undefined) annots.push(...parts.annots);
+
+      // A page copied 1:1 brings its own dictionary; its content stream was
+      // already folded into it (as an overlay) by buildImports().
+      if (parts?.pageDict !== undefined) {
+        writer.fill(pageRefs[i]!, {
+          Type: new Name("Page"),
+          Parent: pagesRef,
+          ...parts.pageDict,
+          Annots: annots.length > 0 ? annots : undefined,
+        });
+        continue;
+      }
+
+      const raw = page.content.toBytes();
+      const compressed = this.compress ? await deflate(raw) : null;
+      const contentRef = writer.addStream(
+        { Filter: compressed ? new Name("FlateDecode") : undefined },
+        compressed ?? raw,
+      );
 
       writer.fill(pageRefs[i]!, {
         Type: new Name("Page"),
         Parent: pagesRef,
         MediaBox: [0, 0, page.size.width, page.size.height],
-        Contents: contentRef,
+        Contents: parts?.contentPrefix !== undefined ? [parts.contentPrefix, contentRef] : contentRef,
         Annots: annots.length > 0 ? annots : undefined,
-        Resources: {
-          Font: page.fontsUsed.size > 0 ? fontDict : undefined,
-          XObject: page.imagesUsed.size > 0 ? xobjectDict : undefined,
-          ExtGState: page.extGStatesUsed.size > 0 ? gsDict : undefined,
-        },
+        Resources: this.pageResources(page, fontRefs, imageRefs, gsRefs, parts?.form),
       });
     }
     writer.fill(pagesRef, { Type: new Name("Pages"), Kids: pageRefs, Count: pageRefs.length });
@@ -2817,6 +3003,142 @@ export class PDFDocument {
     return signState !== undefined ? embedSignature(bytes, signState) : bytes;
   }
 
+  /** The /Resources dictionary of one page, from the resources it registered. */
+  private pageResources(
+    page: Page,
+    fontRefs: Map<string, Ref>,
+    imageRefs: Map<string, Ref>,
+    gsRefs: Map<number, Ref>,
+    extraForm?: { res: string; ref: Ref },
+  ): PDFValue {
+    const fontDict: Record<string, PDFValue> = {};
+    for (const { font, res } of page.fontsUsed.values()) fontDict[res] = fontRefs.get(font.key)!;
+    const xobjectDict: Record<string, PDFValue> = {};
+    for (const { entry, res } of page.imagesUsed.values()) xobjectDict[res] = imageRefs.get(entry.id)!;
+    if (extraForm !== undefined) xobjectDict[extraForm.res] = extraForm.ref;
+    const gsDict: Record<string, PDFValue> = {};
+    for (const [key, { res }] of page.extGStatesUsed) gsDict[res] = gsRefs.get(key)!;
+    return {
+      Font: page.fontsUsed.size > 0 ? fontDict : undefined,
+      XObject: Object.keys(xobjectDict).length > 0 ? xobjectDict : undefined,
+      ExtGState: page.extGStatesUsed.size > 0 ? gsDict : undefined,
+    };
+  }
+
+  /**
+   * Copy every appended PDF page into the writer.
+   *
+   * Runs once per render, before the page loop, and returns what each imported
+   * page contributes to its page dictionary. One `ObjectCopier` per source file
+   * means pages from the same file share their fonts and images; seeding the
+   * copier with our page references first means links between imported pages
+   * resolve to the pages being written rather than to fresh copies of them.
+   */
+  private async buildImports(
+    writer: PDFWriter,
+    refOf: Map<Page, Ref>,
+    fontRefs: Map<string, Ref>,
+    imageRefs: Map<string, Ref>,
+    gsRefs: Map<number, Ref>,
+  ): Promise<Map<Page, ImportedParts>> {
+    const out = new Map<Page, ImportedParts>();
+    if (this.imported.size === 0) return out;
+
+    const copiers = new Map<ImportGroup, ObjectCopier>();
+    for (const [page, info] of this.imported) {
+      let copier = copiers.get(info.group);
+      if (copier === undefined) {
+        copier = new ObjectCopier(info.group.reader, writer);
+        copiers.set(info.group, copier);
+      }
+      copier.seed(info.source.ref.num, refOf.get(page)!);
+    }
+
+    // Wrapping imported content in q/Q keeps an unbalanced source stream from
+    // leaking its graphics state into the overlay drawn after it. Two tiny
+    // streams, shared by every imported page in the document.
+    let pushRef: Ref | undefined;
+    let popRef: Ref | undefined;
+
+    for (const [page, info] of this.imported) {
+      const { reader } = info.group;
+      const copier = copiers.get(info.group)!;
+      const pageRef = refOf.get(page)!;
+
+      if (info.mode === "form") {
+        const placement = info.placement!;
+        const formRef = await importAsForm(reader, copier, writer, info.source, this.compress);
+        const draw = new ContentStream();
+        draw
+          .save()
+          .transform(placement[0], placement[1], placement[2], placement[3], placement[4], placement[5])
+          .raw(`/${IMPORT_RES} Do`)
+          .restore();
+        out.set(page, {
+          form: { res: IMPORT_RES, ref: formRef },
+          contentPrefix: writer.addStream({}, draw.toBytes()),
+          annots: await importAnnots(reader, copier, writer, info.source, {
+            imported: info.group.imported,
+            pageRef,
+            // The form's own /Matrix normalizes rotation; annotations are not
+            // inside the form, so they need that step applied explicitly.
+            transform: concatMatrix(displayMatrix(info.source), placement),
+          }),
+        });
+        continue;
+      }
+
+      const pageDict = await importPageDict(copier, info.source);
+      const annotTransform = overlayMatrix(info.source);
+      if (!page.content.isEmpty) {
+        if (!info.overlay) {
+          throw new FastPDFError(
+            "Drawing on an appended page needs append(…, { overlay: true }) — " +
+              "without it the appended PDF is copied unchanged and the drawing would be dropped",
+            "INVALID_ARGUMENT",
+          );
+        }
+        const raw = page.content.toBytes();
+        const compressed = this.compress ? await deflate(raw) : null;
+        // The overlay is a form XObject so its resource names cannot collide
+        // with the ones the imported page already uses, and so its /Matrix can
+        // undo the source page's rotation and box offset.
+        const overlayRef = writer.addStream(
+          {
+            Type: new Name("XObject"),
+            Subtype: new Name("Form"),
+            FormType: 1,
+            BBox: [0, 0, page.size.width, page.size.height],
+            Matrix: annotTransform,
+            Resources: this.pageResources(page, fontRefs, imageRefs, gsRefs),
+            Filter: compressed ? new Name("FlateDecode") : undefined,
+          },
+          compressed ?? raw,
+        );
+        pushRef ??= writer.addStream({}, latin1Bytes("q\n"));
+        popRef ??= writer.addStream({}, latin1Bytes("Q\n"));
+        const base = pageDict.Contents;
+        pageDict.Contents = [
+          pushRef,
+          ...(Array.isArray(base) ? base : base !== undefined ? [base] : []),
+          popRef,
+          writer.addStream({}, latin1Bytes(`q /${OVERLAY_RES} Do Q\n`)),
+        ];
+        pageDict.Resources = await resourcesWithOverlay(reader, copier, info.source, OVERLAY_RES, overlayRef);
+      }
+      out.set(page, {
+        pageDict,
+        annotTransform,
+        annots: await importAnnots(reader, copier, writer, info.source, {
+          imported: info.group.imported,
+          pageRef,
+          transform: null, // a 1:1 copy keeps the source's own coordinates
+        }),
+      });
+    }
+    return out;
+  }
+
   /** Run page decorators exactly once, over the final page order. */
   private applyDecorators(): void {
     if (this.decorated || this.decorators.length === 0) return;
@@ -2826,6 +3148,10 @@ export class PDFDocument {
     this.suppressBreaks++;
     try {
       this.pages.forEach((page, i) => {
+        // Appended pages are left alone unless the caller opted into overlays:
+        // a page number stamped over someone else's contract is a surprise.
+        const imported = this.imported.get(page);
+        if (imported !== undefined && !imported.overlay) return;
         this.activePage = page;
         const info: PageInfo = {
           pageNumber: i + 1,
@@ -2842,9 +3168,19 @@ export class PDFDocument {
     }
   }
 
-  /** Resolve a pending link into a PDF annotation dictionary. */
-  private buildLinkAnnot(link: PendingLink, page: Page, refOf: Map<Page, Ref>): PDFValue {
-    const rect = [link.x, page.ty(link.y + link.height), link.x + link.width, page.ty(link.y)];
+  /**
+   * Resolve a pending link into a PDF annotation dictionary.
+   * `transform` is set on pages appended 1:1, whose annotation coordinates are
+   * the source page's rather than our top-left drawing space.
+   */
+  private buildLinkAnnot(link: PendingLink, page: Page, refOf: Map<Page, Ref>, transform?: Matrix): PDFValue {
+    const box: [number, number, number, number] = [
+      link.x,
+      page.ty(link.y + link.height),
+      link.x + link.width,
+      page.ty(link.y),
+    ];
+    const rect = transform !== undefined ? transformRect(transform, box) : box;
     const common = {
       Type: new Name("Annot"),
       Subtype: new Name("Link"),
@@ -2980,26 +3316,50 @@ function clampAlpha(a: number): number {
   return a < 0 ? 0 : a > 1 ? 1 : a;
 }
 
+/**
+ * Resource names for imported content. Distinct prefixes keep them clear of
+ * both our own generated names (F0, Im0, GS0) and the source page's, which the
+ * overlay's resources are merged with.
+ */
+const IMPORT_RES = "FpImport";
+const OVERLAY_RES = "FpOverlay";
+
+/** Pick the requested pages of a source document, 1-based and in order. */
+function selectSourcePages(available: SourcePage[], pages: AppendOptions["pages"]): SourcePage[] {
+  if (pages === undefined) return available;
+  const wanted = typeof pages === "number" ? [pages] : pages;
+  return wanted.map((number) => {
+    if (!Number.isInteger(number) || number < 1 || number > available.length) {
+      throw new FastPDFError(
+        `append(): page ${number} does not exist — the file has ${available.length} page(s)`,
+        "INVALID_ARGUMENT",
+      );
+    }
+    return available[number - 1]!;
+  });
+}
+
+/** Scale a source page to fit a target page, centred, keeping its aspect ratio. */
+function containMatrix(source: PageSize, target: PageSize, padding: number): Matrix {
+  const boxWidth = Math.max(1, target.width - 2 * padding);
+  const boxHeight = Math.max(1, target.height - 2 * padding);
+  const scale = Math.min(boxWidth / source.width, boxHeight / source.height);
+  const width = source.width * scale;
+  const height = source.height * scale;
+  // PDF space, so centring needs no vertical flip — it is symmetric.
+  return [scale, 0, 0, scale, (target.width - width) / 2, (target.height - height) / 2];
+}
+
 /** Corner radius of a clip rectangle, capped at half its shorter side. */
 function clipRadius(rect: ClipRect): number {
   return Math.max(0, Math.min(rect.radius ?? 0, rect.width / 2, rect.height / 2));
 }
 
-/**
- * URI schemes that PDF viewers may hand straight to the OS or script engine.
- * Rejected so untrusted data flowing into a link target cannot turn an
- * invoice into a script/local-file launcher.
- */
-const BLOCKED_URI_SCHEMES = new Set(["javascript", "vbscript", "data", "file"]);
-
 /** Validate an external link target ("#anchor" refs are resolved elsewhere). */
 function checkLinkTarget(target: string): void {
   if (target.startsWith("#")) return;
-  // Strip control chars and spaces before matching — they must not be able
-  // to disguise the scheme ("java\nscript:" and friends).
-  const compact = target.replace(/[\x00-\x20\x7f]/g, "");
-  const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(compact)?.[1]?.toLowerCase();
-  if (scheme !== undefined && BLOCKED_URI_SCHEMES.has(scheme)) {
+  const scheme = blockedUriScheme(target);
+  if (scheme !== null) {
     throw new FastPDFError(`Link target scheme "${scheme}:" is not allowed`, "UNSAFE_LINK");
   }
 }

@@ -1,4 +1,104 @@
 import { deflate } from "../src/pdf/compress";
+import { latin1Bytes } from "../src/pdf/objects";
+
+/**
+ * Build a PDF the modern way: objects packed into an object stream, indexed by
+ * a cross-reference stream with a PNG predictor. This is what Word, Chrome and
+ * most scanners emit, and it shares no code path with fast-pdf's own writer
+ * (classic table, plain objects) — so importing it exercises the reader's
+ * /ObjStm, /XRef and predictor handling.
+ */
+export async function makeObjStmPdf(
+  options: {
+    content?: string;
+    mediaBox?: [number, number, number, number];
+    rotate?: number;
+    /** Put /MediaBox and /Rotate on the page *tree node*, to be inherited. */
+    inherit?: boolean;
+  } = {},
+): Promise<Uint8Array> {
+  const content = options.content ?? "0 0 1 rg 20 20 120 60 re f";
+  const mediaBox = options.mediaBox ?? [0, 0, 300, 400];
+  const rotate = options.rotate ?? 0;
+  const geometry = `/MediaBox [${mediaBox.join(" ")}] ` + (rotate !== 0 ? `/Rotate ${rotate} ` : "");
+
+  // Objects 3–5 go into the object stream; 1 (content) and 6 (xref) stay loose.
+  const members = [
+    { num: 3, text: "<< /Type /Catalog /Pages 4 0 R >>" },
+    {
+      num: 4,
+      text: `<< /Type /Pages /Kids [5 0 R] /Count 1 ${options.inherit ? geometry : ""}>>`,
+    },
+    {
+      num: 5,
+      text:
+        "<< /Type /Page /Parent 4 0 R " +
+        (options.inherit ? "" : geometry) +
+        "/Contents 1 0 R /Resources << >> >>",
+    },
+  ];
+  let index = "";
+  let payload = "";
+  for (const member of members) {
+    index += `${member.num} ${payload.length} `;
+    payload += `${member.text}\n`;
+  }
+  const objStm = (await deflate(latin1Bytes(index + payload)))!;
+
+  const chunks: Uint8Array[] = [];
+  let offset = 0;
+  const push = (text: string | Uint8Array): void => {
+    const bytes = typeof text === "string" ? latin1Bytes(text) : text;
+    chunks.push(bytes);
+    offset += bytes.length;
+  };
+  const offsets: Record<number, number> = {};
+
+  push("%PDF-1.5\n%\xe2\xe3\xcf\xd3\n");
+
+  offsets[1] = offset;
+  push(`1 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
+
+  offsets[2] = offset;
+  push(`2 0 obj\n<< /Type /ObjStm /N ${members.length} /First ${index.length} /Filter /FlateDecode /Length ${objStm.length} >>\nstream\n`);
+  push(objStm);
+  push("\nendstream\nendobj\n");
+
+  offsets[6] = offset;
+  // W [1 2 2]: one type byte, a two-byte field 2, a two-byte field 3.
+  const rows: number[][] = [
+    [0, 0, 0, 255, 255], // object 0, the free-list head
+    [1, offsets[1]! >> 8, offsets[1]! & 0xff, 0, 0],
+    [1, offsets[2]! >> 8, offsets[2]! & 0xff, 0, 0],
+    [2, 0, 2, 0, 0], // object 3: member 0 of stream 2
+    [2, 0, 2, 0, 1],
+    [2, 0, 2, 0, 2],
+    [1, offsets[6]! >> 8, offsets[6]! & 0xff, 0, 0],
+  ];
+  const encoded: number[] = [];
+  let previous = new Array<number>(5).fill(0);
+  for (const row of rows) {
+    encoded.push(2); // PNG "Up" filter
+    for (let i = 0; i < 5; i++) encoded.push((row[i]! - previous[i]!) & 0xff);
+    previous = row;
+  }
+  const xref = (await deflate(new Uint8Array(encoded)))!;
+  push(
+    `6 0 obj\n<< /Type /XRef /Size ${rows.length} /W [1 2 2] /Root 3 0 R /Filter /FlateDecode ` +
+      `/DecodeParms << /Predictor 12 /Columns 5 >> /Length ${xref.length} >>\nstream\n`,
+  );
+  push(xref);
+  push("\nendstream\nendobj\n");
+  push(`startxref\n${offsets[6]}\n%%EOF\n`);
+
+  const out = new Uint8Array(offset);
+  let at = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, at);
+    at += chunk.length;
+  }
+  return out;
+}
 
 /** Build a PNG programmatically (CRCs zeroed — the parser ignores them). */
 export async function makePng(

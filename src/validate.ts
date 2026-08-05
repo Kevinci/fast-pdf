@@ -27,6 +27,25 @@ export function assertFinite(value: number, name: string): number {
   return value;
 }
 
+/**
+ * URI schemes that PDF viewers may hand straight to the OS or a script
+ * engine. Rejected wherever a link target is set, so untrusted data — a
+ * value flowing into `link()`, or an annotation inside an imported PDF —
+ * cannot turn a document into a script or local-file launcher.
+ */
+const BLOCKED_URI_SCHEMES = new Set(["javascript", "vbscript", "data", "file"]);
+
+/**
+ * The blocked scheme of a URI, or null when it is safe to emit.
+ * Control characters and spaces are stripped before matching so they cannot
+ * disguise the scheme ("java\nscript:" and friends).
+ */
+export function blockedUriScheme(target: string): string | null {
+  const compact = target.replace(/[\x00-\x20\x7f]/g, "");
+  const scheme = /^([a-zA-Z][a-zA-Z0-9+.-]*):/.exec(compact)?.[1]?.toLowerCase();
+  return scheme !== undefined && BLOCKED_URI_SCHEMES.has(scheme) ? scheme : null;
+}
+
 /** Reject anything that is not a finite number `>= 0`. */
 export function assertNonNegative(value: number, name: string): number {
   assertFinite(value, name);

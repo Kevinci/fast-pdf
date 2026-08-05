@@ -4,10 +4,58 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased] — 0.7.0, planned for the end of August 2026
+## [0.7.0] — 2026-08-05
+
+Appending existing PDFs — the last thing that forced a second library into a
+fast-pdf project — plus clickable buttons.
+
+No breaking changes: existing documents render as before.
 
 ### Added
 
+- **`append(pdfBytes, options)` — attach the pages of an existing PDF.** The
+  most common reason to run fast-pdf next to a second library: a CV builder
+  whose applicants upload a reference letter or a certificate and want it
+  attached to the generated résumé.
+
+  ```ts
+  await pdf.append(certificateBytes);                   // original size, 1:1
+  await pdf.append(letterBytes, { fit: "page" });       // scaled to A4
+  await pdf.append(scanBytes, { pages: [1, 3] });       // a selection
+  await pdf.append(refBytes, { overlay: true });         // and stamp it
+  ```
+
+  Pages are **copied, not re-rendered**: their content streams, fonts and
+  images move into the output byte-for-byte with their filters intact, so an
+  appended page looks exactly like the original, stays as small as it was, and
+  no filter beyond `/FlateDecode` has to be understood. Objects shared by
+  several pages of one file are written once.
+
+  `fit: "keep"` (default) copies the page dictionary, so the page keeps its
+  size, rotation and annotations; `fit: "page"` wraps it in a form XObject
+  scaled onto this document's format (`padding`, `autoRotate`). `overlay` opens
+  imported pages to `header()`, `footer()`, `pageNumbers()`, `watermark()`,
+  `onPage()` and direct drawing — via a form XObject whose `/Matrix` undoes the
+  source page's rotation and box offset, so a stamp lands upright even on a
+  page scanned sideways. Without `overlay` the flow continues on a fresh page,
+  and drawing on an appended page is a typed error rather than silently
+  dropped content.
+
+  Reading covers classic cross-reference tables, cross-reference streams and
+  object streams (PDF 1.5+) with PNG/TIFF predictors, inherited page
+  attributes, `/Rotate` and `/CropBox`. A file whose cross-reference table is
+  damaged or stale — a truncated upload, a hand-edited file — is recovered by
+  scanning it for objects. Encrypted sources are rejected with
+  `ENCRYPTED_PDF`; source form fields, bookmarks and tagged structure are not
+  carried over, and neither are annotations holding an action other than a
+  plain web link or a jump inside the imported pages, so a `/Launch` or
+  `/JavaScript` action cannot travel out of an upload and into the output.
+  Decompression is bounded at 64 MB per stream.
+- **`pdfInfo(pdfBytes)`** → `{ version, pageCount, pageSizes, encrypted }`.
+  Inspect an upload — reject a 500-page file, show "3 pages", detect a
+  password-protected file — without importing anything.
+- New error codes: `INVALID_PDF_FILE`, `ENCRYPTED_PDF`, `UNSUPPORTED_PDF`,
+  `DECOMPRESSION_UNSUPPORTED`.
 - **`button(label, options)`** — a clickable button: a filled (optionally
   bordered) rounded box with an optically centred label, covered by a link
   annotation. `link`, `fill`, `borderColor`, `borderWidth`, `color`, `width`

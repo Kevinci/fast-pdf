@@ -10,6 +10,7 @@ export type {
   PDFDocumentOptions,
   PageOptions,
   PageBreakOptions,
+  AppendOptions,
   TextOptions,
   ImageOptions,
   SvgOptions,
@@ -76,6 +77,7 @@ export { PDFWriter } from "./pdf/writer";
 export { ContentStream } from "./pdf/content";
 export { Ref, Name, PDFString, serialize, type PDFValue } from "./pdf/objects";
 export { deflate, inflate, supportsCompression } from "./pdf/compress";
+export { pdfInfo, type PDFInfo } from "./pdf/reader";
 export {
   createSecurityHandler,
   supportsEncryption,

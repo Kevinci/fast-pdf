@@ -1,8 +1,17 @@
 import { describe, expect, it } from "vitest";
 import { FastPDFError, PDFDocument } from "../src/index";
 import { latin1String } from "../src/pdf/objects";
+import type { PendingLink } from "../src/document/page";
 
 const raw = () => new PDFDocument({ compress: false });
+
+/**
+ * Link annotations pending on the current page. `page` is private — the link
+ * rectangle is not observable through the public API, and it is exactly what
+ * these tests are about, so they read it through a cast.
+ */
+const linksOf = (pdf: PDFDocument): PendingLink[] =>
+  (pdf as unknown as { page: { links: PendingLink[] } }).page.links;
 
 async function rendered(pdf: PDFDocument): Promise<string> {
   return latin1String(await pdf.render());
@@ -46,7 +55,7 @@ describe("button()", () => {
     half.anchor("ziel");
     half.button("Halbe Breite", { link: "#ziel", width: "50%" });
     // The link rectangle is the button box: half the content width.
-    expect(half.page.links[0]!.width).toBeCloseTo(half.width / 2, 5);
+    expect(linksOf(half)[0]!.width).toBeCloseTo(half.width / 2, 5);
   });
 
   it("truncates a label that is wider than the box instead of spilling out", async () => {
@@ -71,7 +80,7 @@ describe("button()", () => {
     absolute.button("Absolut", { link: "https://example.com", x: 40, y: 700 });
     expect(absolute.y).toBe(y0);
     expect(absolute.lastBlockHeight).toBeGreaterThan(0);
-    expect(absolute.page.links[0]!.y).toBe(700);
+    expect(linksOf(absolute)[0]!.y).toBe(700);
   });
 
   it("breaks the page when the button no longer fits", () => {
@@ -84,7 +93,7 @@ describe("button()", () => {
   it("places the button within the flow area", () => {
     const pdf = raw();
     pdf.button("Rechts", { link: "https://example.com", width: 100, align: "right" });
-    const link = pdf.page.links[0]!;
+    const link = linksOf(pdf)[0]!;
     expect(link.x + link.width).toBeCloseTo(pdf.x + pdf.width, 5);
   });
 

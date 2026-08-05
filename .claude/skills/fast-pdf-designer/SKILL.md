@@ -189,6 +189,12 @@ question to page 1 temporarily.
 - Round images: `image({ shape: "circle" })` — real vector clipping, works
   server-side. Do **not** pre-punch alpha with `<canvas>`; that is browser-only.
 - `toc()` must be the **last** call before saving.
+- `await pdf.append(bytes)` attaches an existing PDF's pages. It is `async`
+  (the only page-producing call that is) and copies pages unchanged — you
+  cannot restyle imported content. Drawing on an appended page needs
+  `{ overlay: true }`, otherwise it is a typed error; `{ fit: "page" }` scales
+  a foreign page size onto this document's format. Use `pdfInfo(bytes)` to
+  check an upload's page count first.
 - `signature()` names must be unique per document; omit `name` for auto-numbering.
 - Full-bleed backgrounds need `margins: 0` (report.ts) or absolute `rect()`s.
 - Custom fonts: `.ttf` only (convert WOFF2 first). Register every **bold**

@@ -129,6 +129,8 @@ pdf.remainingHeight;                 // room left before the bottom margin
 pdf.lastBlockHeight;                 // height the previous block consumed
 pdf.ensureSpace(120);                // break now if 120pt no longer fit → boolean
 pdf.keepTogether((d) => { … });      // measure first, move the whole block if needed
+
+await pdf.append(pdfBytes);          // append the pages of an existing PDF
 ```
 
 `x` bridges the two coordinate modes: `text({ x })` **without** `y` is an
@@ -389,6 +391,45 @@ pdf.image(cover, { width: 200, height: 120, radius: 12, opacity: 0.85 });
   work identically on a server, in an edge function and in the browser — no
   Canvas pre-processing.
 
+### Appending existing PDFs
+
+Attach a file the user uploaded — a certificate, a reference letter, a scan —
+to a document you just generated:
+
+```ts
+const pdf = new PDFDocument();
+pdf.text("Curriculum Vitae", { size: 24 });
+
+await pdf.append(certificateBytes);                       // original size, 1:1
+await pdf.append(letterBytes, { fit: "page" });           // scaled onto A4
+await pdf.append(scanBytes, { pages: [1, 3] });           // a selection
+await pdf.append(refBytes, { overlay: true });            // and stamp it
+
+const info = await pdfInfo(uploadBytes);  // { pageCount, pageSizes, encrypted, version }
+```
+
+| Option | Meaning |
+|---|---|
+| `pages` | 1-based page numbers to take, in the order given. Default: all. |
+| `fit` | `"keep"` (default) copies pages at their original size; `"page"` scales them to this document's format. |
+| `overlay` | Allow `header()`/`footer()`/`pageNumbers()`/`watermark()` and your own drawing on the appended pages. Default: off for `"keep"`, always on for `"page"`. |
+| `padding` | `fit: "page"` only — inset from the page edge, in points. |
+| `autoRotate` | `fit: "page"` only — give the target page the source's orientation. Default: true. |
+
+- Pages are **copied, not re-rendered**: content streams, fonts and images move
+  over byte-for-byte, so an appended page looks exactly like the original and
+  stays as small as it was. Objects shared by several pages of one file are
+  written once.
+- Object streams, cross-reference streams and page rotation are handled; a file
+  with a damaged cross-reference table is recovered by scanning it.
+- After `append()` the flow continues on a **fresh page** unless `overlay` is
+  set, so a following `text()` never lands on someone else's document.
+- Not carried over: form fields, bookmarks and tagged structure. Annotations
+  come along only as **markup** (links, notes, highlights, shapes) and only with
+  a plain web link or a jump inside the imported pages — an upload cannot
+  smuggle a file attachment or a `/JavaScript` action into your output.
+  Encrypted source files are rejected with `ENCRYPTED_PDF`.
+
 ### Shapes & vector primitives
 
 ```ts
@@ -512,7 +553,7 @@ cannot do today, so you can decide before you start:
 
 | Not supported | Notes |
 |---|---|
-| Reading, merging or appending existing PDFs | Generation only. Combining several files needs a second library. |
+| Editing existing PDFs | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected. |
 | Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not. |
 | Form fields other than signatures | Text fields, checkboxes and dropdowns are not implemented. |
 | WOFF/WOFF2 fonts | Needs Brotli. Convert to `.ttf` at build time (see above). |
