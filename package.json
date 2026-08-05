@@ -72,6 +72,7 @@
     "report": "tsx examples/report.ts",
     "cv": "tsx examples/cv.ts",
     "append": "tsx examples/append.ts",
+    "hostile": "node scripts/make-hostile-pdf.mjs",
     "docs:demo": "tailwindcss -i docs/demo.input.css -o docs/demo.tw.css --minify && node docs/build-demo.mjs"
   },
   "devDependencies": {

@@ -80,6 +80,19 @@
   .status { margin-top: 14px; font-size: 13.5px; min-height: 1.4em; color: var(--muted); }
   .status.err { color: var(--bad); }
   .status.ok { color: var(--ok); }
+  button.mini {
+    margin-top: 10px; font: inherit; font-size: 13px; padding: 5px 10px; cursor: pointer;
+    border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--muted);
+  }
+  button.mini:hover { border-color: var(--accent); color: var(--accent); }
+  .sec { margin-top: 18px; border-top: 1px solid var(--line); padding-top: 14px; }
+  .sec h3 { margin: 0 0 4px; font-size: 13px; }
+  .sec .sum { font-size: 13px; margin-bottom: 8px; }
+  .sec ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; font-size: 12.5px; }
+  .sec li { display: flex; gap: 7px; }
+  .sec li b { font-weight: 600; }
+  .sec .pass { color: var(--ok); }
+  .sec .fail { color: var(--bad); }
   .status code { background: color-mix(in srgb, currentColor 12%, transparent); padding: 1px 5px; border-radius: 4px; }
   iframe { width: 100%; height: 78vh; min-height: 520px; border: 1px solid var(--line); border-radius: 10px; background: #fff; }
   .empty {
@@ -108,6 +121,7 @@
         oder klicken zum Auswählen
       </div>
       <input type="file" id="picker" accept="application/pdf,.pdf" multiple hidden>
+      <button class="mini" id="loadTest" title="examples/output/hostile.pdf">Hostile Test-PDF laden</button>
       <ul class="files" id="files"></ul>
 
       <fieldset>
@@ -144,6 +158,11 @@
 
       <button class="go" id="go" disabled>PDF erzeugen</button>
       <div class="status" id="status"></div>
+      <div class="sec" id="sec" hidden>
+        <h3>Sicherheits-Check</h3>
+        <div class="sum" id="secSum"></div>
+        <ul id="secList"></ul>
+      </div>
     </div>
 
     <div>
@@ -170,9 +189,23 @@ const el = (id) => document.getElementById(id);
 const status = el("status");
 const list = el("files");
 
-/** Uploaded files with their parsed info: { name, bytes, info } */
+/** Uploaded files with their parsed info: { name, bytes, info, markers } */
 const attachments = [];
 let previewUrl = null;
+
+const latin1 = new TextDecoder("latin1");
+
+/**
+ * Unique payload markers in a file (see scripts/make-hostile-pdf.mjs).
+ *
+ * The hostile test PDF tags every dangerous construct with one. Grepping the
+ * output for PDF key names would not work: the test page *lists* "/JavaScript",
+ * "/Launch" and friends as visible text, and page content is copied verbatim by
+ * design — so the marker is the only exact signal that a payload survived.
+ */
+function markersIn(bytes) {
+  return [...new Set(latin1.decode(bytes).match(/FASTPDF_LEAK[ _][A-Za-z0-9._]+/g) ?? [])];
+}
 
 function say(message, kind = "") {
   status.className = `status ${kind}`;
@@ -209,7 +242,12 @@ async function add(fileList) {
       const bytes = new Uint8Array(await file.arrayBuffer());
       // pdfInfo() first: page count, sizes and whether it is encrypted —
       // exactly the pre-flight check a real upload form wants.
-      attachments.push({ name: file.name, bytes, info: await pdfInfo(bytes) });
+      attachments.push({
+        name: file.name,
+        bytes,
+        info: await pdfInfo(bytes),
+        markers: markersIn(bytes),
+      });
       say("");
     } catch (error) {
       report(error, `${file.name} konnte nicht gelesen werden`);
@@ -282,14 +320,56 @@ async function build() {
       `${pdf.pageCount} Seiten · ${(blob.size / 1024).toFixed(1)} KB · ${ms} ms`,
       "ok",
     );
+    await securityCheck(new Uint8Array(await blob.arrayBuffer()));
   } catch (error) {
     report(error, "Fehlgeschlagen");
   }
 }
 
+/**
+ * Report which payloads of a hostile upload made it into the output.
+ * Hidden entirely unless an attachment carries markers, so it stays out of the
+ * way for normal files.
+ */
+async function securityCheck(output) {
+  const expected = [...new Set(attachments.flatMap((f) => f.markers))];
+  el("sec").hidden = expected.length === 0;
+  if (expected.length === 0) return;
+
+  const leaked = markersIn(output);
+  const list = el("secList");
+  list.innerHTML = "";
+  for (const marker of expected.sort()) {
+    const bad = leaked.includes(marker);
+    const li = document.createElement("li");
+    li.innerHTML = `<b class="${bad ? "fail" : "pass"}"></b><span></span>`;
+    li.querySelector("b").textContent = bad ? "✗" : "✓";
+    li.querySelector("span").textContent = marker.replace(/^FASTPDF_LEAK[ _]/, "");
+    list.appendChild(li);
+  }
+  const sum = el("secSum");
+  sum.className = `sum ${leaked.length === 0 ? "pass" : "fail"}`;
+  sum.textContent =
+    leaked.length === 0
+      ? `${expected.length} Payloads im Upload · alle verworfen`
+      : `${leaked.length} von ${expected.length} Payloads durchgekommen!`;
+}
+
 el("drop").onclick = () => el("picker").click();
 el("picker").onchange = (e) => add(e.target.files);
 el("go").onclick = build;
+el("loadTest").onclick = async () => {
+  say("lade Test-PDF …");
+  try {
+    const response = await fetch("../examples/output/hostile.pdf");
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    await add([{ name: "hostile.pdf", arrayBuffer: async () => bytes.buffer }]);
+    say("Test-PDF geladen — enthält 15 Konstrukte, die verworfen werden müssen.");
+  } catch (error) {
+    say(`Test-PDF nicht gefunden (${error.message}) — mit <code>npm run hostile</code> erzeugen.`, "err");
+  }
+};
 el("fit").onchange = () => {
   // fit: "page" always draws on its own pages, so the flag is implied there.
   const scaled = el("fit").value === "page";
