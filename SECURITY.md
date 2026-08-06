@@ -14,7 +14,7 @@ security reports. You will get a response within a few days.
 
 ## Threat model
 
-fast-pdf generates PDFs. It never *executes* anything, and the generated output
+fast-pdf generates PDFs. It never _executes_ anything, and the generated output
 is **passive by design**: no JavaScript actions, no embedded files, no forms, no
 launch actions and no external content — only text, vector graphics, images,
 links, bookmarks and metadata.
@@ -45,7 +45,7 @@ What the library guarantees:
 An imported page's content streams are copied **verbatim**, without being
 decoded or executed — a content stream is drawing instructions, and fast-pdf
 does not interpret them. What could turn a copied page into something active is
-the *structure* around it, so the import is filtered rather than cloned
+the _structure_ around it, so the import is filtered rather than cloned
 wholesale:
 
 - **The page dictionary is whitelisted**, not blocklisted. Only geometry,
@@ -65,7 +65,7 @@ wholesale:
 - **Encrypted files are rejected** (`ENCRYPTED_PDF`) instead of being guessed at.
 - A damaged cross-reference table is recovered by scanning the file. This is a
   robustness feature for real-world uploads, not a security boundary: it only
-  changes *which* objects are found, never what they are allowed to contain.
+  changes _which_ objects are found, never what they are allowed to contain.
 
 Still yours to decide: **apply an upload size and page-count limit.** `pdfInfo()`
 exists for exactly that — check `pageCount` before calling `append()`. A 5,000-page
@@ -85,7 +85,7 @@ Trust boundaries you are responsible for:
   practice.
 - **What a PDF says is not authenticated.** If you generate invoices,
   encryption or careful escaping cannot prevent someone from crafting a
-  *different* PDF that imitates yours. Authenticity requires digital
+  _different_ PDF that imitates yours. Authenticity requires digital
   signatures (PAdES) and/or structured e-invoicing formats (ZUGFeRD/Factur-X,
   XRechnung) — currently outside the scope of this library.
 

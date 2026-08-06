@@ -26,7 +26,16 @@ const NUM_RE = /[+-]?(?:\d*\.\d+|\d+\.?)(?:[eE][+-]?\d+)?/g;
 function scanner(d: string) {
   let i = 0;
   const skip = (): void => {
-    while (i < d.length && (d[i] === " " || d[i] === "," || d[i] === "\t" || d[i] === "\n" || d[i] === "\r" || d[i] === "\f")) i++;
+    while (
+      i < d.length &&
+      (d[i] === " " ||
+        d[i] === "," ||
+        d[i] === "\t" ||
+        d[i] === "\n" ||
+        d[i] === "\r" ||
+        d[i] === "\f")
+    )
+      i++;
   };
   return {
     atEnd(): boolean {
@@ -128,35 +137,51 @@ export function parsePath(d: string): PathSeg[] {
         break;
       }
       case "C": {
-        const x1 = num() + dx, y1 = num() + dy, x2 = num() + dx, y2 = num() + dy, ex = num() + dx, ey = num() + dy;
+        const x1 = num() + dx,
+          y1 = num() + dy,
+          x2 = num() + dx,
+          y2 = num() + dy,
+          ex = num() + dx,
+          ey = num() + dy;
         cubic(x1, y1, x2, y2, ex, ey);
         lastQ = null;
         break;
       }
       case "S": {
         const [x1, y1] = reflect(lastC, x, y);
-        const x2 = num() + dx, y2 = num() + dy, ex = num() + dx, ey = num() + dy;
+        const x2 = num() + dx,
+          y2 = num() + dy,
+          ex = num() + dx,
+          ey = num() + dy;
         cubic(x1, y1, x2, y2, ex, ey);
         lastQ = null;
         break;
       }
       case "Q": {
-        const qx = num() + dx, qy = num() + dy, ex = num() + dx, ey = num() + dy;
+        const qx = num() + dx,
+          qy = num() + dy,
+          ex = num() + dx,
+          ey = num() + dy;
         quadratic(cubic, x, y, qx, qy, ex, ey);
         lastQ = { x: qx, y: qy };
         break;
       }
       case "T": {
         const [qx, qy] = reflect(lastQ, x, y);
-        const ex = num() + dx, ey = num() + dy;
+        const ex = num() + dx,
+          ey = num() + dy;
         quadratic(cubic, x, y, qx, qy, ex, ey);
         lastQ = { x: qx, y: qy };
         break;
       }
       case "A": {
-        const rx = num(), ry = num(), rot = num();
-        const large = s.flag(), sweep = s.flag();
-        const ex = num() + dx, ey = num() + dy;
+        const rx = num(),
+          ry = num(),
+          rot = num();
+        const large = s.flag(),
+          sweep = s.flag();
+        const ex = num() + dx,
+          ey = num() + dy;
         if (Number.isNaN(large) || Number.isNaN(sweep)) return segs; // malformed flags
         arc(segs, x, y, rx, ry, rot, large !== 0, sweep !== 0, ex, ey);
         x = ex;
@@ -188,7 +213,15 @@ function reflect(last: { x: number; y: number } | null, cx: number, cy: number):
 }
 
 /** Elevate a quadratic Bézier to a cubic one. */
-function quadratic(cubic: CubicFn, x0: number, y0: number, qx: number, qy: number, ex: number, ey: number): void {
+function quadratic(
+  cubic: CubicFn,
+  x0: number,
+  y0: number,
+  qx: number,
+  qy: number,
+  ex: number,
+  ey: number,
+): void {
   cubic(
     x0 + (2 / 3) * (qx - x0),
     y0 + (2 / 3) * (qy - y0),
@@ -202,10 +235,15 @@ function quadratic(cubic: CubicFn, x0: number, y0: number, qx: number, qy: numbe
 /** Endpoint-parameterised elliptical arc → cubic Bézier segments (SVG impl. notes F.6). */
 function arc(
   segs: PathSeg[],
-  x0: number, y0: number,
-  rx: number, ry: number,
-  rotDeg: number, large: boolean, sweep: boolean,
-  x: number, y: number,
+  x0: number,
+  y0: number,
+  rx: number,
+  ry: number,
+  rotDeg: number,
+  large: boolean,
+  sweep: boolean,
+  x: number,
+  y: number,
 ): void {
   if (rx === 0 || ry === 0) {
     segs.push({ op: "L", x, y });
@@ -227,7 +265,7 @@ function arc(
   const y1p = -sin * dx2 + cos * dy2;
 
   // Correct out-of-range radii.
-  let lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
+  const lambda = (x1p * x1p) / (rx * rx) + (y1p * y1p) / (ry * ry);
   if (lambda > 1) {
     const s = Math.sqrt(lambda);
     rx *= s;
@@ -264,8 +302,10 @@ function arc(
   let ang = theta1;
   for (let s = 0; s < segments; s++) {
     const nextAng = ang + step;
-    const cosA = Math.cos(ang), sa = Math.sin(ang);
-    const cosB = Math.cos(nextAng), sb = Math.sin(nextAng);
+    const cosA = Math.cos(ang),
+      sa = Math.sin(ang);
+    const cosB = Math.cos(nextAng),
+      sb = Math.sin(nextAng);
 
     const p1x = cx + rx * cos * cosA - ry * sin * sa;
     const p1y = cy + rx * sin * cosA + ry * cos * sa;

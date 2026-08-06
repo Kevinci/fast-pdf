@@ -259,7 +259,8 @@ describe("flowColumns()", () => {
     // Column 1 has room for exactly three single-line items. Without the
     // keep rule the heading would be the third and its body the fourth,
     // i.e. stranded at the foot of column 1.
-    const line = (label: string) => (d: PDFDocument) => d.text(label, { size: 10, lineHeight: 1.2 });
+    const line = (label: string) => (d: PDFDocument) =>
+      d.text(label, { size: 10, lineHeight: 1.2 });
     const bottom = 50 + 3 * 12 + 6;
 
     const loose = raw();

@@ -82,7 +82,8 @@ describe("SVG arc parsing", () => {
   it("renders a Lucide-style icon path without NaN coordinates", () => {
     // The globe icon: circle plus two arcs, exactly the shape the report
     // had to rebuild by hand from circle/ellipse/path.
-    const d = "M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z";
+    const d =
+      "M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z";
     const segs = parsePath(d);
     expect(segs.length).toBeGreaterThan(6);
     for (const seg of segs) {
@@ -230,15 +231,17 @@ describe("table valign and custom cells", () => {
   it("centres a short cell against a tall neighbour", async () => {
     const rows = [
       ["Kopf A", "Kopf B"],
-      [{ text: "kurz", valign: "middle" as const }, { text: "eine ziemlich lange Zelle, die über mehrere Zeilen umbricht und die Zeile hoch macht" }],
+      [
+        { text: "kurz", valign: "middle" as const },
+        {
+          text: "eine ziemlich lange Zelle, die über mehrere Zeilen umbricht und die Zeile hoch macht",
+        },
+      ],
     ];
     const middle = raw();
     middle.table(rows, { widths: [80, 120] });
     const top = raw();
-    top.table(
-      [rows[0]!, [{ text: "kurz" }, rows[1]![1]!]],
-      { widths: [80, 120] },
-    );
+    top.table([rows[0]!, [{ text: "kurz" }, rows[1]![1]!]], { widths: [80, 120] });
     // The centred cell's baseline sits lower than the top-aligned one.
     const yOf = (text: string): number =>
       Number(/\(kurz\) Tj/.exec(text) ? /([\d.]+) ([\d.]+) Td \(kurz\)/.exec(text)![2] : NaN);
@@ -248,7 +251,10 @@ describe("table valign and custom cells", () => {
   it("applies a table-wide valign", async () => {
     const pdf = raw();
     pdf.table(
-      [["A", "B"], ["x", "eine Zelle, die umbricht und die Zeilenhöhe deutlich vergrößert"]],
+      [
+        ["A", "B"],
+        ["x", "eine Zelle, die umbricht und die Zeilenhöhe deutlich vergrößert"],
+      ],
       { widths: [60, 120], valign: "bottom" },
     );
     expect(await rendered(pdf)).toContain("(x) Tj");
@@ -307,8 +313,32 @@ describe("table valign and custom cells", () => {
   it("sizes a render row from the height the callback reports", () => {
     const pdf = raw();
     const short = raw();
-    short.table([["A"], [{ render: (d, box) => { d.y = box.y + 6; } }]], { widths: [100] });
-    pdf.table([["A"], [{ render: (d, box) => { d.y = box.y + 60; } }]], { widths: [100] });
+    short.table(
+      [
+        ["A"],
+        [
+          {
+            render: (d, box) => {
+              d.y = box.y + 6;
+            },
+          },
+        ],
+      ],
+      { widths: [100] },
+    );
+    pdf.table(
+      [
+        ["A"],
+        [
+          {
+            render: (d, box) => {
+              d.y = box.y + 60;
+            },
+          },
+        ],
+      ],
+      { widths: [100] },
+    );
     expect(pdf.y).toBeGreaterThan(short.y + 40);
   });
 
@@ -324,7 +354,10 @@ describe("table valign and custom cells", () => {
 
   it("keeps plain string tables byte-identical to 0.5.0 behaviour", async () => {
     const pdf = raw();
-    pdf.table([["A", "B"], ["1", "2"]]);
+    pdf.table([
+      ["A", "B"],
+      ["1", "2"],
+    ]);
     const text = await rendered(pdf);
     expect(text).toContain("(A) Tj");
     expect(text).toContain("(2) Tj");

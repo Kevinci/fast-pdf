@@ -1,7 +1,19 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { PDFDocument } from "../src/index";
 import { latin1String, bytesToHex, hexToBytes } from "../src/pdf/objects";
-import { readTLV, children, elementBytes, seq, set, tlv, oid, integer, contextConstructed, nullValue, utcTime } from "../src/pdf/asn1";
+import {
+  readTLV,
+  children,
+  elementBytes,
+  seq,
+  set,
+  tlv,
+  oid,
+  integer,
+  contextConstructed,
+  nullValue,
+  utcTime,
+} from "../src/pdf/asn1";
 
 const bs = (u: Uint8Array) => u as unknown as BufferSource;
 const concat = (a: Uint8Array, b: Uint8Array) => {
@@ -10,7 +22,8 @@ const concat = (a: Uint8Array, b: Uint8Array) => {
   out.set(b, a.length);
   return out;
 };
-const sha256 = async (d: Uint8Array) => new Uint8Array(await crypto.subtle.digest("SHA-256", bs(d)));
+const sha256 = async (d: Uint8Array) =>
+  new Uint8Array(await crypto.subtle.digest("SHA-256", bs(d)));
 
 // A throwaway RSA key + self-signed certificate, generated fresh each run — so
 // no private key is ever committed. Uses the same asn1 primitives as src/.
@@ -18,7 +31,12 @@ let KEY = "";
 let CERT = "";
 beforeAll(async () => {
   const kp = (await crypto.subtle.generateKey(
-    { name: "RSASSA-PKCS1-v1_5", modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: "SHA-256" },
+    {
+      name: "RSASSA-PKCS1-v1_5",
+      modulusLength: 2048,
+      publicExponent: new Uint8Array([1, 0, 1]),
+      hash: "SHA-256",
+    },
     true,
     ["sign", "verify"],
   )) as CryptoKeyPair;
@@ -27,12 +45,27 @@ beforeAll(async () => {
   const utf8 = (s: string) => tlv(0x0c, new Uint8Array([...s].map((c) => c.charCodeAt(0))));
   const name = seq(set(seq(oid("2.5.4.3"), utf8("fast-pdf Test Signer"))));
   const sigAlg = seq(oid("1.2.840.113549.1.1.11"), nullValue()); // sha256WithRSAEncryption
-  const validity = seq(utcTime(new Date("2020-01-01T00:00:00Z")), utcTime(new Date("2040-01-01T00:00:00Z")));
-  const tbs = seq(contextConstructed(0, integer(2)), integer(1), sigAlg, name, validity, name, spki);
-  const sig = new Uint8Array(await crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5" }, kp.privateKey, bs(tbs)));
+  const validity = seq(
+    utcTime(new Date("2020-01-01T00:00:00Z")),
+    utcTime(new Date("2040-01-01T00:00:00Z")),
+  );
+  const tbs = seq(
+    contextConstructed(0, integer(2)),
+    integer(1),
+    sigAlg,
+    name,
+    validity,
+    name,
+    spki,
+  );
+  const sig = new Uint8Array(
+    await crypto.subtle.sign({ name: "RSASSA-PKCS1-v1_5" }, kp.privateKey, bs(tbs)),
+  );
   const cert = seq(tbs, sigAlg, tlv(0x03, concat(new Uint8Array([0]), sig))); // BIT STRING
   const pem = (u: Uint8Array, label: string) =>
-    `-----BEGIN ${label}-----\n${Buffer.from(u).toString("base64").replace(/(.{64})/g, "$1\n")}\n-----END ${label}-----\n`;
+    `-----BEGIN ${label}-----\n${Buffer.from(u)
+      .toString("base64")
+      .replace(/(.{64})/g, "$1\n")}\n-----END ${label}-----\n`;
   KEY = pem(pkcs8, "PRIVATE KEY");
   CERT = pem(cert, "CERTIFICATE");
 });
@@ -40,7 +73,10 @@ beforeAll(async () => {
 async function signedPdf(): Promise<Uint8Array> {
   const pdf = new PDFDocument({ deterministic: true });
   pdf.text("Please countersign.");
-  pdf.signature({ label: "Signature", sign: { privateKeyPem: KEY, certificatePem: CERT, reason: "Approved" } });
+  pdf.signature({
+    label: "Signature",
+    sign: { privateKeyPem: KEY, certificatePem: CERT, reason: "Approved" },
+  });
   return pdf.render();
 }
 
@@ -119,7 +155,12 @@ describe("PAdES-B digital signatures", () => {
       false,
       ["verify"],
     );
-    const ok = await crypto.subtle.verify({ name: "RSASSA-PKCS1-v1_5" }, key, bs(signature), bs(signed));
+    const ok = await crypto.subtle.verify(
+      { name: "RSASSA-PKCS1-v1_5" },
+      key,
+      bs(signature),
+      bs(signed),
+    );
     expect(ok).toBe(true);
   });
 

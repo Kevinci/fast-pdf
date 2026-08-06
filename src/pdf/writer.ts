@@ -58,7 +58,10 @@ function contentDigest(chunks: Uint8Array[]): string {
 }
 
 /** Deep-clone a value, replacing every string leaf with its encrypted form. */
-async function encryptStrings(value: PDFValue, encrypt: (d: Uint8Array) => Promise<Uint8Array>): Promise<PDFValue> {
+async function encryptStrings(
+  value: PDFValue,
+  encrypt: (d: Uint8Array) => Promise<Uint8Array>,
+): Promise<PDFValue> {
   if (value instanceof PDFString) {
     return new HexString(bytesToHex(await encrypt(latin1Bytes(value.value))));
   }
@@ -70,7 +73,12 @@ async function encryptStrings(value: PDFValue, encrypt: (d: Uint8Array) => Promi
     for (const item of value) out.push(await encryptStrings(item, encrypt));
     return out;
   }
-  if (value !== null && typeof value === "object" && !(value instanceof Ref) && !(value instanceof Name)) {
+  if (
+    value !== null &&
+    typeof value === "object" &&
+    !(value instanceof Ref) &&
+    !(value instanceof Name)
+  ) {
     const out: { [key: string]: PDFValue } = {};
     for (const [k, v] of Object.entries(value)) {
       if (v !== undefined) out[k] = await encryptStrings(v, encrypt);
@@ -130,7 +138,10 @@ export class PDFWriter {
     }
     // stream
     const dict = encryptThis
-      ? ((await encryptStrings(body.dict as PDFValue, enc!.encrypt)) as Record<string, PDFValue | undefined>)
+      ? ((await encryptStrings(body.dict as PDFValue, enc!.encrypt)) as Record<
+          string,
+          PDFValue | undefined
+        >)
       : body.dict;
     const data = encryptThis ? await enc!.encrypt(body.data) : body.data;
     const head = latin1Bytes(serialize({ ...dict, Length: data.length }) + "\nstream\n");

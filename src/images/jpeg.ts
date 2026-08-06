@@ -16,7 +16,12 @@ export function parseJpeg(bytes: Uint8Array): ParsedImage {
     }
     const marker = bytes[pos + 1]!;
     // Standalone markers without a length field.
-    if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd7) || marker === 0x01 || marker === 0xff) {
+    if (
+      marker === 0xd8 ||
+      (marker >= 0xd0 && marker <= 0xd7) ||
+      marker === 0x01 ||
+      marker === 0xff
+    ) {
       pos += marker === 0xff ? 1 : 2;
       continue;
     }

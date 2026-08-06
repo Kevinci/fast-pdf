@@ -24,7 +24,11 @@ interface PngInfo {
 function readPng(bytes: Uint8Array): PngInfo {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   let pos = 8; // signature
-  let width = 0, height = 0, bitDepth = 0, colorType = 0, interlace = 0;
+  let width = 0,
+    height = 0,
+    bitDepth = 0,
+    colorType = 0,
+    interlace = 0;
   let palette: Uint8Array | null = null;
   const idatChunks: Uint8Array[] = [];
 
@@ -36,7 +40,8 @@ function readPng(bytes: Uint8Array): PngInfo {
       throw new FastPDFError(`Invalid PNG: truncated ${type} chunk`, "INVALID_IMAGE_FILE");
     }
     if (type === "IHDR") {
-      if (length < 13) throw new FastPDFError("Invalid PNG: IHDR chunk too short", "INVALID_IMAGE_FILE");
+      if (length < 13)
+        throw new FastPDFError("Invalid PNG: IHDR chunk too short", "INVALID_IMAGE_FILE");
       width = view.getUint32(dataStart);
       height = view.getUint32(dataStart + 4);
       bitDepth = bytes[dataStart + 8]!;
@@ -114,7 +119,10 @@ export async function parsePng(bytes: Uint8Array): Promise<ParsedImage> {
     else if (png.colorType === 2) colorSpace = new Name("DeviceRGB");
     else {
       if (!png.palette) {
-        throw new FastPDFError("Invalid PNG: indexed color without PLTE chunk", "INVALID_IMAGE_FILE");
+        throw new FastPDFError(
+          "Invalid PNG: indexed color without PLTE chunk",
+          "INVALID_IMAGE_FILE",
+        );
       }
       colorSpace = [
         new Name("Indexed"),
@@ -212,12 +220,23 @@ function unfilter(data: Uint8Array, width: number, height: number, channels: num
       const upLeft = row > 0 && i >= bpp ? out[prevStart + i - bpp]! : 0;
       let value: number;
       switch (filter) {
-        case 0: value = x; break;
-        case 1: value = x + left; break;
-        case 2: value = x + up; break;
-        case 3: value = x + ((left + up) >> 1); break;
-        case 4: value = x + paeth(left, up, upLeft); break;
-        default: throw new FastPDFError(`Invalid PNG filter type: ${filter}`, "INVALID_IMAGE_FILE");
+        case 0:
+          value = x;
+          break;
+        case 1:
+          value = x + left;
+          break;
+        case 2:
+          value = x + up;
+          break;
+        case 3:
+          value = x + ((left + up) >> 1);
+          break;
+        case 4:
+          value = x + paeth(left, up, upLeft);
+          break;
+        default:
+          throw new FastPDFError(`Invalid PNG filter type: ${filter}`, "INVALID_IMAGE_FILE");
       }
       out[rowStart + i] = value & 0xff;
     }

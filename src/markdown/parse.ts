@@ -55,7 +55,10 @@ function parseBlocks(lines: string[], from: number, to: number): MdBlock[] {
       const marker = fence[1]![0]!;
       const body: string[] = [];
       i++;
-      while (i < to && !new RegExp(`^ {0,3}${marker === "`" ? "```+" : "~~~+"}\\s*$`).test(lines[i]!)) {
+      while (
+        i < to &&
+        !new RegExp(`^ {0,3}${marker === "`" ? "```+" : "~~~+"}\\s*$`).test(lines[i]!)
+      ) {
         body.push(lines[i]!);
         i++;
       }
@@ -79,7 +82,11 @@ function parseBlocks(lines: string[], from: number, to: number): MdBlock[] {
 
     if (BLOCKQUOTE_RE.test(line)) {
       const inner: string[] = [];
-      while (i < to && (BLOCKQUOTE_RE.test(lines[i]!) || (lines[i]!.trim() !== "" && inner.length > 0 && !isBlockStart(lines[i]!)))) {
+      while (
+        i < to &&
+        (BLOCKQUOTE_RE.test(lines[i]!) ||
+          (lines[i]!.trim() !== "" && inner.length > 0 && !isBlockStart(lines[i]!)))
+      ) {
         const m = BLOCKQUOTE_RE.exec(lines[i]!);
         inner.push(m ? m[1]! : lines[i]!);
         i++;
@@ -110,7 +117,11 @@ function parseBlocks(lines: string[], from: number, to: number): MdBlock[] {
       // heading — this takes precedence over the thematic-break reading of "---".
       const setext = /^ {0,3}(=+|-+)\s*$/.exec(lines[i]!);
       if (setext) {
-        blocks.push({ type: "heading", level: setext[1]![0] === "=" ? 1 : 2, inline: parseInline(para.join("\n").trim()) });
+        blocks.push({
+          type: "heading",
+          level: setext[1]![0] === "=" ? 1 : 2,
+          inline: parseInline(para.join("\n").trim()),
+        });
         i++;
         para.length = 0;
         break;
@@ -186,7 +197,11 @@ function isLazyContinuation(line: string): boolean {
   return line.trim() !== "" && !isBlockStart(line);
 }
 
-function tryTable(lines: string[], from: number, to: number): { block: MdBlock; next: number } | null {
+function tryTable(
+  lines: string[],
+  from: number,
+  to: number,
+): { block: MdBlock; next: number } | null {
   if (from + 1 >= to) return null;
   const header = lines[from]!;
   const delim = lines[from + 1]!;
@@ -259,7 +274,14 @@ export function parseInline(text: string, base: Omit<MdRun, "text"> = {}): MdRun
       const close = text.indexOf(ticks, i + n);
       if (close !== -1) {
         flush();
-        runs.push({ ...base, text: text.slice(i + n, close).replace(/\s+/g, " ").trim(), code: true });
+        runs.push({
+          ...base,
+          text: text
+            .slice(i + n, close)
+            .replace(/\s+/g, " ")
+            .trim(),
+          code: true,
+        });
         i = close + n;
         continue;
       }
@@ -326,7 +348,10 @@ function findEmphasisClose(text: string, from: number, marker: string, ch: strin
   return -1;
 }
 
-function parseLink(text: string, start: number): { label: string; dest: string; end: number } | null {
+function parseLink(
+  text: string,
+  start: number,
+): { label: string; dest: string; end: number } | null {
   // text[start] === "["
   let depth = 0;
   let i = start;

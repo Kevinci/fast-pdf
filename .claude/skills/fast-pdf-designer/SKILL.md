@@ -13,14 +13,14 @@ then verify visually** — never ship a PDF you haven't looked at.
 
 Don't start from a blank file. Copy the closest example and adapt:
 
-| Template | Use for |
-|---|---|
-| `examples/invoice.ts` | Invoices, quotes, order confirmations — letterhead, item table, totals block |
-| `examples/report.ts` | Design-forward reports — full-bleed cover, KPI cards, vector bar chart, dark theme |
-| `examples/cv.ts` | CVs, profiles, datasheets — full-height sidebar, circular portrait, measured panels, balanced multi-column flow |
-| `examples/signature.ts` | Contracts & agreements — clause sections, side-by-side AcroForm signature fields |
-| `examples/showcase.ts` | Feature reference — TOC, outlines, watermark, spans, columns, links |
-| `examples/basic.ts` | Minimal starting point |
+| Template                | Use for                                                                                                         |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `examples/invoice.ts`   | Invoices, quotes, order confirmations — letterhead, item table, totals block                                    |
+| `examples/report.ts`    | Design-forward reports — full-bleed cover, KPI cards, vector bar chart, dark theme                              |
+| `examples/cv.ts`        | CVs, profiles, datasheets — full-height sidebar, circular portrait, measured panels, balanced multi-column flow |
+| `examples/signature.ts` | Contracts & agreements — clause sections, side-by-side AcroForm signature fields                                |
+| `examples/showcase.ts`  | Feature reference — TOC, outlines, watermark, spans, columns, links                                             |
+| `examples/basic.ts`     | Minimal starting point                                                                                          |
 
 In a project that installed the package, the templates live in
 `node_modules/fast-pdf/examples/` — copy one into the project and change the
@@ -66,44 +66,85 @@ everything to the left margin or the right margin — nothing in between.
 ## 3 · Layout recipes
 
 **Letterhead** — accent bar + name + meta line:
+
 ```ts
-pdf.rect(0, 0, page.width, 6, { fill: ACCENT });          // full-bleed top bar
+pdf.rect(0, 0, page.width, 6, { fill: ACCENT }); // full-bleed top bar
 pdf.text("INVOICE", { y: 52, size: 11, bold: true, color: ACCENT, letterSpacing: 3 });
 pdf.text("R-2026-0042", { y: 72, size: 26, bold: true, color: INK });
 pdf.text("Issued 19.07.2026 · due in 14 days", { y: 106, size: 9.5, color: MUTED });
 ```
 
 **Address / meta row** — two blocks, absolute positioning:
+
 ```ts
 pdf.y = 150;
 pdf.text("Client AG\nMain St 1\n10115 Berlin", { lineHeight: 1.4 });
 pdf.text("Invoice no: R-2026-0042\nDate: 19.07.2026", {
-  y: 150, x: page.width - 250, width: 200, align: "right", color: MUTED, lineHeight: 1.4 });
+  y: 150,
+  x: page.width - 250,
+  width: 200,
+  align: "right",
+  color: MUTED,
+  lineHeight: 1.4,
+});
 ```
 
 **Item table + totals block** — the totals are a second, borderless table:
+
 ```ts
-pdf.table(rows, { widths: [40, 230, 60, 80, 85], aligns: ["left","left","right","right","right"],
-  headerFill: INK, headerColor: "#ffffff", zebraFill: "#f8fafc" });
+pdf.table(rows, {
+  widths: [40, 230, 60, 80, 85],
+  aligns: ["left", "left", "right", "right", "right"],
+  headerFill: INK,
+  headerColor: "#ffffff",
+  zebraFill: "#f8fafc",
+});
 pdf.moveDown(0.5);
-pdf.table([["Subtotal", fmt(net)], ["VAT 19 %", fmt(vat)],
-  [{ text: "Total", bold: true }, { text: fmt(gross), bold: true }]],
-  { header: false, widths: [405, 90], aligns: ["right","right"], borderWidth: 0 });
+pdf.table(
+  [
+    ["Subtotal", fmt(net)],
+    ["VAT 19 %", fmt(vat)],
+    [
+      { text: "Total", bold: true },
+      { text: fmt(gross), bold: true },
+    ],
+  ],
+  { header: false, widths: [405, 90], aligns: ["right", "right"], borderWidth: 0 },
+);
 ```
 
 **KPI cards** — `grid()` of containers (or absolute rects on dark covers):
+
 ```ts
-pdf.grid(kpis.map((k) => (d) => {
-  d.text(k.label, { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.5 });
-  d.text(k.value, { size: 22, bold: true, color: INK });
-}), { columns: 3, gap: 10 });
+pdf.grid(
+  kpis.map((k) => (d) => {
+    d.text(k.label, { size: 8.5, bold: true, color: MUTED, letterSpacing: 1.5 });
+    d.text(k.value, { size: 22, bold: true, color: INK });
+  }),
+  { columns: 3, gap: 10 },
+);
 ```
 
 **Signature area** — soft panel + two absolute fields (see signature.ts):
+
 ```ts
 pdf.rect(46, y - 18, page.width - 92, 128, { fill: PANEL });
-pdf.signature({ name: "client",     label: "Client · place, date",     x: 60,  y: y + 16, width: 210, height: 56 });
-pdf.signature({ name: "contractor", label: "Contractor · place, date", x: 325, y: y + 16, width: 210, height: 56 });
+pdf.signature({
+  name: "client",
+  label: "Client · place, date",
+  x: 60,
+  y: y + 16,
+  width: 210,
+  height: 56,
+});
+pdf.signature({
+  name: "contractor",
+  label: "Contractor · place, date",
+  x: 325,
+  y: y + 16,
+  width: 210,
+  height: 56,
+});
 ```
 
 **Footer** — hairline + centered 8 pt meta, via absolute y near page bottom
@@ -111,37 +152,57 @@ pdf.signature({ name: "contractor", label: "Contractor · place, date", x: 325, 
 
 **Panel sized to its text** — measure first, then draw the box behind it.
 Never guess a line count:
+
 ```ts
 const m = pdf.measureText(quote, { width: 300, size: 10, lineHeight: 1.5 });
 pdf.rect(50, y, 324, m.height + 24, { fill: PANEL, radius: 8 });
 pdf.text(quote, { x: 62, y: y + 12, width: 300, size: 10, lineHeight: 1.5 });
 ```
+
 For mixed content use `pdf.measureBlock((d) => …, { width })`.
 
 **Sidebar on every page** — `region()` inside a decorator, not manual `y`:
+
 ```ts
 pdf.onPage((doc, info) => {
   doc.rect(0, 0, 170, info.size.height, { fill: INK });
   doc.image(photo, { x: 35, y: 44, width: 100, height: 100, shape: "circle", fit: "cover" });
-  const { overflow } = doc.region({ x: 28, y: 170, width: 114, height: info.size.height - 220 }, (d) => {
-    d.text("KONTAKT", { color: ACCENT, size: 8, bold: true, letterSpacing: 1.5, spacingAfter: 6 });
-    d.text(contact, { color: "#e2e8f0", size: 9 });
-  });
+  const { overflow } = doc.region(
+    { x: 28, y: 170, width: 114, height: info.size.height - 220 },
+    (d) => {
+      d.text("KONTAKT", {
+        color: ACCENT,
+        size: 8,
+        bold: true,
+        letterSpacing: 1.5,
+        spacingAfter: 6,
+      });
+      d.text(contact, { color: "#e2e8f0", size: 9 });
+    },
+  );
   if (overflow) console.warn("sidebar content truncated");
 });
 ```
 
 **Two-column list that continues across pages** — `flowColumns()`, not
 `columns()` (which is side-by-side, single page):
+
 ```ts
-pdf.flowColumns(categories.map((c) => ({
-  render: (d) => { d.text(c.name, { bold: true, spacingAfter: 3 }); d.text(c.items.join(" · ")); },
-  spacingBefore: 12,
-  keepWithNext: true,
-})), { columns: 2, gap: 24, balance: true });
+pdf.flowColumns(
+  categories.map((c) => ({
+    render: (d) => {
+      d.text(c.name, { bold: true, spacingAfter: 3 });
+      d.text(c.items.join(" · "));
+    },
+    spacingBefore: 12,
+    keepWithNext: true,
+  })),
+  { columns: 2, gap: 24, balance: true },
+);
 ```
 
 **Optically centred bullet** — from real metrics, never a magic constant:
+
 ```ts
 const f = pdf.fontMetrics({ size: 9 });
 pdf.circle(pdf.x + 2, pdf.y + f.baseline - f.capHeight / 2, 1.8, { fill: ACCENT });

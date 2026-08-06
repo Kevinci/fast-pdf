@@ -20,7 +20,8 @@ export async function makeObjStmPdf(
   const content = options.content ?? "0 0 1 rg 20 20 120 60 re f";
   const mediaBox = options.mediaBox ?? [0, 0, 300, 400];
   const rotate = options.rotate ?? 0;
-  const geometry = `/MediaBox [${mediaBox.join(" ")}] ` + (rotate !== 0 ? `/Rotate ${rotate} ` : "");
+  const geometry =
+    `/MediaBox [${mediaBox.join(" ")}] ` + (rotate !== 0 ? `/Rotate ${rotate} ` : "");
 
   // Objects 3–5 go into the object stream; 1 (content) and 6 (xref) stay loose.
   const members = [
@@ -60,7 +61,9 @@ export async function makeObjStmPdf(
   push(`1 0 obj\n<< /Length ${content.length} >>\nstream\n${content}\nendstream\nendobj\n`);
 
   offsets[2] = offset;
-  push(`2 0 obj\n<< /Type /ObjStm /N ${members.length} /First ${index.length} /Filter /FlateDecode /Length ${objStm.length} >>\nstream\n`);
+  push(
+    `2 0 obj\n<< /Type /ObjStm /N ${members.length} /First ${index.length} /Filter /FlateDecode /Length ${objStm.length} >>\nstream\n`,
+  );
   push(objStm);
   push("\nendstream\nendobj\n");
 
@@ -135,7 +138,12 @@ export async function makePng(
   ihdr[9] = colorType;
 
   const signature = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
-  const parts = [signature, chunk("IHDR", ihdr), chunk("IDAT", idat), chunk("IEND", new Uint8Array(0))];
+  const parts = [
+    signature,
+    chunk("IHDR", ihdr),
+    chunk("IDAT", idat),
+    chunk("IEND", new Uint8Array(0)),
+  ];
   const total = parts.reduce((n, p) => n + p.length, 0);
   const png = new Uint8Array(total);
   let off = 0;
@@ -430,5 +438,15 @@ export function makeJpeg(width: number, height: number, components = 3): Uint8Ar
   const sofData = [8, height >> 8, height & 0xff, width >> 8, width & 0xff, components];
   for (let c = 0; c < components; c++) sofData.push(c + 1, 0x11, 0);
   const length = sofData.length + 2;
-  return new Uint8Array([0xff, 0xd8, 0xff, 0xc0, length >> 8, length & 0xff, ...sofData, 0xff, 0xd9]);
+  return new Uint8Array([
+    0xff,
+    0xd8,
+    0xff,
+    0xc0,
+    length >> 8,
+    length & 0xff,
+    ...sofData,
+    0xff,
+    0xd9,
+  ]);
 }

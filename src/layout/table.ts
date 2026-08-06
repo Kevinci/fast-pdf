@@ -112,7 +112,10 @@ export function columnWidths(available: number, columns: number, requested?: num
     return new Array(columns).fill(available / columns);
   }
   if (requested.length !== columns) {
-    throw new FastPDFError(`Table has ${columns} columns but "widths" has ${requested.length} entries`, "INVALID_ARGUMENT");
+    throw new FastPDFError(
+      `Table has ${columns} columns but "widths" has ${requested.length} entries`,
+      "INVALID_ARGUMENT",
+    );
   }
   const sum = requested.reduce((a, b) => a + b, 0);
   const scale = sum > available ? available / sum : 1;
@@ -182,7 +185,7 @@ export function measureTable(
       const innerWidth = Math.max(1, width - 2 * opts.padding);
       const lines = cell.render ? [] : wrapText(cell.text ?? "", font, opts.fontSize, innerWidth);
       const contentHeight = cell.render
-        ? cell.height ?? opts.measureRender?.(cell, innerWidth) ?? 0
+        ? (cell.height ?? opts.measureRender?.(cell, innerWidth) ?? 0)
         : lines.length * opts.fontSize * opts.lineHeight;
       cells.push({
         cell,

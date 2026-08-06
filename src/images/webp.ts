@@ -46,7 +46,9 @@ function fourCC(bytes: Uint8Array, at: number): string {
 }
 
 function u32le(bytes: Uint8Array, at: number): number {
-  return (bytes[at]! | (bytes[at + 1]! << 8) | (bytes[at + 2]! << 16) | (bytes[at + 3]! << 24)) >>> 0;
+  return (
+    (bytes[at]! | (bytes[at + 1]! << 8) | (bytes[at + 2]! << 16) | (bytes[at + 3]! << 24)) >>> 0
+  );
 }
 
 /** Locate a RIFF chunk by its FourCC, returning its data slice. */
@@ -76,7 +78,8 @@ export function webpSize(bytes: Uint8Array): { width: number; height: number } {
   }
   const vp8l = findChunk(bytes, "VP8L");
   if (vp8l) {
-    if (vp8l[0] !== VP8L_MAGIC) throw new FastPDFError("Invalid WebP: bad VP8L signature", "INVALID_IMAGE_FILE");
+    if (vp8l[0] !== VP8L_MAGIC)
+      throw new FastPDFError("Invalid WebP: bad VP8L signature", "INVALID_IMAGE_FILE");
     const bits = (vp8l[1]! | (vp8l[2]! << 8) | (vp8l[3]! << 16) | (vp8l[4]! << 24)) >>> 0;
     return { width: (bits & 0x3fff) + 1, height: ((bits >> 14) & 0x3fff) + 1 };
   }
@@ -303,7 +306,8 @@ const A = (p: number): number => (p >>> 24) & 0xff;
 const R = (p: number): number => (p >> 16) & 0xff;
 const G = (p: number): number => (p >> 8) & 0xff;
 const B = (p: number): number => p & 0xff;
-const pack = (a: number, r: number, g: number, b: number): number => ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
+const pack = (a: number, r: number, g: number, b: number): number =>
+  ((a << 24) | (r << 16) | (g << 8) | b) >>> 0;
 
 function average2(a: number, b: number): number {
   return pack(avg2(A(a), A(b)), avg2(R(a), R(b)), avg2(G(a), G(b)), avg2(B(a), B(b)));
@@ -312,10 +316,15 @@ function average2(a: number, b: number): number {
 function select(t: number, l: number, tl: number): number {
   // libwebp Select(top, left, topLeft): pick top when its gradient distance
   // to the top-left is no greater than the left's, else pick left.
-  const pa = Math.abs(R(t) - R(tl)) - Math.abs(R(l) - R(tl))
-    + Math.abs(G(t) - G(tl)) - Math.abs(G(l) - G(tl))
-    + Math.abs(B(t) - B(tl)) - Math.abs(B(l) - B(tl))
-    + Math.abs(A(t) - A(tl)) - Math.abs(A(l) - A(tl));
+  const pa =
+    Math.abs(R(t) - R(tl)) -
+    Math.abs(R(l) - R(tl)) +
+    Math.abs(G(t) - G(tl)) -
+    Math.abs(G(l) - G(tl)) +
+    Math.abs(B(t) - B(tl)) -
+    Math.abs(B(l) - B(tl)) +
+    Math.abs(A(t) - A(tl)) -
+    Math.abs(A(l) - A(tl));
   return pa <= 0 ? t : l;
 }
 
@@ -332,7 +341,7 @@ function clampAddSubtractHalf(c0: number, c1: number): number {
   // Matches libwebp's AddSubtractComponentHalf: the halving uses C integer
   // division (truncation toward zero), not an arithmetic shift, so negative
   // differences round differently.
-  const half = (a: number, b: number): number => clip255(a + ((a - b) / 2 | 0));
+  const half = (a: number, b: number): number => clip255(a + (((a - b) / 2) | 0));
   return pack(half(A(c0), A(c1)), half(R(c0), R(c1)), half(G(c0), G(c1)), half(B(c0), B(c1)));
 }
 
@@ -342,21 +351,36 @@ function predict(mode: number, argb: Uint32Array, i: number, width: number): num
   const tl = argb[i - width - 1]!;
   const tr = argb[i - width + 1]!;
   switch (mode) {
-    case 0: return 0xff000000;
-    case 1: return l;
-    case 2: return t;
-    case 3: return tr;
-    case 4: return tl;
-    case 5: return average2(average2(l, tr), t);
-    case 6: return average2(l, tl);
-    case 7: return average2(l, t);
-    case 8: return average2(tl, t);
-    case 9: return average2(t, tr);
-    case 10: return average2(average2(l, tl), average2(t, tr));
-    case 11: return select(t, l, tl);
-    case 12: return clampAddSubtractFull(l, t, tl);
-    case 13: return clampAddSubtractHalf(average2(l, t), tl);
-    default: return 0xff000000;
+    case 0:
+      return 0xff000000;
+    case 1:
+      return l;
+    case 2:
+      return t;
+    case 3:
+      return tr;
+    case 4:
+      return tl;
+    case 5:
+      return average2(average2(l, tr), t);
+    case 6:
+      return average2(l, tl);
+    case 7:
+      return average2(l, t);
+    case 8:
+      return average2(tl, t);
+    case 9:
+      return average2(t, tr);
+    case 10:
+      return average2(average2(l, tl), average2(t, tr));
+    case 11:
+      return select(t, l, tl);
+    case 12:
+      return clampAddSubtractFull(l, t, tl);
+    case 13:
+      return clampAddSubtractHalf(average2(l, t), tl);
+    default:
+      return 0xff000000;
   }
 }
 
@@ -458,7 +482,15 @@ class VP8LDecoder {
       ]);
     }
 
-    let argb = this.decodePixels(xsize, height, groups, huffmanImage, huffmanBits, huffmanXSize, cacheBits);
+    let argb = this.decodePixels(
+      xsize,
+      height,
+      groups,
+      huffmanImage,
+      huffmanBits,
+      huffmanXSize,
+      cacheBits,
+    );
 
     // Inverse transforms, applied in reverse order of reading.
     let curWidth = xsize;
@@ -471,7 +503,14 @@ class VP8LDecoder {
 
   private readTransform(xsize: number, ysize: number): Transform {
     const type = this.br.readBits(2);
-    const t: Transform = { type, bits: 0, data: new Uint32Array(0), palette: null, paletteBits: 0, fullWidth: xsize };
+    const t: Transform = {
+      type,
+      bits: 0,
+      data: new Uint32Array(0),
+      palette: null,
+      paletteBits: 0,
+      fullWidth: xsize,
+    };
     if (type === PREDICTOR || type === COLOR) {
       t.bits = this.br.readBits(3) + 2;
       t.data = this.decodeImageStream(subSample(xsize, t.bits), subSample(ysize, t.bits), false);
@@ -483,7 +522,8 @@ class VP8LDecoder {
       // The palette is delta-coded per channel; take the prefix sum.
       const finalColors = 1 << (8 >> t.bits);
       const palette = new Uint32Array(finalColors);
-      for (let i = 0; i < numColors; i++) palette[i] = i === 0 ? raw[0]! : addPixels(raw[i]!, palette[i - 1]!);
+      for (let i = 0; i < numColors; i++)
+        palette[i] = i === 0 ? raw[0]! : addPixels(raw[i]!, palette[i - 1]!);
       t.palette = palette;
     } else if (type !== SUBTRACT_GREEN) {
       throw new FastPDFError(`Invalid WebP: unknown transform ${type}`, "INVALID_IMAGE_FILE");
@@ -510,7 +550,7 @@ class VP8LDecoder {
       if (!cache) return;
       while (lastCached < upTo) {
         const v = argb[lastCached++]!;
-        cache[(Math.imul(0x1e35a7bd, v) >>> cacheShift)] = v;
+        cache[Math.imul(0x1e35a7bd, v) >>> cacheShift] = v;
       }
     };
 
@@ -528,29 +568,47 @@ class VP8LDecoder {
         const blue = readSymbol(this.br, group[2]!);
         const alpha = readSymbol(this.br, group[3]!);
         argb[pos++] = pack(alpha, red, code, blue);
-        if (++x === width) { x = 0; y++; }
+        if (++x === width) {
+          x = 0;
+          y++;
+        }
       } else if (code < NUM_LITERAL + NUM_LENGTH) {
         const length = prefixValue(this.br, code - NUM_LITERAL);
         const distSymbol = readSymbol(this.br, group[4]!);
         const planeCode = prefixValue(this.br, distSymbol);
         const dist = planeToDistance(width, planeCode);
         let src = pos - dist;
-        if (src < 0) throw new FastPDFError("Invalid WebP: backward reference out of range", "INVALID_IMAGE_FILE");
+        if (src < 0)
+          throw new FastPDFError(
+            "Invalid WebP: backward reference out of range",
+            "INVALID_IMAGE_FILE",
+          );
         for (let i = 0; i < length && pos < total; i++) argb[pos++] = argb[src++]!;
         x += length;
-        while (x >= width) { x -= width; y++; }
+        while (x >= width) {
+          x -= width;
+          y++;
+        }
       } else {
         // Colour-cache reference.
         flushCache(pos);
         argb[pos++] = cache![code - NUM_LITERAL - NUM_LENGTH]!;
-        if (++x === width) { x = 0; y++; }
+        if (++x === width) {
+          x = 0;
+          y++;
+        }
       }
       flushCache(pos);
     }
     return argb;
   }
 
-  private inverseTransform(t: Transform, argb: Uint32Array, width: number, height: number): Uint32Array {
+  private inverseTransform(
+    t: Transform,
+    argb: Uint32Array,
+    width: number,
+    height: number,
+  ): Uint32Array {
     switch (t.type) {
       case SUBTRACT_GREEN:
         for (let i = 0; i < argb.length; i++) {
@@ -570,7 +628,12 @@ class VP8LDecoder {
     }
   }
 
-  private inversePredictor(t: Transform, argb: Uint32Array, width: number, height: number): Uint32Array {
+  private inversePredictor(
+    t: Transform,
+    argb: Uint32Array,
+    width: number,
+    height: number,
+  ): Uint32Array {
     const tileW = subSample(width, t.bits);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -589,7 +652,12 @@ class VP8LDecoder {
     return argb;
   }
 
-  private inverseColor(t: Transform, argb: Uint32Array, width: number, height: number): Uint32Array {
+  private inverseColor(
+    t: Transform,
+    argb: Uint32Array,
+    width: number,
+    height: number,
+  ): Uint32Array {
     const tileW = subSample(width, t.bits);
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -611,7 +679,12 @@ class VP8LDecoder {
     return argb;
   }
 
-  private inverseColorIndexing(t: Transform, argb: Uint32Array, bundledWidth: number, height: number): Uint32Array {
+  private inverseColorIndexing(
+    t: Transform,
+    argb: Uint32Array,
+    bundledWidth: number,
+    height: number,
+  ): Uint32Array {
     const palette = t.palette!;
     const fullWidth = t.fullWidth;
     const perSample = 1 << t.paletteBits;

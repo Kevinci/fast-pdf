@@ -47,13 +47,7 @@ export type {
 
 export { FastPDFError, type FastPDFErrorCode } from "./errors";
 
-export type {
-  CellValue,
-  TableCell,
-  TableOptions,
-  CellBox,
-  VerticalAlign,
-} from "./layout/table";
+export type { CellValue, TableCell, TableOptions, CellBox, VerticalAlign } from "./layout/table";
 
 export {
   PAGE_FORMATS,

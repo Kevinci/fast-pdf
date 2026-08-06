@@ -24,7 +24,7 @@ describe("shapes (M1)", () => {
     const pdf = raw();
     pdf.circle(100, 100, 30, { stroke: "#00ff00", lineWidth: 3 });
     const text = await rendered(pdf);
-    expect(text).toContain("0 1 0 RG");   // green stroke is set
+    expect(text).toContain("0 1 0 RG"); // green stroke is set
     expect(text).not.toContain("0 0 0 RG"); // and NOT reset to black before stroking
   });
 
@@ -197,10 +197,10 @@ describe("layout engine (M2)", () => {
 
   it("supports percentage column widths", async () => {
     const pdf = raw();
-    pdf.columns(
-      [(d) => d.text("left"), (d) => d.text("right")],
-      { widths: ["30%", "70%"], gap: 10 },
-    );
+    pdf.columns([(d) => d.text("left"), (d) => d.text("right")], {
+      widths: ["30%", "70%"],
+      gap: 10,
+    });
     expect(await rendered(pdf)).toContain("(left) Tj");
   });
 
@@ -236,13 +236,7 @@ describe("tables (M4)", () => {
 
   it("renders colSpan cells across the full spanned width", async () => {
     const pdf = raw();
-    pdf.table(
-      [
-        [{ text: "Spanning header", colSpan: 2 }],
-        ["a", "b"],
-      ],
-      { header: true },
-    );
+    pdf.table([[{ text: "Spanning header", colSpan: 2 }], ["a", "b"]], { header: true });
     const text = await rendered(pdf);
     expect(text).toContain("(Spanning header) Tj");
   });
@@ -289,7 +283,10 @@ describe("objectTable() — REST/JSON binding", () => {
 
   it("stringifies values and renders empty cells for null/undefined", async () => {
     const pdf = raw();
-    pdf.objectTable([{ a: 1, b: null }, { a: 2, b: undefined as unknown as number }]);
+    pdf.objectTable([
+      { a: 1, b: null },
+      { a: 2, b: undefined as unknown as number },
+    ]);
     const text = await rendered(pdf);
     expect(text).toContain("(1) Tj");
     expect(text).toContain("(2) Tj");
@@ -321,7 +318,9 @@ describe("objectTable() — REST/JSON binding", () => {
   it("passes the whole record to format() (e.g. for computed cells)", async () => {
     const pdf = raw();
     pdf.objectTable(orders, {
-      columns: [{ key: "paid", header: "Status", format: (_v, r) => (r.paid ? "OK" : `offen: ${r.total}`) }],
+      columns: [
+        { key: "paid", header: "Status", format: (_v, r) => (r.paid ? "OK" : `offen: ${r.total}`) },
+      ],
     });
     const text = await rendered(pdf);
     expect(text).toContain("(OK) Tj");
@@ -331,11 +330,7 @@ describe("objectTable() — REST/JSON binding", () => {
   it("mixes fixed and auto column widths", async () => {
     const pdf = raw();
     pdf.objectTable(orders, {
-      columns: [
-        { key: "id", width: 40 },
-        { key: "customer" },
-        { key: "total", width: 60 },
-      ],
+      columns: [{ key: "id", width: 40 }, { key: "customer" }, { key: "total", width: 60 }],
     });
     // Just needs to render without throwing; widths add up within content width.
     expect((await rendered(pdf)).includes("(Alice) Tj")).toBe(true);
@@ -484,7 +479,9 @@ describe("document features (M8)", () => {
 
   it("truncates overlong TOC labels with an ellipsis", async () => {
     const pdf = raw();
-    pdf.outline("Ein extrem langer Kapiteltitel, der niemals in eine einzelne Zeile eines Inhaltsverzeichnisses passen wird, weil er einfach immer weiterläuft und kein Ende findet");
+    pdf.outline(
+      "Ein extrem langer Kapiteltitel, der niemals in eine einzelne Zeile eines Inhaltsverzeichnisses passen wird, weil er einfach immer weiterläuft und kein Ende findet",
+    );
     pdf.text("Inhalt");
     pdf.toc();
     const text = await rendered(pdf);

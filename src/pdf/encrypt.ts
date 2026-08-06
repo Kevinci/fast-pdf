@@ -121,7 +121,11 @@ const EMPTY = new Uint8Array(0);
  * AES-128-CBC until the mixing has run at least 64 rounds and the last
  * ciphertext byte falls under the round threshold.
  */
-async function hash2B(password: Uint8Array, salt: Uint8Array, udata: Uint8Array): Promise<Uint8Array> {
+async function hash2B(
+  password: Uint8Array,
+  salt: Uint8Array,
+  udata: Uint8Array,
+): Promise<Uint8Array> {
   let k: Uint8Array = await sha(256, concat(password, salt, udata));
   let e: Uint8Array = EMPTY;
   for (let round = 0; round < 64 || e[e.length - 1]! > round - 32; round++) {

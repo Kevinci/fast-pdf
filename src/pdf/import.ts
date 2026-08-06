@@ -71,10 +71,14 @@ export function displayMatrix(page: SourcePage): Matrix {
   const w = urx - llx;
   const h = ury - lly;
   switch (page.rotate) {
-    case 90: return [0, -1, 1, 0, -lly, w + llx];
-    case 180: return [-1, 0, 0, -1, w + llx, h + lly];
-    case 270: return [0, 1, -1, 0, h + lly, -llx];
-    default: return [1, 0, 0, 1, -llx, -lly];
+    case 90:
+      return [0, -1, 1, 0, -lly, w + llx];
+    case 180:
+      return [-1, 0, 0, -1, w + llx, h + lly];
+    case 270:
+      return [0, 1, -1, 0, h + lly, -llx];
+    default:
+      return [1, 0, 0, 1, -llx, -lly];
   }
 }
 
@@ -89,10 +93,14 @@ export function overlayMatrix(page: SourcePage): Matrix {
   const w = urx - llx;
   const h = ury - lly;
   switch (page.rotate) {
-    case 90: return [0, 1, -1, 0, llx + w, lly];
-    case 180: return [-1, 0, 0, -1, llx + w, lly + h];
-    case 270: return [0, -1, 1, 0, llx, lly + h];
-    default: return [1, 0, 0, 1, llx, lly];
+    case 90:
+      return [0, 1, -1, 0, llx + w, lly];
+    case 180:
+      return [-1, 0, 0, -1, llx + w, lly + h];
+    case 270:
+      return [0, -1, 1, 0, llx, lly + h];
+    default:
+      return [1, 0, 0, 1, llx, lly];
   }
 }
 
@@ -127,7 +135,8 @@ export class ObjectCopier {
   async copy(value: PDFValue | undefined): Promise<PDFValue | undefined> {
     if (value === undefined || value === null) return value;
     if (typeof value === "number" || typeof value === "boolean") return value;
-    if (value instanceof Name || value instanceof PDFString || value instanceof HexString) return value;
+    if (value instanceof Name || value instanceof PDFString || value instanceof HexString)
+      return value;
     if (value instanceof Ref) return this.copyRef(value);
     if (Array.isArray(value)) {
       const out: PDFValue[] = [];
@@ -173,8 +182,16 @@ export class ObjectCopier {
  * /Parent and /Annots are set by the caller.
  */
 const PAGE_KEYS = [
-  "Contents", "Resources", "MediaBox", "CropBox", "BleedBox", "TrimBox",
-  "ArtBox", "Rotate", "Group", "UserUnit",
+  "Contents",
+  "Resources",
+  "MediaBox",
+  "CropBox",
+  "BleedBox",
+  "TrimBox",
+  "ArtBox",
+  "Rotate",
+  "Group",
+  "UserUnit",
 ] as const;
 
 /** Copy a source page dictionary for a 1:1 import (without /Parent, /Annots). */
@@ -280,8 +297,21 @@ export interface AnnotContext {
  * which draws and does nothing else.
  */
 const ANNOT_SUBTYPES = new Set([
-  "Link", "Text", "FreeText", "Highlight", "Underline", "StrikeOut", "Squiggly",
-  "Square", "Circle", "Line", "Polygon", "PolyLine", "Stamp", "Ink", "Caret",
+  "Link",
+  "Text",
+  "FreeText",
+  "Highlight",
+  "Underline",
+  "StrikeOut",
+  "Squiggly",
+  "Square",
+  "Circle",
+  "Line",
+  "Polygon",
+  "PolyLine",
+  "Stamp",
+  "Ink",
+  "Caret",
 ]);
 
 /**
@@ -315,8 +345,14 @@ export async function importAnnots(
     const dict = asDict(await reader.resolve(entry));
     if (dict === undefined) continue;
     if (!(dict.Subtype instanceof Name) || !ANNOT_SUBTYPES.has(dict.Subtype.value)) continue;
+    // A /Link whose only behaviour sat in /AA (which is never copied) would come
+    // through as a rectangle that does nothing. It is harmless, but a viewer
+    // still shows a hover cursor over it — which reads as "the filter did not
+    // work". A link without a destination has no purpose, so it goes too.
+    if (isName(dict.Subtype, "Link") && dict.A === undefined && dict.Dest === undefined) continue;
     if (dict.A !== undefined && !(await isSafeAction(reader, dict.A, context))) continue;
-    if (dict.Dest !== undefined && !(await isImportedDestination(reader, dict.Dest, context))) continue;
+    if (dict.Dest !== undefined && !(await isImportedDestination(reader, dict.Dest, context)))
+      continue;
     // Rewritten rather than cloned: the rectangle may need transforming and
     // the back-reference to the page has to point at ours.
     const copied = await copier.copyDict(dict, ANNOT_SKIP);
@@ -329,7 +365,11 @@ export async function importAnnots(
   return out;
 }
 
-async function isSafeAction(reader: PDFReader, value: PDFValue, context: AnnotContext): Promise<boolean> {
+async function isSafeAction(
+  reader: PDFReader,
+  value: PDFValue,
+  context: AnnotContext,
+): Promise<boolean> {
   const action = asDict(await reader.resolve(value));
   if (action === undefined) return false;
   if (isName(action.S, "URI")) {
@@ -357,7 +397,11 @@ async function isImportedDestination(
 }
 
 /** Resolve a /Rect and map it into the target page's coordinates. */
-async function rect(reader: PDFReader, value: PDFValue | undefined, transform: Matrix | null): Promise<PDFValue> {
+async function rect(
+  reader: PDFReader,
+  value: PDFValue | undefined,
+  transform: Matrix | null,
+): Promise<PDFValue> {
   const n = await numberArray(reader, value, 4);
   if (n === null) return [0, 0, 0, 0];
   const box: [number, number, number, number] = [n[0]!, n[1]!, n[2]!, n[3]!];

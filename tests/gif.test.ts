@@ -7,7 +7,9 @@ import { inflate } from "../src/pdf/compress";
 import { makeGif } from "./helpers";
 
 /** Decode a parsed GIF back to flat RGBA for assertions. */
-async function toRgba(bytes: Uint8Array): Promise<{ width: number; height: number; rgba: Uint8Array }> {
+async function toRgba(
+  bytes: Uint8Array,
+): Promise<{ width: number; height: number; rgba: Uint8Array }> {
   const img = await parseGif(bytes);
   const color = img.dict["Filter"] ? await inflate(img.data) : img.data;
   const alpha = img.smask ? (img.smaskDeflated ? await inflate(img.smask) : img.smask) : null;
@@ -35,11 +37,16 @@ describe("detectFormat", () => {
 
 describe("gifSize", () => {
   it("probes dimensions from the logical screen descriptor", () => {
-    expect(gifSize(makeGif(37, 19, RGB, new Array(37 * 19).fill(0)))).toEqual({ width: 37, height: 19 });
+    expect(gifSize(makeGif(37, 19, RGB, new Array(37 * 19).fill(0)))).toEqual({
+      width: 37,
+      height: 19,
+    });
   });
 
   it("throws on a bad header", () => {
-    expect(() => gifSize(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))).toThrow(/GIF87a\/GIF89a/);
+    expect(() => gifSize(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]))).toThrow(
+      /GIF87a\/GIF89a/,
+    );
   });
 });
 
@@ -89,20 +96,30 @@ describe("parseGif", () => {
     let bad = 0;
     for (let i = 0; i < 48 * 48; i++) {
       const c = idx[i]!;
-      if (rgba[i * 4] !== c || rgba[i * 4 + 1] !== (c * 7) % 256 || rgba[i * 4 + 2] !== (c * 13) % 256) bad++;
+      if (
+        rgba[i * 4] !== c ||
+        rgba[i * 4 + 1] !== (c * 7) % 256 ||
+        rgba[i * 4 + 2] !== (c * 13) % 256
+      )
+        bad++;
     }
     expect(bad).toBe(0);
   });
 
   it("rejects a truncated file with no image frame", async () => {
-    const trailerOnly = new Uint8Array([0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 1, 0, 1, 0, 0, 0, 0, 0x3b]);
+    const trailerOnly = new Uint8Array([
+      0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 1, 0, 1, 0, 0, 0, 0, 0x3b,
+    ]);
     await expect(parseGif(trailerOnly)).rejects.toThrow(/no image frame|no image data/);
   });
 
   it("rejects oversized dimensions", async () => {
     const gif = makeGif(2, 2, RGB, [0, 0, 0, 0]);
     // Rewrite the logical screen size to 20000×20000 (> 67 MP cap).
-    gif[6] = 0x20; gif[7] = 0x4e; gif[8] = 0x20; gif[9] = 0x4e;
+    gif[6] = 0x20;
+    gif[7] = 0x4e;
+    gif[8] = 0x20;
+    gif[9] = 0x4e;
     await expect(parseGif(gif)).rejects.toThrow(/too large/);
   });
 });

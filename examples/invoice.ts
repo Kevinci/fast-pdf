@@ -16,7 +16,9 @@ const page = pdf.pageSize;
 pdf.rect(0, 0, page.width, 8, { fill: "#0f172a" });
 pdf.text("Example Software GmbH", { y: 40, size: 20, bold: true, color: "#0f172a" });
 pdf.text("Musterstraße 12 · 50667 Köln · hello@example-software.de", {
-  y: 66, size: 9, color: "#64748b",
+  y: 66,
+  size: 9,
+  color: "#64748b",
 });
 pdf.text("RECHNUNG", { y: 40, align: "right", size: 14, bold: true, color: "#64748b" });
 
@@ -24,7 +26,12 @@ pdf.text("RECHNUNG", { y: 40, align: "right", size: 14, bold: true, color: "#647
 pdf.y = 110;
 pdf.text("Beispiel AG\nFrau Erika Mustermann\nHauptstraße 1\n10115 Berlin", { lineHeight: 1.4 });
 pdf.text("Rechnungsnr.: R-2026-0042\nDatum: 14.07.2026\nFällig bis: 28.07.2026", {
-  y: 110, x: page.width - 250, width: 200, align: "right", lineHeight: 1.4, color: "#334155",
+  y: 110,
+  x: page.width - 250,
+  width: 200,
+  align: "right",
+  lineHeight: 1.4,
+  color: "#334155",
 });
 
 pdf.y = 220;
@@ -47,7 +54,11 @@ pdf.table(
   [
     ["Pos.", "Leistung", "Stunden", "Satz", "Betrag"],
     ...items.map(([name, hours, rate], i) => [
-      String(i + 1), name, String(hours), fmtEur(rate), fmtEur(hours * rate),
+      String(i + 1),
+      name,
+      String(hours),
+      fmtEur(rate),
+      fmtEur(hours * rate),
     ]),
   ],
   {
@@ -64,7 +75,10 @@ pdf.table(
   [
     ["Zwischensumme (netto)", fmtEur(net)],
     ["Umsatzsteuer 19 %", fmtEur(vat)],
-    [{ text: "Gesamtbetrag", bold: true }, { text: fmtEur(net + vat), bold: true }],
+    [
+      { text: "Gesamtbetrag", bold: true },
+      { text: fmtEur(net + vat), bold: true },
+    ],
   ],
   {
     header: false,
@@ -86,7 +100,10 @@ pdf.text(
 const footerY = page.height - 40;
 pdf.line(50, footerY - 12, page.width - 50, footerY - 12, { color: "#e2e8f0", width: 0.5 });
 pdf.text("Example Software GmbH · IBAN DE12 3456 7890 1234 5678 90 · USt-IdNr. DE123456789", {
-  y: footerY, size: 8, color: "#94a3b8", align: "center",
+  y: footerY,
+  size: 8,
+  color: "#94a3b8",
+  align: "center",
 });
 
 await pdf.save("examples/output/invoice.pdf");

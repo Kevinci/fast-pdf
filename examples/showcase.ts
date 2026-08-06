@@ -41,7 +41,14 @@ pdf.text(
 pdf.outline("Layout");
 pdf.text("Layout: Container, Spalten, Grid", { size: 16, bold: true, spacingAfter: 6 });
 pdf.container(
-  { background: "#eef4ff", border: { color: "#4a7dff", width: 1 }, radius: 8, padding: 12, width: "80%", align: "center" },
+  {
+    background: "#eef4ff",
+    border: { color: "#4a7dff", width: 1 },
+    radius: 8,
+    padding: 12,
+    width: "80%",
+    align: "center",
+  },
   (d) => {
     d.text("Ein Container mit Hintergrund, Rahmen, Radius und 80% Breite.", { align: "center" });
   },
@@ -61,7 +68,9 @@ pdf.columns(
 pdf.moveDown(0.5);
 pdf.grid(
   ["A", "B", "C", "D"].map((label) => (d: PDFDocument) => {
-    d.container({ background: "#f4f4f6", padding: 8, radius: 4 }, (dd) => dd.text(`Karte ${label}`, { align: "center" }));
+    d.container({ background: "#f4f4f6", padding: 8, radius: 4 }, (dd) =>
+      dd.text(`Karte ${label}`, { align: "center" }),
+    );
   }),
   { columns: 2, gap: 10 },
 );
@@ -88,7 +97,10 @@ pdf.table(
     [{ text: "Beratung", rowSpan: 2 }, "8 h", "960,00 €"],
     ["4 h", "480,00 €"],
     ["Lizenz", "1", "199,00 €"],
-    [{ text: "Summe", colSpan: 2, bold: true }, { text: "1.639,00 €", bold: true }],
+    [
+      { text: "Summe", colSpan: 2, bold: true },
+      { text: "1.639,00 €", bold: true },
+    ],
   ],
   { footer: true, zebraFill: "#fafafa", aligns: ["left", "right", "right"] },
 );
@@ -96,8 +108,16 @@ pdf.moveDown();
 
 // ── Links ──────────────────────────────────────────────────────────────
 pdf.outline("Links");
-pdf.text("Interner Link zurück zur Typografie", { link: "#typo", color: "#1a55cc", underline: true });
-pdf.text("Externer Link: anthropic.com", { link: "https://anthropic.com", color: "#1a55cc", underline: true });
+pdf.text("Interner Link zurück zur Typografie", {
+  link: "#typo",
+  color: "#1a55cc",
+  underline: true,
+});
+pdf.text("Externer Link: anthropic.com", {
+  link: "https://anthropic.com",
+  color: "#1a55cc",
+  underline: true,
+});
 
 // ── TOC (last: entries must exist) ─────────────────────────────────────
 pdf.toc({ title: "Inhalt" });

@@ -22,7 +22,10 @@ export function assertFinite(value: number, name: string): number {
     throw new FastPDFError(`${name} must be a finite number (got ${value})`, "INVALID_NUMBER");
   }
   if (Math.abs(value) >= MAX_PDF_NUMBER) {
-    throw new FastPDFError(`${name} is too large for a PDF number (got ${value})`, "INVALID_NUMBER");
+    throw new FastPDFError(
+      `${name} is too large for a PDF number (got ${value})`,
+      "INVALID_NUMBER",
+    );
   }
   return value;
 }

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { detectFormat } from "../src/images/image";
 import { parseJpeg } from "../src/images/jpeg";
 import { parsePng, pngSize } from "../src/images/png";
-import { deflate, inflate } from "../src/pdf/compress";
+import { inflate } from "../src/pdf/compress";
 import { Name } from "../src/pdf/objects";
 
 import { makeJpeg, makePng } from "./helpers";

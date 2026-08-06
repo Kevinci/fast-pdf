@@ -118,7 +118,7 @@ describe("append() — 1:1 copy", () => {
   });
 });
 
-describe("append() — fit: \"page\"", () => {
+describe('append() — fit: "page"', () => {
   it("scales a foreign page size onto the document format", async () => {
     const pdf = new PDFDocument({ format: "A4" });
     await pdf.append(await source({ format: "Letter" }), { fit: "page" });
@@ -323,6 +323,25 @@ describe("append() — annotations", () => {
     // …while the harmless markup annotation next to it is carried over, so the
     // filter is doing the work and not just failing to read the array.
     expect(text).toContain("/Subtype /Square");
+  });
+
+  it("drops a link left inert by the filter, rather than keeping a dead rectangle", async () => {
+    // The only behaviour of this link sits in /AA, which is never copied. What
+    // would be left is a rectangle a viewer still shows a hover cursor over —
+    // indistinguishable, to someone checking, from a filter that did nothing.
+    const inner = latin1String(await new PDFDocument({ compress: false }).toBuffer());
+    const withAA = inner.replace(
+      "/Type /Page /Parent",
+      "/Annots [<< /Type /Annot /Subtype /Link /Rect [10 10 90 30] " +
+        "/AA << /E << /S /JavaScript /JS (app.alert\\(1\\)) >> >> >>] /Type /Page /Parent",
+    );
+    const bytes = new Uint8Array(withAA.length);
+    for (let i = 0; i < withAA.length; i++) bytes[i] = withAA.charCodeAt(i) & 0xff;
+
+    const pdf = new PDFDocument({ compress: false });
+    const text = latin1String(await (await pdf.append(bytes)).render());
+    expect(text).not.toContain("/JavaScript");
+    expect(text).not.toContain("/Subtype /Link");
   });
 
   it("drops form-field widgets, which have no /AcroForm here", async () => {

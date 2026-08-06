@@ -70,7 +70,10 @@ export interface DocumentMetadata {
   creationDate?: Date;
 }
 
-export function normalizeMargins(m: number | Partial<Margins> | undefined, fallback: number): Margins {
+export function normalizeMargins(
+  m: number | Partial<Margins> | undefined,
+  fallback: number,
+): Margins {
   if (typeof m === "number") return { top: m, right: m, bottom: m, left: m };
   return {
     top: m?.top ?? fallback,
@@ -91,7 +94,10 @@ export function parseColor(input: ColorInput): RGB {
     hex = hex[0]! + hex[0]! + hex[1]! + hex[1]! + hex[2]! + hex[2]!;
   }
   if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
-    throw new FastPDFError(`Invalid color: "${input}" (expected "#rgb", "#rrggbb" or {r,g,b})`, "INVALID_COLOR");
+    throw new FastPDFError(
+      `Invalid color: "${input}" (expected "#rgb", "#rrggbb" or {r,g,b})`,
+      "INVALID_COLOR",
+    );
   }
   return {
     r: parseInt(hex.slice(0, 2), 16) / 255,

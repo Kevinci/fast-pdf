@@ -7,7 +7,10 @@ import { parseTransform, renderSvg, viewport, type SvgContext } from "../src/svg
 import type { RGB } from "../src/types/index";
 
 /** Render SVG source to a content-stream operator string, capturing text calls. */
-function render(svg: string, currentColor: RGB = { r: 0, g: 0, b: 0 }): { ops: string; texts: unknown[][] } {
+function render(
+  svg: string,
+  currentColor: RGB = { r: 0, g: 0, b: 0 },
+): { ops: string; texts: unknown[][] } {
   const content = new ContentStream();
   const texts: unknown[][] = [];
   const ctx: SvgContext = {
@@ -130,7 +133,9 @@ describe("renderSvg", () => {
   });
 
   it("emits stroke operators with scaled line width for stroked shapes", () => {
-    const { ops } = render(wrap('<circle cx="5" cy="5" r="4" fill="none" stroke="#00ff00" stroke-width="2"/>'));
+    const { ops } = render(
+      wrap('<circle cx="5" cy="5" r="4" fill="none" stroke="#00ff00" stroke-width="2"/>'),
+    );
     expect(ops).toContain("0 1 0 RG"); // green stroke
     expect(ops).toContain(" c\n"); // circle → Bézier curves
     expect(ops).toMatch(/\bS\b/);
@@ -143,19 +148,31 @@ describe("renderSvg", () => {
   });
 
   it("resolves named colours, rgb() and currentColor", () => {
-    expect(render(wrap('<rect width="1" height="1" fill="rebeccapurple"/>')).ops).not.toContain("rg\n1 1 1"); // parsed, not white default
-    expect(render(wrap('<rect width="1" height="1" fill="rgb(255,128,0)"/>')).ops).toContain("1 0.502 0 rg");
-    const cur = render(wrap('<rect width="1" height="1" fill="currentColor"/>'), { r: 1, g: 0, b: 0 });
+    expect(render(wrap('<rect width="1" height="1" fill="rebeccapurple"/>')).ops).not.toContain(
+      "rg\n1 1 1",
+    ); // parsed, not white default
+    expect(render(wrap('<rect width="1" height="1" fill="rgb(255,128,0)"/>')).ops).toContain(
+      "1 0.502 0 rg",
+    );
+    const cur = render(wrap('<rect width="1" height="1" fill="currentColor"/>'), {
+      r: 1,
+      g: 0,
+      b: 0,
+    });
     expect(cur.ops).toContain("1 0 0 rg");
   });
 
   it("uses an ExtGState for fill-opacity", () => {
-    const { ops } = render(wrap('<rect width="10" height="10" fill="#000000" fill-opacity="0.5"/>'));
+    const { ops } = render(
+      wrap('<rect width="10" height="10" fill="#000000" fill-opacity="0.5"/>'),
+    );
     expect(ops).toContain("/GS0 gs");
   });
 
   it("passes text through to drawText with the resolved anchor", () => {
-    const { texts } = render(wrap('<text x="50" y="20" text-anchor="middle" fill="#000">Hi</text>'));
+    const { texts } = render(
+      wrap('<text x="50" y="20" text-anchor="middle" fill="#000">Hi</text>'),
+    );
     expect(texts).toHaveLength(1);
     expect(texts[0]![0]).toBe("Hi");
     expect(texts[0]![5]).toBe("middle");
@@ -165,7 +182,9 @@ describe("renderSvg", () => {
     expect(render(wrap('<ellipse cx="5" cy="5" rx="4" ry="2" fill="#000"/>')).ops).toMatch(/\bc\b/);
     expect(render(wrap('<line x1="0" y1="0" x2="9" y2="9" stroke="#000"/>')).ops).toMatch(/\bS\b/);
     expect(render(wrap('<polygon points="0,0 9,0 9,9" fill="#000"/>')).ops).toMatch(/\bf\b/);
-    expect(render(wrap('<polyline points="0,0 9,0 9,9" fill="none" stroke="#000"/>')).ops).toMatch(/\bS\b/);
+    expect(render(wrap('<polyline points="0,0 9,0 9,9" fill="none" stroke="#000"/>')).ops).toMatch(
+      /\bS\b/,
+    );
   });
 
   it("skips elements with display:none", () => {
@@ -180,7 +199,11 @@ describe("renderSvg", () => {
 
   it("applies group transforms to child geometry", () => {
     const plain = render(wrap('<rect x="0" y="0" width="10" height="10" fill="#000"/>')).ops;
-    const shifted = render(wrap('<g transform="translate(100,0)"><rect x="0" y="0" width="10" height="10" fill="#000"/></g>')).ops;
+    const shifted = render(
+      wrap(
+        '<g transform="translate(100,0)"><rect x="0" y="0" width="10" height="10" fill="#000"/></g>',
+      ),
+    ).ops;
     expect(plain).not.toBe(shifted); // the translate moved the coordinates
     expect(shifted).toContain("100 ");
   });

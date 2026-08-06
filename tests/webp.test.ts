@@ -21,7 +21,9 @@ const GRADIENT_WEBP = Uint8Array.from(
 );
 
 /** Reconstruct flat RGBA from a parsed WebP for assertions. */
-async function toRgba(bytes: Uint8Array): Promise<{ width: number; height: number; rgba: Uint8Array }> {
+async function toRgba(
+  bytes: Uint8Array,
+): Promise<{ width: number; height: number; rgba: Uint8Array }> {
   const img = await parseWebp(bytes);
   const color = img.dict["Filter"] ? await inflate(img.data) : img.data;
   const alpha = img.smask ? (img.smaskDeflated ? await inflate(img.smask) : img.smask) : null;
@@ -58,9 +60,9 @@ describe("webpSize", () => {
   });
 
   it("throws on a bad header", () => {
-    expect(() => webpSize(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]))).toThrow(
-      /RIFF\/WEBP/,
-    );
+    expect(() =>
+      webpSize(new Uint8Array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16])),
+    ).toThrow(/RIFF\/WEBP/);
   });
 });
 

@@ -12,7 +12,14 @@ export interface SvgContext {
   /** ExtGState resource name for a constant alpha. */
   gsRes(alpha: number): string;
   /** Draw one upright text line; the anchor point is already in PDF space. */
-  drawText(text: string, pdfX: number, pdfY: number, sizePt: number, fill: RGB, anchor: "start" | "middle" | "end"): void;
+  drawText(
+    text: string,
+    pdfX: number,
+    pdfY: number,
+    sizePt: number,
+    fill: RGB,
+    anchor: "start" | "middle" | "end",
+  ): void;
   /** Value substituted for `currentColor`. */
   currentColor: RGB;
 }
@@ -65,20 +72,32 @@ export function parseTransform(value: string): Mat {
     const args = numbers(match[2]!);
     const [a = 0, b = 0, c = 0, d = 0, e = 0, f = 0] = args;
     switch (match[1]) {
-      case "matrix": m = mul(m, [a, b, c, d, e, f]); break;
-      case "translate": m = mul(m, [1, 0, 0, 1, a, args.length > 1 ? b : 0]); break;
-      case "scale": m = mul(m, [a, 0, 0, args.length > 1 ? b : a, 0, 0]); break;
+      case "matrix":
+        m = mul(m, [a, b, c, d, e, f]);
+        break;
+      case "translate":
+        m = mul(m, [1, 0, 0, 1, a, args.length > 1 ? b : 0]);
+        break;
+      case "scale":
+        m = mul(m, [a, 0, 0, args.length > 1 ? b : a, 0, 0]);
+        break;
       case "rotate": {
         const rad = (a * Math.PI) / 180;
-        const cos = Math.cos(rad), sin = Math.sin(rad);
-        const cx = args.length > 1 ? b : 0, cy = args.length > 1 ? c : 0;
+        const cos = Math.cos(rad),
+          sin = Math.sin(rad);
+        const cx = args.length > 1 ? b : 0,
+          cy = args.length > 1 ? c : 0;
         m = mul(m, [1, 0, 0, 1, cx, cy]);
         m = mul(m, [cos, sin, -sin, cos, 0, 0]);
         m = mul(m, [1, 0, 0, 1, -cx, -cy]);
         break;
       }
-      case "skewX": m = mul(m, [1, 0, Math.tan((a * Math.PI) / 180), 1, 0, 0]); break;
-      case "skewY": m = mul(m, [1, Math.tan((a * Math.PI) / 180), 0, 1, 0, 0]); break;
+      case "skewX":
+        m = mul(m, [1, 0, Math.tan((a * Math.PI) / 180), 1, 0, 0]);
+        break;
+      case "skewY":
+        m = mul(m, [1, Math.tan((a * Math.PI) / 180), 0, 1, 0, 0]);
+        break;
     }
   }
   return m;
@@ -87,14 +106,42 @@ export function parseTransform(value: string): Mat {
 // ── colours ────────────────────────────────────────────────────────────
 
 const NAMED: Record<string, string> = {
-  black: "#000000", white: "#ffffff", red: "#ff0000", green: "#008000", lime: "#00ff00",
-  blue: "#0000ff", yellow: "#ffff00", cyan: "#00ffff", aqua: "#00ffff", magenta: "#ff00ff",
-  fuchsia: "#ff00ff", gray: "#808080", grey: "#808080", silver: "#c0c0c0", maroon: "#800000",
-  olive: "#808000", navy: "#000080", teal: "#008080", purple: "#800080", orange: "#ffa500",
-  pink: "#ffc0cb", brown: "#a52a2a", gold: "#ffd700", indigo: "#4b0082", violet: "#ee82ee",
-  darkgray: "#a9a9a9", darkgrey: "#a9a9a9", lightgray: "#d3d3d3", lightgrey: "#d3d3d3",
-  dimgray: "#696969", steelblue: "#4682b4", tomato: "#ff6347", crimson: "#dc143c",
-  darkgreen: "#006400", lightblue: "#add8e6", transparent: "none",
+  black: "#000000",
+  white: "#ffffff",
+  red: "#ff0000",
+  green: "#008000",
+  lime: "#00ff00",
+  blue: "#0000ff",
+  yellow: "#ffff00",
+  cyan: "#00ffff",
+  aqua: "#00ffff",
+  magenta: "#ff00ff",
+  fuchsia: "#ff00ff",
+  gray: "#808080",
+  grey: "#808080",
+  silver: "#c0c0c0",
+  maroon: "#800000",
+  olive: "#808000",
+  navy: "#000080",
+  teal: "#008080",
+  purple: "#800080",
+  orange: "#ffa500",
+  pink: "#ffc0cb",
+  brown: "#a52a2a",
+  gold: "#ffd700",
+  indigo: "#4b0082",
+  violet: "#ee82ee",
+  darkgray: "#a9a9a9",
+  darkgrey: "#a9a9a9",
+  lightgray: "#d3d3d3",
+  lightgrey: "#d3d3d3",
+  dimgray: "#696969",
+  steelblue: "#4682b4",
+  tomato: "#ff6347",
+  crimson: "#dc143c",
+  darkgreen: "#006400",
+  lightblue: "#add8e6",
+  transparent: "none",
 };
 
 /** Resolve an SVG paint value to an RGB colour, or null for "none"/invalid. */
@@ -102,9 +149,7 @@ function resolveColor(value: string, currentColor: RGB): RGB | null {
   const v = value.trim().toLowerCase();
   if (v === "" || v === "none" || v === "transparent") return null;
   if (v === "currentcolor") return currentColor;
-  const rgb = v.startsWith("rgb")
-    ? numbers(v)
-    : null;
+  const rgb = v.startsWith("rgb") ? numbers(v) : null;
   if (rgb) {
     const pct = v.includes("%");
     const to255 = (n: number): number => (pct ? (n / 100) * 255 : n);
@@ -186,7 +231,8 @@ function resolveStyle(node: SvgNode, parent: Style, currentColor: RGB): Style {
 // ── shapes → path segments (in SVG user space) ──────────────────────────
 
 function ellipseSegs(cx: number, cy: number, rx: number, ry: number): PathSeg[] {
-  const kx = KAPPA * rx, ky = KAPPA * ry;
+  const kx = KAPPA * rx,
+    ky = KAPPA * ry;
   return [
     { op: "M", x: cx + rx, y: cy },
     { op: "C", x1: cx + rx, y1: cy + ky, x2: cx + kx, y2: cy + ry, x: cx, y: cy + ry },
@@ -197,7 +243,14 @@ function ellipseSegs(cx: number, cy: number, rx: number, ry: number): PathSeg[] 
   ];
 }
 
-function roundedRectSegs(x: number, y: number, w: number, h: number, rx: number, ry: number): PathSeg[] {
+function roundedRectSegs(
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  rx: number,
+  ry: number,
+): PathSeg[] {
   rx = Math.min(rx, w / 2);
   ry = Math.min(ry, h / 2);
   if (rx <= 0 || ry <= 0) {
@@ -209,13 +262,22 @@ function roundedRectSegs(x: number, y: number, w: number, h: number, rx: number,
       { op: "Z" },
     ];
   }
-  const kx = KAPPA * rx, ky = KAPPA * ry;
+  const kx = KAPPA * rx,
+    ky = KAPPA * ry;
   return [
     { op: "M", x: x + rx, y },
     { op: "L", x: x + w - rx, y },
     { op: "C", x1: x + w - rx + kx, y1: y, x2: x + w, y2: y + ry - ky, x: x + w, y: y + ry },
     { op: "L", x: x + w, y: y + h - ry },
-    { op: "C", x1: x + w, y1: y + h - ry + ky, x2: x + w - rx + kx, y2: y + h, x: x + w - rx, y: y + h },
+    {
+      op: "C",
+      x1: x + w,
+      y1: y + h - ry + ky,
+      x2: x + w - rx + kx,
+      y2: y + h,
+      x: x + w - rx,
+      y: y + h,
+    },
     { op: "L", x: x + rx, y: y + h },
     { op: "C", x1: x + rx - kx, y1: y + h, x2: x, y2: y + h - ry + ky, x, y: y + h - ry },
     { op: "L", x, y: y + ry },
@@ -294,9 +356,25 @@ function renderNode(node: SvgNode, m: Mat, parent: Style, ctx: SvgContext): void
       for (const child of node.children) renderNode(child, local, style, ctx);
       return;
     case "rect": {
-      const rx = a["rx"] !== undefined ? parseFloat(a["rx"]) : a["ry"] !== undefined ? parseFloat(a["ry"]) : 0;
+      const rx =
+        a["rx"] !== undefined
+          ? parseFloat(a["rx"])
+          : a["ry"] !== undefined
+            ? parseFloat(a["ry"])
+            : 0;
       const ry = a["ry"] !== undefined ? parseFloat(a["ry"]) : rx;
-      emitPath(ctx.content, roundedRectSegs(num(a["x"], 0), num(a["y"], 0), num(a["width"], 0), num(a["height"], 0), rx, ry), local);
+      emitPath(
+        ctx.content,
+        roundedRectSegs(
+          num(a["x"], 0),
+          num(a["y"], 0),
+          num(a["width"], 0),
+          num(a["height"], 0),
+          rx,
+          ry,
+        ),
+        local,
+      );
       paint(ctx, style, local, true);
       return;
     }
@@ -309,7 +387,8 @@ function renderNode(node: SvgNode, m: Mat, parent: Style, ctx: SvgContext): void
       return;
     }
     case "ellipse": {
-      const rx = num(a["rx"], 0), ry = num(a["ry"], 0);
+      const rx = num(a["rx"], 0),
+        ry = num(a["ry"], 0);
       if (rx > 0 && ry > 0) {
         emitPath(ctx.content, ellipseSegs(num(a["cx"], 0), num(a["cy"], 0), rx, ry), local);
         paint(ctx, style, local, true);
@@ -317,10 +396,14 @@ function renderNode(node: SvgNode, m: Mat, parent: Style, ctx: SvgContext): void
       return;
     }
     case "line": {
-      emitPath(ctx.content, [
-        { op: "M", x: num(a["x1"], 0), y: num(a["y1"], 0) },
-        { op: "L", x: num(a["x2"], 0), y: num(a["y2"], 0) },
-      ], local);
+      emitPath(
+        ctx.content,
+        [
+          { op: "M", x: num(a["x1"], 0), y: num(a["y1"], 0) },
+          { op: "L", x: num(a["x2"], 0), y: num(a["y2"], 0) },
+        ],
+        local,
+      );
       paint(ctx, { ...style, fill: null }, local, true);
       return;
     }

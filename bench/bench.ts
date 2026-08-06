@@ -36,7 +36,13 @@ async function tableDocument(rows: number): Promise<number> {
   const pdf = new PDFDocument();
   const data: string[][] = [["#", "Artikel", "Beschreibung", "Menge", "Preis"]];
   for (let i = 0; i < rows; i++) {
-    data.push([String(i), `Artikel ${i}`, "Eine mittellange Beschreibung des Artikels", "3", "19,99 €"]);
+    data.push([
+      String(i),
+      `Artikel ${i}`,
+      "Eine mittellange Beschreibung des Artikels",
+      "3",
+      "19,99 €",
+    ]);
   }
   pdf.table(data, { aligns: ["right", "left", "left", "right", "right"], zebraFill: "#f5f5f5" });
   return (await pdf.render()).length;

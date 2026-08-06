@@ -20,7 +20,14 @@ import { deflate } from "../pdf/compress";
 import { isStandardFamily, resolveFont, styleIndex, type Font } from "../fonts/font";
 import { EmbeddedFont } from "../fonts/embedded";
 import { wrapLines, alignOffset, measureLine, type WrappedLine } from "../layout/text";
-import { columnWidths, countColumns, measureTable, type CellValue, type TableOptions, type MeasuredRow } from "../layout/table";
+import {
+  columnWidths,
+  countColumns,
+  measureTable,
+  type CellValue,
+  type TableOptions,
+  type MeasuredRow,
+} from "../layout/table";
 import { detectFormat, toBytes, type ParsedImage } from "../images/image";
 import { parseJpeg } from "../images/jpeg";
 import { parsePng, pngSize } from "../images/png";
@@ -681,7 +688,11 @@ export class PDFDocument {
     const merged = { ...this.pageDefaults, ...options };
     const base: PageSize =
       typeof merged.format === "string" ? PAGE_FORMATS[merged.format] : merged.format;
-    if (!base) throw new FastPDFError(`Unknown page format: ${String(merged.format)}`, "UNKNOWN_PAGE_FORMAT");
+    if (!base)
+      throw new FastPDFError(
+        `Unknown page format: ${String(merged.format)}`,
+        "UNKNOWN_PAGE_FORMAT",
+      );
     const size = merged.landscape
       ? { width: base.height, height: base.width }
       : { width: base.width, height: base.height };
@@ -770,9 +781,10 @@ export class PDFDocument {
         continue;
       }
       const pageOptions: PageOptions = {
-        landscape: (options.autoRotate ?? true)
-          ? sourcePage.size.width > sourcePage.size.height
-          : (options.landscape ?? this.pageDefaults.landscape),
+        landscape:
+          (options.autoRotate ?? true)
+            ? sourcePage.size.width > sourcePage.size.height
+            : (options.landscape ?? this.pageDefaults.landscape),
       };
       if (options.format !== undefined) pageOptions.format = options.format;
       if (options.margins !== undefined) pageOptions.margins = options.margins;
@@ -971,7 +983,7 @@ export class PDFDocument {
     this.frameTop = startY;
     this.suppressBreaks++;
     this.measuring++;
-    let endY = startY;
+    let endY: number;
     try {
       content(this);
       endY = this.cursorY;
@@ -985,8 +997,10 @@ export class PDFDocument {
       this.lastBlock = saved.lastBlock;
       for (const key of this.images.keys()) if (!imageKeys.has(key)) this.images.delete(key);
       this.outlines.length = outlineCount;
-      for (const key of [...this.anchors.keys()]) if (!anchorKeys.has(key)) this.anchors.delete(key);
-      for (const name of [...this.sigFieldNames]) if (!sigNames.has(name)) this.sigFieldNames.delete(name);
+      for (const key of [...this.anchors.keys()])
+        if (!anchorKeys.has(key)) this.anchors.delete(key);
+      for (const name of [...this.sigFieldNames])
+        if (!sigNames.has(name)) this.sigFieldNames.delete(name);
     }
     return { height: endY - startY, width };
   }
@@ -1060,14 +1074,20 @@ export class PDFDocument {
     const page = this.page;
     if (clip) {
       page.content.save();
-      buildRectPath(page.content, rect.x, page.ty(rect.y), rect.width, rect.height, clipRadius(rect));
+      buildRectPath(
+        page.content,
+        rect.x,
+        page.ty(rect.y),
+        rect.width,
+        rect.height,
+        clipRadius(rect),
+      );
       page.content.clip();
     }
     this.frame = { x: rect.x, width: rect.width };
     this.cursorY = rect.y;
     this.frameTop = rect.y;
     this.suppressBreaks++;
-    let usedHeight = 0;
     try {
       content(this);
       usedHeight = this.cursorY - rect.y;
@@ -1132,7 +1152,10 @@ export class PDFDocument {
 
   private breakPageIfNeeded(blockHeight: number): void {
     if (this.suppressBreaks > 0) return;
-    if (this.cursorY + blockHeight > this.page.contentBottom && this.cursorY > this.page.margins.top) {
+    if (
+      this.cursorY + blockHeight > this.page.contentBottom &&
+      this.cursorY > this.page.margins.top
+    ) {
       this.addPage();
     }
   }
@@ -1159,17 +1182,23 @@ export class PDFDocument {
     const margin = normalizeMargins(options.margin ?? 0, 0);
     const padding = normalizeMargins(options.padding ?? 0, 0);
     const available = this.flowWidth - margin.left - margin.right;
-    const outerWidth = options.width !== undefined ? resolveSize(options.width, available) : available;
+    const outerWidth =
+      options.width !== undefined ? resolveSize(options.width, available) : available;
     const innerWidth = outerWidth - padding.left - padding.right;
     if (innerWidth <= 0) {
-      throw new FastPDFError(`Container inner width is ${innerWidth}pt — width too small for its padding`, "INVALID_ARGUMENT");
+      throw new FastPDFError(
+        `Container inner width is ${innerWidth}pt — width too small for its padding`,
+        "INVALID_ARGUMENT",
+      );
     }
     const free = available - outerWidth;
     const shift = options.align === "center" ? free / 2 : options.align === "right" ? free : 0;
     const outerX = this.flowX + margin.left + shift;
 
     this.breakPageIfNeeded(
-      padding.top + padding.bottom + (options.minHeight ?? this.defaults.size * this.defaults.lineHeight),
+      padding.top +
+        padding.bottom +
+        (options.minHeight ?? this.defaults.size * this.defaults.lineHeight),
     );
 
     const startY = this.cursorY + margin.top;
@@ -1201,7 +1230,8 @@ export class PDFDocument {
       const radius = Math.min(options.radius ?? 0, outerWidth / 2, height / 2);
       buildRectPath(bg, outerX, page.ty(startY), outerWidth, height, radius);
       const fill = options.background !== undefined ? parseColor(options.background) : undefined;
-      const stroke = options.border !== undefined ? parseColor(options.border.color ?? "#000000") : undefined;
+      const stroke =
+        options.border !== undefined ? parseColor(options.border.color ?? "#000000") : undefined;
       if (fill) bg.fillColor(fill);
       if (stroke) bg.strokeColor(stroke).lineWidth(options.border?.width ?? 1);
       if (fill && stroke) bg.fillAndStroke();
@@ -1273,7 +1303,10 @@ export class PDFDocument {
   grid(cells: ((doc: this) => void)[], options: GridOptions): this {
     const cols = options.columns;
     if (!Number.isInteger(cols) || cols < 1) {
-      throw new FastPDFError(`grid() needs a positive integer "columns" (got ${cols})`, "INVALID_ARGUMENT");
+      throw new FastPDFError(
+        `grid() needs a positive integer "columns" (got ${cols})`,
+        "INVALID_ARGUMENT",
+      );
     }
     const rowGap = options.rowGap ?? options.gap ?? 12;
     for (let i = 0; i < cells.length; i += cols) {
@@ -1308,7 +1341,10 @@ export class PDFDocument {
   flowColumns(items: FlowItem[], options: FlowColumnsOptions = {}): FlowColumnsResult {
     const count = options.columns ?? options.widths?.length ?? 2;
     if (!Number.isInteger(count) || count < 1) {
-      throw new FastPDFError(`flowColumns() needs a positive integer "columns" (got ${count})`, "INVALID_ARGUMENT");
+      throw new FastPDFError(
+        `flowColumns() needs a positive integer "columns" (got ${count})`,
+        "INVALID_ARGUMENT",
+      );
     }
     if (this.suppressBreaks > 0) {
       throw new FastPDFError(
@@ -1340,7 +1376,9 @@ export class PDFDocument {
     // it lands. Measuring is the whole point: nothing is drawn twice blind.
     const measured = items.map((item) => {
       const spec = typeof item === "function" ? { render: item } : item;
-      const { height } = this.measureBlock((d) => spec.render(d as PDFDocument), { width: narrowest });
+      const { height } = this.measureBlock((d) => spec.render(d as PDFDocument), {
+        width: narrowest,
+      });
       return {
         render: spec.render,
         height,
@@ -1358,7 +1396,11 @@ export class PDFDocument {
     let dropped = 0;
 
     /** Greedily pack items into `count` columns of at most `limit` height. */
-    const pack = (from: number, top: number, height: number): { columns: number[][]; next: number } => {
+    const pack = (
+      from: number,
+      top: number,
+      height: number,
+    ): { columns: number[][]; next: number } => {
       const columns: number[][] = [];
       let i = from;
       for (let c = 0; c < count; c++) {
@@ -1414,7 +1456,10 @@ export class PDFDocument {
         // Shrink the column height until the remainder no longer fits in
         // fewer columns — the classic binary search for even columns.
         const rest = measured.slice(index);
-        const contentHeight = rest.reduce((a, it, i) => a + it.height + it.spacingAfter + (i > 0 ? it.spacingBefore : 0), 0);
+        const contentHeight = rest.reduce(
+          (a, it, i) => a + it.height + it.spacingAfter + (i > 0 ? it.spacingBefore : 0),
+          0,
+        );
         let lo = Math.max(...rest.map((it) => it.height));
         let hi = height;
         let best = height;
@@ -1472,7 +1517,10 @@ export class PDFDocument {
   ): this {
     const family = options.family.toLowerCase();
     if (isStandardFamily(family)) {
-      throw new FastPDFError(`"${family}" is a built-in family name — pick a different one`, "INVALID_ARGUMENT");
+      throw new FastPDFError(
+        `"${family}" is a built-in family name — pick a different one`,
+        "INVALID_ARGUMENT",
+      );
     }
     const slot = styleIndex(options.bold ?? false, options.italic ?? false);
     let variants = this.customFonts.get(family);
@@ -1498,7 +1546,10 @@ export class PDFDocument {
     if (variants) {
       const font = variants[styleIndex(bold, italic)] ?? variants[0];
       if (!font) {
-        throw new FastPDFError(`Font family "${family}" has no regular variant registered`, "UNKNOWN_FONT");
+        throw new FastPDFError(
+          `Font family "${family}" has no regular variant registered`,
+          "UNKNOWN_FONT",
+        );
       }
       return font;
     }
@@ -1552,7 +1603,13 @@ export class PDFDocument {
           const drawn = this.drawTextLine(line, font, style, x, y, width);
           // A rotated block's link rectangle would no longer cover the glyphs.
           if (drawn && options.link !== undefined && rotate === 0) {
-            this.page.links.push({ x: drawn.x, y, width: drawn.width, height: lineStep, target: options.link });
+            this.page.links.push({
+              x: drawn.x,
+              y,
+              width: drawn.width,
+              height: lineStep,
+              target: options.link,
+            });
           }
           y += lineStep;
         }
@@ -1596,7 +1653,13 @@ export class PDFDocument {
       if (this.cursorY < before) pageBreaks++;
       const drawn = this.drawTextLine(line, font, style, x, this.cursorY, width);
       if (drawn && options.link !== undefined) {
-        this.page.links.push({ x: drawn.x, y: this.cursorY, width: drawn.width, height: lineStep, target: options.link });
+        this.page.links.push({
+          x: drawn.x,
+          y: this.cursorY,
+          width: drawn.width,
+          height: lineStep,
+          target: options.link,
+        });
       }
       this.cursorY += lineStep;
     }
@@ -1712,11 +1775,17 @@ export class PDFDocument {
         content.strokeColor(style.color).lineWidth(thickness);
         if (style.underline) {
           const uy = this.page.ty(baselineTop + size * 0.1);
-          content.moveTo(x + offset, uy).lineTo(x + offset + drawnWidth, uy).stroke();
+          content
+            .moveTo(x + offset, uy)
+            .lineTo(x + offset + drawnWidth, uy)
+            .stroke();
         }
         if (style.strikethrough) {
           const sy = this.page.ty(baselineTop - size * 0.25);
-          content.moveTo(x + offset, sy).lineTo(x + offset + drawnWidth, sy).stroke();
+          content
+            .moveTo(x + offset, sy)
+            .lineTo(x + offset + drawnWidth, sy)
+            .stroke();
         }
       }
     });
@@ -1735,13 +1804,16 @@ export class PDFDocument {
     const hasFooter = options.footer ?? false;
     const family = this.defaults.font;
     const widths = columnWidths(this.flowWidth, columns, options.widths);
-    const resolve = (bold: boolean, italic: boolean): Font => this.resolveFontStyle(family, bold, italic);
+    const resolve = (bold: boolean, italic: boolean): Font =>
+      this.resolveFontStyle(family, bold, italic);
 
     const borderWidth = options.borderWidth ?? 0.5;
     const borderColor = parseColor(options.borderColor ?? "#c8ccd4");
     const headerFill = parseColor(options.headerFill ?? "#eef0f4");
-    const headerColor = options.headerColor !== undefined ? parseColor(options.headerColor) : this.defaults.color;
-    const footerFill = options.footerFill !== undefined ? parseColor(options.footerFill) : headerFill;
+    const headerColor =
+      options.headerColor !== undefined ? parseColor(options.headerColor) : this.defaults.color;
+    const footerFill =
+      options.footerFill !== undefined ? parseColor(options.footerFill) : headerFill;
     const zebraFill = options.zebraFill !== undefined ? parseColor(options.zebraFill) : undefined;
 
     const measured = measureTable(rows, widths, {
@@ -1770,12 +1842,21 @@ export class PDFDocument {
 
     const drawRow = (row: MeasuredRow, zebra: boolean): void => {
       const yTop = this.cursorY;
-      const rowFill = row.isHeader ? headerFill : row.isFooter ? footerFill : zebra ? zebraFill : undefined;
+      const rowFill = row.isHeader
+        ? headerFill
+        : row.isFooter
+          ? footerFill
+          : zebra
+            ? zebraFill
+            : undefined;
       for (const mc of row.cells) {
         const x = tableX + mc.x;
         const fill = mc.cell.fill !== undefined ? parseColor(mc.cell.fill) : rowFill;
         if (fill) {
-          this.page.content.fillColor(fill).rect(x, this.page.ty(yTop + mc.height), mc.width, mc.height).fill();
+          this.page.content
+            .fillColor(fill)
+            .rect(x, this.page.ty(yTop + mc.height), mc.width, mc.height)
+            .fill();
         }
         if (borderWidth > 0) {
           this.page.content
@@ -1784,10 +1865,16 @@ export class PDFDocument {
             .rect(x, this.page.ty(yTop + mc.height), mc.width, mc.height)
             .stroke();
         }
-        const font = resolve(mc.cell.bold ?? (row.isHeader || row.isFooter), mc.cell.italic ?? false);
-        const color = mc.cell.color !== undefined
-          ? parseColor(mc.cell.color)
-          : row.isHeader ? headerColor : this.defaults.color;
+        const font = resolve(
+          mc.cell.bold ?? (row.isHeader || row.isFooter),
+          mc.cell.italic ?? false,
+        );
+        const color =
+          mc.cell.color !== undefined
+            ? parseColor(mc.cell.color)
+            : row.isHeader
+              ? headerColor
+              : this.defaults.color;
         const innerWidth = mc.width - 2 * padding;
         // Vertical placement inside the (possibly taller) cell box.
         const slack = Math.max(0, mc.height - 2 * padding - mc.contentHeight);
@@ -1811,7 +1898,13 @@ export class PDFDocument {
             const baseline = this.page.ty(lineY + (font.ascent * fontSize) / 1000);
             this.page.content
               .fillColor(color)
-              .text(font.encode(line), x + padding + offset, baseline, this.page.fontRes(font), fontSize);
+              .text(
+                font.encode(line),
+                x + padding + offset,
+                baseline,
+                this.page.fontRes(font),
+                fontSize,
+              );
           }
           lineY += fontSize * lineHeight;
         }
@@ -1839,7 +1932,7 @@ export class PDFDocument {
       drawRow(header, false);
     }
     let zebraIndex = 0;
-    for (let i = 0; i < body.length; ) {
+    for (let i = 0; i < body.length;) {
       let end = i;
       while (end < body.length - 1 && body[end]!.keepWithNext) end++;
       const groupHeight = body.slice(i, end + 1).reduce((a, r) => a + r.height, 0);
@@ -1875,8 +1968,9 @@ export class PDFDocument {
     options: ObjectTableOptions<T> = {},
   ): this {
     if (records.length === 0) return this;
-    const specs: ObjectTableColumn<T>[] = (options.columns ?? (Object.keys(records[0]!) as (keyof T & string)[]))
-      .map((c) => (typeof c === "string" ? { key: c } : c));
+    const specs: ObjectTableColumn<T>[] = (
+      options.columns ?? (Object.keys(records[0]!) as (keyof T & string)[])
+    ).map((c) => (typeof c === "string" ? { key: c } : c));
     if (specs.length === 0) return this;
 
     // Mixed widths: explicit ones are kept, the rest share the leftover space.
@@ -1959,8 +2053,7 @@ export class PDFDocument {
     // real vector clipping, so it works identically on a server and in a
     // browser, with no Canvas pre-processing.
     if (options.radius !== undefined) assertFinite(options.radius, "image radius");
-    const requested =
-      options.shape === "circle" ? Math.min(boxW, boxH) / 2 : options.radius ?? 0;
+    const requested = options.shape === "circle" ? Math.min(boxW, boxH) / 2 : (options.radius ?? 0);
     const radius = Math.max(0, Math.min(requested, boxW / 2, boxH / 2));
     if (radius > 0) clip = true;
 
@@ -2055,13 +2148,13 @@ export class PDFDocument {
 
     const paint = (boxX: number, boxTop: number): void => {
       const pageH = this.page.size.height;
-      const base: Mat = [
-        sx, 0, 0, -sy,
-        boxX + ox - vbX * sx,
-        pageH - boxTop - oy + vbY * sy,
-      ];
+      const base: Mat = [sx, 0, 0, -sy, boxX + ox - vbX * sx, pageH - boxTop - oy + vbY * sy];
       const clip = fit === "cover";
-      if (clip) this.page.content.save().rect(boxX, this.page.ty(boxTop + boxH), boxW, boxH).clip();
+      if (clip)
+        this.page.content
+          .save()
+          .rect(boxX, this.page.ty(boxTop + boxH), boxW, boxH)
+          .clip();
       const ctx: SvgContext = {
         content: this.page.content,
         gsRes: (alpha) => this.page.gsRes(alpha),
@@ -2070,7 +2163,9 @@ export class PDFDocument {
           const font = this.resolveFontStyle(this.defaults.font, false, false);
           const w = font.widthOf(str, size);
           const shift = anchor === "middle" ? -w / 2 : anchor === "end" ? -w : 0;
-          this.page.content.fillColor(fill).text(font.encode(str), px + shift, py, this.page.fontRes(font), size);
+          this.page.content
+            .fillColor(fill)
+            .text(font.encode(str), px + shift, py, this.page.fontRes(font), size);
         },
       };
       renderSvg(svg, base, ctx);
@@ -2159,7 +2254,10 @@ export class PDFDocument {
           break;
         case "table": {
           const flat = (runs: MdRun[]): string => runs.map((r) => r.text).join("");
-          const rows: CellValue[][] = [block.headers.map(flat), ...block.rows.map((r) => r.map(flat))];
+          const rows: CellValue[][] = [
+            block.headers.map(flat),
+            ...block.rows.map((r) => r.map(flat)),
+          ];
           this.table(rows, { header: true, aligns: block.aligns });
           this.cursorY += base * 0.4;
           break;
@@ -2177,11 +2275,16 @@ export class PDFDocument {
     const height = lines.length * step + pad * 2;
     this.breakPageIfNeeded(Math.min(height, this.page.contentBottom - this.page.margins.top));
     const top = this.cursorY;
-    this.page.content.fillColor(MD_CODE_BG).rect(this.flowX, this.page.ty(top + height), this.flowWidth, height).fill();
+    this.page.content
+      .fillColor(MD_CODE_BG)
+      .rect(this.flowX, this.page.ty(top + height), this.flowWidth, height)
+      .fill();
     let y = top + pad;
     for (const line of lines) {
       const baseline = this.page.ty(y + (font.ascent * size) / 1000);
-      this.page.content.fillColor(MD_CODE_COLOR).text(font.encode(line), this.flowX + pad, baseline, this.page.fontRes(font), size);
+      this.page.content
+        .fillColor(MD_CODE_COLOR)
+        .text(font.encode(line), this.flowX + pad, baseline, this.page.fontRes(font), size);
       y += step;
     }
     this.cursorY = top + height + base * 0.5;
@@ -2211,7 +2314,11 @@ export class PDFDocument {
     this.cursorY += base * 0.3;
   }
 
-  private mdList(block: Extract<MdBlock, { type: "list" }>, options: MarkdownOptions, base: number): void {
+  private mdList(
+    block: Extract<MdBlock, { type: "list" }>,
+    options: MarkdownOptions,
+    base: number,
+  ): void {
     const font = this.resolveFontStyle(this.defaults.font, false, false);
     const indent = base * 1.6;
     const prevFrame = this.frame;
@@ -2224,7 +2331,12 @@ export class PDFDocument {
       this.page.content
         .fillColor(this.defaults.color)
         .text(font.encode(marker), outerX, baseline, this.page.fontRes(font), base);
-      this.frame = { x: outerX + indent, width: prevFrame ? prevFrame.width - indent : this.page.contentWidth - (outerX - this.page.margins.left) - indent };
+      this.frame = {
+        x: outerX + indent,
+        width: prevFrame
+          ? prevFrame.width - indent
+          : this.page.contentWidth - (outerX - this.page.margins.left) - indent,
+      };
       try {
         this.renderMarkdown(item, options);
       } finally {
@@ -2241,8 +2353,17 @@ export class PDFDocument {
    * one line. A "word" may span several runs (e.g. `super**cali**`), so
    * wrapping works on whitespace-separated chunks, not per run.
    */
-  private mdInline(runs: MdRun[], opts: { size: number; bold?: boolean; lineHeight?: number }): void {
-    interface Seg { text: string; font: Font; color: RGB; link?: string; underline: boolean }
+  private mdInline(
+    runs: MdRun[],
+    opts: { size: number; bold?: boolean; lineHeight?: number },
+  ): void {
+    interface Seg {
+      text: string;
+      font: Font;
+      color: RGB;
+      link?: string;
+      underline: boolean;
+    }
     const size = opts.size;
     const lineHeight = opts.lineHeight ?? this.defaults.lineHeight;
     const step = size * lineHeight;
@@ -2256,16 +2377,28 @@ export class PDFDocument {
     let pendingSpace = false;
     const closeChunk = (): void => {
       if (cur.length > 0) {
-        chunks.push({ segs: cur, width: cur.reduce((a, s) => a + s.font.widthOf(s.text, size), 0), spaceBefore: curSpaceBefore });
+        chunks.push({
+          segs: cur,
+          width: cur.reduce((a, s) => a + s.font.widthOf(s.text, size), 0),
+          spaceBefore: curSpaceBefore,
+        });
         cur = [];
       }
     };
     for (const run of runs) {
       const font = run.code
         ? this.resolveFontStyle("courier", false, false)
-        : this.resolveFontStyle(this.defaults.font, (opts.bold ?? false) || !!run.bold, !!run.italic);
+        : this.resolveFontStyle(
+            this.defaults.font,
+            (opts.bold ?? false) || !!run.bold,
+            !!run.italic,
+          );
       const link = run.link !== undefined ? this.mdSafeLink(run.link) : undefined;
-      const color = run.code ? MD_CODE_COLOR : link !== undefined ? MD_LINK_COLOR : this.defaults.color;
+      const color = run.code
+        ? MD_CODE_COLOR
+        : link !== undefined
+          ? MD_LINK_COLOR
+          : this.defaults.color;
       for (const part of run.text.split(/(\s+)/)) {
         if (part === "") continue;
         if (/^\s+$/.test(part)) {
@@ -2291,17 +2424,23 @@ export class PDFDocument {
         this.cursorY += step;
         this.breakPageIfNeeded(step);
         x = startX;
-        lineHasContent = false;
       } else {
         x += lead;
       }
       for (const seg of chunk.segs) {
         const w = seg.font.widthOf(seg.text, size);
         const baseline = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000);
-        this.page.content.fillColor(seg.color).text(seg.font.encode(seg.text), x, baseline, this.page.fontRes(seg.font), size);
+        this.page.content
+          .fillColor(seg.color)
+          .text(seg.font.encode(seg.text), x, baseline, this.page.fontRes(seg.font), size);
         if (seg.underline) {
           const uy = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000 + size * 0.1);
-          this.page.content.strokeColor(seg.color).lineWidth(Math.max(0.4, size * 0.04)).moveTo(x, uy).lineTo(x + w, uy).stroke();
+          this.page.content
+            .strokeColor(seg.color)
+            .lineWidth(Math.max(0.4, size * 0.04))
+            .moveTo(x, uy)
+            .lineTo(x + w, uy)
+            .stroke();
         }
         if (seg.link !== undefined) {
           this.page.links.push({ x, y: this.cursorY, width: w, height: step, target: seg.link });
@@ -2328,13 +2467,19 @@ export class PDFDocument {
     if (entry) return entry;
     const format = detectFormat(bytes);
     if (!format) {
-      throw new FastPDFError("Unsupported image format (JPEG, PNG, GIF and WebP are supported)", "UNSUPPORTED_IMAGE");
+      throw new FastPDFError(
+        "Unsupported image format (JPEG, PNG, GIF and WebP are supported)",
+        "UNSUPPORTED_IMAGE",
+      );
     }
     const size =
-      format === "jpeg" ? parseJpeg(bytes)
-      : format === "png" ? pngSize(bytes)
-      : format === "gif" ? gifSize(bytes)
-      : webpSize(bytes);
+      format === "jpeg"
+        ? parseJpeg(bytes)
+        : format === "png"
+          ? pngSize(bytes)
+          : format === "gif"
+            ? gifSize(bytes)
+            : webpSize(bytes);
     entry = {
       id: `img${this.images.size}`,
       bytes,
@@ -2387,7 +2532,10 @@ export class PDFDocument {
     assertFinite(rx, "ellipse rx");
     assertFinite(ry, "ellipse ry");
     if (rx <= 0 || ry <= 0) {
-      throw new FastPDFError(`Ellipse radii must be positive (got ${rx}, ${ry})`, "INVALID_ARGUMENT");
+      throw new FastPDFError(
+        `Ellipse radii must be positive (got ${rx}, ${ry})`,
+        "INVALID_ARGUMENT",
+      );
     }
     return this.paintShape(options, () => {
       const c = this.page.content;
@@ -2497,11 +2645,16 @@ export class PDFDocument {
   /** Diagonal translucent watermark text on every page. */
   watermark(text: string, options: WatermarkOptions = {}): this {
     return this.onPage((doc, info) => {
-      const font = doc.resolveFontStyle(options.font ?? doc.defaults.font, options.bold ?? true, false);
+      const font = doc.resolveFontStyle(
+        options.font ?? doc.defaults.font,
+        options.bold ?? true,
+        false,
+      );
       const diag = Math.hypot(info.size.width, info.size.height);
       const w100 = font.widthOf(text, 100);
       const size = options.size ?? (w100 > 0 ? (0.6 * diag * 100) / w100 : 48);
-      const angleDeg = options.angle ?? (-Math.atan2(info.size.height, info.size.width) * 180) / Math.PI;
+      const angleDeg =
+        options.angle ?? (-Math.atan2(info.size.height, info.size.width) * 180) / Math.PI;
       const rad = (-angleDeg * Math.PI) / 180;
       const cos = Math.cos(rad);
       const sin = Math.sin(rad);
@@ -2513,7 +2666,9 @@ export class PDFDocument {
       page.content
         .save()
         .setGState(page.gsRes(clampAlpha(options.opacity ?? 0.12)))
-        .fillColor(options.color !== undefined ? parseColor(options.color) : { r: 0.5, g: 0.5, b: 0.55 })
+        .fillColor(
+          options.color !== undefined ? parseColor(options.color) : { r: 0.5, g: 0.5, b: 0.55 },
+        )
         .transform(cos, sin, -sin, cos, cx - cos * cx + sin * cyPdf, cyPdf - sin * cx - cos * cyPdf)
         .text(font.encode(text), cx - width / 2, cyPdf - size * 0.35, page.fontRes(font), size)
         .restore();
@@ -2581,7 +2736,8 @@ export class PDFDocument {
     if (options.x !== undefined) assertFinite(options.x, "button x");
     if (options.y !== undefined) assertFinite(options.y, "button y");
     if (options.height !== undefined) assertNonNegative(options.height, "button height");
-    if (options.borderWidth !== undefined) assertNonNegative(options.borderWidth, "button borderWidth");
+    if (options.borderWidth !== undefined)
+      assertNonNegative(options.borderWidth, "button borderWidth");
     checkLinkTarget(options.link);
 
     const font = this.resolveFontStyle(options.font ?? this.defaults.font, bold, false);
@@ -2672,7 +2828,10 @@ export class PDFDocument {
         );
       }
       if (this.sigFieldNames.has(name)) {
-        throw new FastPDFError(`Signature field name "${name}" is already used`, "INVALID_ARGUMENT");
+        throw new FastPDFError(
+          `Signature field name "${name}" is already used`,
+          "INVALID_ARGUMENT",
+        );
       }
     } else {
       let n = this.sigFieldNames.size + 1;
@@ -2757,7 +2916,11 @@ export class PDFDocument {
 
     const tocStart = this.pages.length;
     this.addPage();
-    this.text(options.title ?? "Contents", { size: titleSize, bold: true, spacingAfter: entrySize });
+    this.text(options.title ?? "Contents", {
+      size: titleSize,
+      bold: true,
+      spacingAfter: entrySize,
+    });
     for (const entry of entries) {
       this.breakPageIfNeeded(rowStep);
       const original = indexOf.get(entry.page);
@@ -2821,10 +2984,13 @@ export class PDFDocument {
     const imageRefs = new Map<string, Ref>();
     for (const entry of this.images.values()) {
       const parsed: ParsedImage =
-        entry.format === "jpeg" ? parseJpeg(entry.bytes)
-        : entry.format === "png" ? await parsePng(entry.bytes)
-        : entry.format === "gif" ? await parseGif(entry.bytes)
-        : await parseWebp(entry.bytes);
+        entry.format === "jpeg"
+          ? parseJpeg(entry.bytes)
+          : entry.format === "png"
+            ? await parsePng(entry.bytes)
+            : entry.format === "gif"
+              ? await parseGif(entry.bytes)
+              : await parseWebp(entry.bytes);
       let smaskRef: Ref | undefined;
       if (parsed.smask) {
         smaskRef = writer.addStream(
@@ -2905,10 +3071,16 @@ export class PDFDocument {
         let sigValueRef: Ref | undefined;
         if (field.sign !== undefined) {
           if (signState !== undefined) {
-            throw new FastPDFError("at most one signed signature field per document", "INVALID_ARGUMENT");
+            throw new FastPDFError(
+              "at most one signed signature field per document",
+              "INVALID_ARGUMENT",
+            );
           }
           if (this.encryption !== undefined) {
-            throw new FastPDFError("signing an encrypted document is not supported", "INVALID_ARGUMENT");
+            throw new FastPDFError(
+              "signing an encrypted document is not supported",
+              "INVALID_ARGUMENT",
+            );
           }
           // The signature dictionary is emitted as raw bytes so the /ByteRange
           // and /Contents placeholders keep their exact fixed widths.
@@ -2960,7 +3132,8 @@ export class PDFDocument {
         Type: new Name("Page"),
         Parent: pagesRef,
         MediaBox: [0, 0, page.size.width, page.size.height],
-        Contents: parts?.contentPrefix !== undefined ? [parts.contentPrefix, contentRef] : contentRef,
+        Contents:
+          parts?.contentPrefix !== undefined ? [parts.contentPrefix, contentRef] : contentRef,
         Annots: annots.length > 0 ? annots : undefined,
         Resources: this.pageResources(page, fontRefs, imageRefs, gsRefs, parts?.form),
       });
@@ -2976,16 +3149,21 @@ export class PDFDocument {
       // Natural language, for screen readers and PDF/UA conformance.
       Lang: this.language !== undefined ? textString(this.language) : undefined,
       // With a title present, tell viewers to show it instead of the filename.
-      ViewerPreferences:
-        this.metadata.title !== undefined ? { DisplayDocTitle: true } : undefined,
+      ViewerPreferences: this.metadata.title !== undefined ? { DisplayDocTitle: true } : undefined,
       // SigFlags: bit 1 = SignaturesExist. A real signature also sets bit 2
       // (AppendOnly, value 3) so viewers preserve the signed bytes.
       AcroForm:
-        acroFields.length > 0 ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 } : undefined,
+        acroFields.length > 0
+          ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 }
+          : undefined,
     });
     const infoRef = writer.add(this.buildInfo());
 
-    if (this.encryption !== undefined && !supportsEncryption() && this.encryption.onUnsupported === "skip") {
+    if (
+      this.encryption !== undefined &&
+      !supportsEncryption() &&
+      this.encryption.onUnsupported === "skip"
+    ) {
       // Explicitly opted in to an unencrypted fallback (e.g. an insecure
       // browser context): render the document rather than failing the export.
       const plain = await writer.finalize(catalogRef, infoRef);
@@ -3014,7 +3192,8 @@ export class PDFDocument {
     const fontDict: Record<string, PDFValue> = {};
     for (const { font, res } of page.fontsUsed.values()) fontDict[res] = fontRefs.get(font.key)!;
     const xobjectDict: Record<string, PDFValue> = {};
-    for (const { entry, res } of page.imagesUsed.values()) xobjectDict[res] = imageRefs.get(entry.id)!;
+    for (const { entry, res } of page.imagesUsed.values())
+      xobjectDict[res] = imageRefs.get(entry.id)!;
     if (extraForm !== undefined) xobjectDict[extraForm.res] = extraForm.ref;
     const gsDict: Record<string, PDFValue> = {};
     for (const [key, { res }] of page.extGStatesUsed) gsDict[res] = gsRefs.get(key)!;
@@ -3071,7 +3250,14 @@ export class PDFDocument {
         const draw = new ContentStream();
         draw
           .save()
-          .transform(placement[0], placement[1], placement[2], placement[3], placement[4], placement[5])
+          .transform(
+            placement[0],
+            placement[1],
+            placement[2],
+            placement[3],
+            placement[4],
+            placement[5],
+          )
           .raw(`/${IMPORT_RES} Do`)
           .restore();
         out.set(page, {
@@ -3124,7 +3310,13 @@ export class PDFDocument {
           popRef,
           writer.addStream({}, latin1Bytes(`q /${OVERLAY_RES} Do Q\n`)),
         ];
-        pageDict.Resources = await resourcesWithOverlay(reader, copier, info.source, OVERLAY_RES, overlayRef);
+        pageDict.Resources = await resourcesWithOverlay(
+          reader,
+          copier,
+          info.source,
+          OVERLAY_RES,
+          overlayRef,
+        );
       }
       out.set(page, {
         pageDict,
@@ -3173,7 +3365,12 @@ export class PDFDocument {
    * `transform` is set on pages appended 1:1, whose annotation coordinates are
    * the source page's rather than our top-left drawing space.
    */
-  private buildLinkAnnot(link: PendingLink, page: Page, refOf: Map<Page, Ref>, transform?: Matrix): PDFValue {
+  private buildLinkAnnot(
+    link: PendingLink,
+    page: Page,
+    refOf: Map<Page, Ref>,
+    transform?: Matrix,
+  ): PDFValue {
     const box: [number, number, number, number] = [
       link.x,
       page.ty(link.y + link.height),
@@ -3191,7 +3388,10 @@ export class PDFDocument {
     if (typeof target === "string" && target.startsWith("#")) {
       const anchor = this.anchors.get(target.slice(1));
       if (!anchor) {
-        throw new FastPDFError(`Unknown anchor "${target}" — call anchor("${target.slice(1)}") first`, "INVALID_ARGUMENT");
+        throw new FastPDFError(
+          `Unknown anchor "${target}" — call anchor("${target.slice(1)}") first`,
+          "INVALID_ARGUMENT",
+        );
       }
       target = anchor;
     }
@@ -3199,7 +3399,8 @@ export class PDFDocument {
       return { ...common, A: { S: new Name("URI"), URI: new PDFString(toAsciiUri(target)) } };
     }
     const pageRef = refOf.get(target.page);
-    if (!pageRef) throw new FastPDFError("Link target page is not part of this document", "INTERNAL");
+    if (!pageRef)
+      throw new FastPDFError("Link target page is not part of this document", "INTERNAL");
     return { ...common, Dest: [pageRef, new Name("XYZ"), null, target.page.ty(target.y), null] };
   }
 
@@ -3274,8 +3475,7 @@ export class PDFDocument {
   async toBuffer(): Promise<Uint8Array> {
     const bytes = await this.render();
     const B = (globalThis as Record<string, unknown>)["Buffer"] as
-      | { from(b: Uint8Array): Uint8Array }
-      | undefined;
+      { from(b: Uint8Array): Uint8Array } | undefined;
     return B ? B.from(bytes) : bytes;
   }
 
@@ -3385,13 +3585,23 @@ function resolveSize(value: SizeInput, available: number): number {
   if (typeof value === "number") return value;
   const m = /^(\d+(?:\.\d+)?)\s*%$/.exec(value.trim());
   if (!m) {
-    throw new FastPDFError(`Invalid size "${value}" — use points (number) or a percentage like "50%"`, "INVALID_ARGUMENT");
+    throw new FastPDFError(
+      `Invalid size "${value}" — use points (number) or a percentage like "50%"`,
+      "INVALID_ARGUMENT",
+    );
   }
   return (parseFloat(m[1]!) / 100) * available;
 }
 
 /** Build a (rounded) rectangle path in PDF space; `yTop` is the top edge. */
-function buildRectPath(c: ContentStream, x: number, yTop: number, width: number, height: number, r: number): void {
+function buildRectPath(
+  c: ContentStream,
+  x: number,
+  yTop: number,
+  width: number,
+  height: number,
+  r: number,
+): void {
   const yBot = yTop - height;
   if (r <= 0) {
     c.rect(x, yBot, width, height);

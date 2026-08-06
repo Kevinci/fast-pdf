@@ -37,10 +37,14 @@ export class TTFFont {
     this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
     const version = this.view.getUint32(0);
     if (version === 0x4f54544f) {
-      throw new Error("CFF-based OpenType fonts (.otf with CFF outlines) are not supported yet — use a TrueType (.ttf) build");
+      throw new Error(
+        "CFF-based OpenType fonts (.otf with CFF outlines) are not supported yet — use a TrueType (.ttf) build",
+      );
     }
     if (version === 0x74746366) {
-      throw new Error("TrueType collections (.ttc) are not supported — extract a single font first");
+      throw new Error(
+        "TrueType collections (.ttc) are not supported — extract a single font first",
+      );
     }
     if (version === 0x774f4646 || version === 0x774f4632) {
       throw new Error("WOFF/WOFF2 files are not supported — use the underlying .ttf");
@@ -53,7 +57,10 @@ export class TTFFont {
     for (let i = 0; i < numTables; i++) {
       const p = 12 + i * 16;
       const tag = String.fromCharCode(bytes[p]!, bytes[p + 1]!, bytes[p + 2]!, bytes[p + 3]!);
-      this.tables.set(tag, { offset: this.view.getUint32(p + 8), length: this.view.getUint32(p + 12) });
+      this.tables.set(tag, {
+        offset: this.view.getUint32(p + 8),
+        length: this.view.getUint32(p + 12),
+      });
     }
 
     const head = this.require("head");
@@ -135,8 +142,10 @@ export class TTFFont {
       components.push(view.getUint16(pos + 2));
       pos += 4;
       pos += flags & 0x0001 ? 4 : 2; // ARG_1_AND_2_ARE_WORDS
-      if (flags & 0x0008) pos += 2; // WE_HAVE_A_SCALE
-      else if (flags & 0x0040) pos += 4; // X_AND_Y_SCALE
+      if (flags & 0x0008)
+        pos += 2; // WE_HAVE_A_SCALE
+      else if (flags & 0x0040)
+        pos += 4; // X_AND_Y_SCALE
       else if (flags & 0x0080) pos += 8; // TWO_BY_TWO
       if (!(flags & 0x0020)) break; // MORE_COMPONENTS
     }
@@ -157,8 +166,7 @@ export class TTFFont {
       const encoding = v.getUint16(p + 2);
       const offset = base + v.getUint32(p + 4);
       const format = v.getUint16(offset);
-      const unicode =
-        (platform === 3 && (encoding === 1 || encoding === 10)) || platform === 0;
+      const unicode = (platform === 3 && (encoding === 1 || encoding === 10)) || platform === 0;
       if (!unicode || (format !== 4 && format !== 12)) continue;
       if (!best || format > best.format) best = { offset, format };
     }

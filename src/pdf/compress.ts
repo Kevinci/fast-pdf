@@ -38,7 +38,9 @@ export async function inflate(data: Uint8Array, maxBytes = Infinity): Promise<Ui
   if (!supportsDecompression()) {
     throw new Error("DecompressionStream is not available in this runtime");
   }
-  const stream = new Blob([data as BlobPart]).stream().pipeThrough(new DecompressionStream("deflate"));
+  const stream = new Blob([data as BlobPart])
+    .stream()
+    .pipeThrough(new DecompressionStream("deflate"));
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
   let total = 0;

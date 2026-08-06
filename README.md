@@ -1,7 +1,7 @@
 # fast-pdf
 
 **Fast, dependency-free, direct-to-PDF generation** — for Node.js, Bun, Deno, browsers and
-edge/serverless runtimes. Think *esbuild for PDFs*: no Chromium, no native binaries,
+edge/serverless runtimes. Think _esbuild for PDFs_: no Chromium, no native binaries,
 no runtime dependencies, ~13 KB min+gzip.
 
 **📄 Demo & Feature-Guide (deutsch): <https://kevinci.github.io/fast-pdf/>**
@@ -23,15 +23,15 @@ await pdf.save("document.pdf");
 
 ## Why
 
-| | fast-pdf | Component-framework renderers | HTML → headless browser |
-|---|---|---|---|
-| Runtime deps | **0** | 10+, incl. a UI framework as peer dependency | a ~300 MB browser binary |
-| Runs on | Node, Bun, Deno, browser, edge | Node + browser; edge runtimes are tricky | servers that can run a browser |
-| 3-page document | **~1.6 ms** | element tree → flexbox layout → PDF lib | ~1000 ms+ (browser startup + render) |
-| Tables | built-in: repeating headers, col/row spans, JSON → table | hand-built from flexbox views | HTML/CSS |
-| Signature form fields | ✅ AcroForm | — | ❌ printed output has no form fields |
-| TOC, outlines, watermark | ✅ built-in | partly | ❌ |
-| Bundle | ~94 KB ESM, tree-shakeable | several 100 KB + the framework | n/a |
+|                          | fast-pdf                                                 | Component-framework renderers                | HTML → headless browser              |
+| ------------------------ | -------------------------------------------------------- | -------------------------------------------- | ------------------------------------ |
+| Runtime deps             | **0**                                                    | 10+, incl. a UI framework as peer dependency | a ~300 MB browser binary             |
+| Runs on                  | Node, Bun, Deno, browser, edge                           | Node + browser; edge runtimes are tricky     | servers that can run a browser       |
+| 3-page document          | **~1.6 ms**                                              | element tree → flexbox layout → PDF lib      | ~1000 ms+ (browser startup + render) |
+| Tables                   | built-in: repeating headers, col/row spans, JSON → table | hand-built from flexbox views                | HTML/CSS                             |
+| Signature form fields    | ✅ AcroForm                                              | —                                            | ❌ printed output has no form fields |
+| TOC, outlines, watermark | ✅ built-in                                              | partly                                       | ❌                                   |
+| Bundle                   | ~94 KB ESM, tree-shakeable                               | several 100 KB + the framework               | n/a                                  |
 
 Measured on this repo's benchmark (`npm run bench`, Apple Silicon, Node 22):
 a 3-page text document renders in **~1.3 ms**, a 170-page / 5000-row table document
@@ -61,13 +61,13 @@ async function downloadOrdersPdf() {
   pdf.text("Order overview", { size: 20, bold: true, spacingAfter: 12 });
   pdf.objectTable(orders, {
     columns: [
-      { key: "id",       header: "No.",    align: "right", width: 60 },
+      { key: "id", header: "No.", align: "right", width: 60 },
       { key: "customer", header: "Customer" },
-      { key: "total",    header: "Amount", align: "right", format: (v) => `${v} €` },
+      { key: "total", header: "Amount", align: "right", format: (v) => `${v} €` },
     ],
   });
 
-  await pdf.save("orders.pdf");   // triggers the browser download directly
+  await pdf.save("orders.pdf"); // triggers the browser download directly
 }
 
 document.querySelector("#pdf-btn")!.addEventListener("click", downloadOrdersPdf);
@@ -87,11 +87,11 @@ explicitly? `import { PDFDocument } from "fast-pdf/browser"`.
 ## Output — pick what fits your platform
 
 ```ts
-const bytes = await pdf.render();      // Uint8Array — works everywhere
-await pdf.save("invoice.pdf");         // Node/Bun/Deno: writes file · browser: download
-const buffer = await pdf.toBuffer();   // Node Buffer (Uint8Array elsewhere)
-const blob = await pdf.toBlob();       // Blob for FormData, object URLs, …
-const stream = pdf.toStream();         // ReadableStream<Uint8Array>, 64 KiB chunks
+const bytes = await pdf.render(); // Uint8Array — works everywhere
+await pdf.save("invoice.pdf"); // Node/Bun/Deno: writes file · browser: download
+const buffer = await pdf.toBuffer(); // Node Buffer (Uint8Array elsewhere)
+const blob = await pdf.toBlob(); // Blob for FormData, object URLs, …
+const stream = pdf.toStream(); // ReadableStream<Uint8Array>, 64 KiB chunks
 
 // Edge / API route:
 return new Response(pdf.toStream(), {
@@ -134,11 +134,11 @@ await pdf.append(pdfBytes);          // append the pages of an existing PDF
 ```
 
 `x` bridges the two coordinate modes: `text({ x })` **without** `y` is an
-offset *within* the flow area, while `text({ x, y })` and `rect(x, …)` take
+offset _within_ the flow area, while `text({ x, y })` and `rect(x, …)` take
 absolute page coordinates — `pdf.x + offset` converts between them.
 
 Text and tables break pages automatically; `pageBreak()` is the explicit
-counterpart — break exactly where *you* decide, optionally with a custom
+counterpart — break exactly where _you_ decide, optionally with a custom
 start position and per-page setup (`format`, `landscape`, `margins`).
 
 All coordinates are **top-left based, in points** (1 pt = 1/72″).
@@ -147,22 +147,24 @@ All coordinates are **top-left based, in points** (1 pt = 1/72″).
 
 ```ts
 pdf.text("Wrapped automatically with real font metrics — äöüß € „quotes“ – dashes.", {
-  size: 12, bold: true, italic: false,
-  color: "#334155",                  // "#rgb" | "#rrggbb" | { r, g, b } (0–255)
-  align: "justify",                  // left | center | right | justify
-  width: 300,                        // wrap width (default: content width)
+  size: 12,
+  bold: true,
+  italic: false,
+  color: "#334155", // "#rgb" | "#rrggbb" | { r, g, b } (0–255)
+  align: "justify", // left | center | right | justify
+  width: 300, // wrap width (default: content width)
   lineHeight: 1.4,
-  underline: true,                   // also: strikethrough
-  letterSpacing: 0.5,                // pt between characters
-  link: "https://example.com",       // or "#anchor" for internal links
-  opacity: 0.6,                      // constant alpha 0–1
-  rotate: -90,                       // clockwise around the block's top-left anchor
+  underline: true, // also: strikethrough
+  letterSpacing: 0.5, // pt between characters
+  link: "https://example.com", // or "#anchor" for internal links
+  opacity: 0.6, // constant alpha 0–1
+  rotate: -90, // clockwise around the block's top-left anchor
   spacingAfter: 8,
-  spacingBefore: 12,                 // collapses at the top of a page/column/region
-  keepWithNext: true,                // reserve room for the next 2 lines as well
+  spacingBefore: 12, // collapses at the top of a page/column/region
+  keepWithNext: true, // reserve room for the next 2 lines as well
 });
 
-pdf.text("Header", { y: 20, align: "right" });   // absolute position: no flow, no page break
+pdf.text("Header", { y: 20, align: "right" }); // absolute position: no flow, no page break
 pdf.widthOfText("How wide is this?", { size: 12, letterSpacing: 1.5 });
 ```
 
@@ -175,22 +177,25 @@ Digit groups stay whole (`2026-08-01`, `3/4`). Standard fonts use WinAnsi
 
 #### Measuring — one engine for drawing and measuring
 
-Every layout that positions blocks absolutely needs the height *before* it
+Every layout that positions blocks absolutely needs the height _before_ it
 draws. `measureText()` and `measureBlock()` run the exact code path that
 `text()` runs, so a pre-computed height can never drift from the drawn one.
 
 ```ts
 const m = pdf.measureText(summary, { width: 180, size: 9 });
-m.lines;        // the lines as they will actually be drawn
-m.width;        // widest line, letterSpacing included
-m.height;       // lines.length × lineHeight
-m.baseline;     // first baseline's offset from the block top
+m.lines; // the lines as they will actually be drawn
+m.width; // widest line, letterSpacing included
+m.height; // lines.length × lineHeight
+m.baseline; // first baseline's offset from the block top
 
 // Dry-run arbitrary flow content on a throwaway page:
-const { height } = pdf.measureBlock((d) => {
-  d.text("Profil", { bold: true, spacingAfter: 4 });
-  d.text(profile);
-}, { width: 260 });
+const { height } = pdf.measureBlock(
+  (d) => {
+    d.text("Profil", { bold: true, spacingAfter: 4 });
+    d.text(profile);
+  },
+  { width: 260 },
+);
 
 pdf.rect(x, y, 260, height + 16, { fill: "#f8fafc", radius: 6 });
 ```
@@ -200,8 +205,8 @@ images the callback created. Font metrics are available too, so optical
 alignment no longer needs a reverse-engineered constant:
 
 ```ts
-const f = pdf.fontMetrics({ size: 9 });   // { baseline, ascent, descent, capHeight, lineGap, lineHeight }
-pdf.circle(x, y + f.baseline - f.capHeight / 2, 2, { fill: accent });  // centred on the x-height
+const f = pdf.fontMetrics({ size: 9 }); // { baseline, ascent, descent, capHeight, lineGap, lineHeight }
+pdf.circle(x, y + f.baseline - f.capHeight / 2, 2, { fill: accent }); // centred on the x-height
 ```
 
 ### Custom fonts (TrueType, subsetted)
@@ -209,7 +214,7 @@ pdf.circle(x, y + f.baseline - f.capHeight / 2, 2, { fill: accent });  // centre
 ```ts
 const inter = await fetch("https://example.com/Inter.ttf").then((r) => r.arrayBuffer());
 pdf.registerFont(inter, { family: "inter" });
-pdf.registerFont(interBold, { family: "inter", bold: true });   // variants per style
+pdf.registerFont(interBold, { family: "inter", bold: true }); // variants per style
 pdf.text("Full Unicode — Ελληνικά, кириллица, 中文", { font: "inter" });
 ```
 
@@ -236,19 +241,27 @@ shaping (Arabic, Devanagari) are out of scope — see [Limitations](#limitations
 
 ```ts
 pdf.container(
-  { width: "80%", align: "center", padding: 12, margin: { top: 8 },
-    background: "#eef4ff", border: { color: "#4a7dff", width: 1 }, radius: 8, minHeight: 60 },
+  {
+    width: "80%",
+    align: "center",
+    padding: 12,
+    margin: { top: 8 },
+    background: "#eef4ff",
+    border: { color: "#4a7dff", width: 1 },
+    radius: 8,
+    minHeight: 60,
+  },
   (d) => d.text("A box that grows with its content."),
 );
 
 pdf.columns(
   [(d) => d.text("Left column"), (d) => d.text("Right column")],
-  { widths: ["35%", "65%"], gap: 16 },      // pt or percentages; default: equal
+  { widths: ["35%", "65%"], gap: 16 }, // pt or percentages; default: equal
 );
 
 pdf.grid(
   cards.map((c) => (d) => d.text(c.title)),
-  { columns: 3, gap: 10 },                  // rows break across pages, cells don't
+  { columns: 3, gap: 10 }, // rows break across pages, cells don't
 );
 ```
 
@@ -257,7 +270,7 @@ the cursor continues below the tallest column afterwards.
 
 #### Multi-column flow
 
-`columns()` places content *side by side* on one page. `flowColumns()` pours
+`columns()` places content _side by side_ on one page. `flowColumns()` pours
 a sequence of items **through** the columns — into the next column when one
 fills up, onto the next page when the last one does:
 
@@ -269,7 +282,7 @@ const { pages, dropped } = pdf.flowColumns(
       d.text(c.skills.join(" · "));
     },
     spacingBefore: 12,
-    keepWithNext: true,        // never leave this heading at the foot of a column
+    keepWithNext: true, // never leave this heading at the foot of a column
   })),
   { columns: 2, gap: 24, balance: true },
 );
@@ -309,21 +322,24 @@ tell you when the content did not fit instead of clipping it quietly. Pass
 ```ts
 pdf.table(
   [
-    [{ text: "Invoice Q3", colSpan: 3, align: "center" }],   // cells can span columns…
+    [{ text: "Invoice Q3", colSpan: 3, align: "center" }], // cells can span columns…
     ["Pos", "Item", "Price"],
     [{ text: "Consulting", rowSpan: 2 }, "8 h", "960,00 €"], // …and rows
     ["4 h", "480,00 €"],
     [{ text: "Total", colSpan: 2, bold: true }, "1.440,00 €"],
   ],
   {
-    widths: [40, 300, 100],           // pt; scaled down proportionally if too wide
+    widths: [40, 300, 100], // pt; scaled down proportionally if too wide
     aligns: ["right", "left", "right"],
-    header: true,                      // first row repeats on every page
-    footer: true,                      // last row styled like the header, drawn once
-    headerFill: "#0f172a", headerColor: "#ffffff",
+    header: true, // first row repeats on every page
+    footer: true, // last row styled like the header, drawn once
+    headerFill: "#0f172a",
+    headerColor: "#ffffff",
     zebraFill: "#f8fafc",
-    padding: 6, borderWidth: 0.5, borderColor: "#c8ccd4",
-    valign: "middle",                  // top | middle | bottom (per cell too)
+    padding: 6,
+    borderWidth: 0.5,
+    borderColor: "#c8ccd4",
+    valign: "middle", // top | middle | bottom (per cell too)
   },
 );
 ```
@@ -338,14 +354,17 @@ from an explicit `height`), and the callback gets its own cursor, so moving
 `doc.y` inside a cell cannot shift the rows below it:
 
 ```ts
-["TypeScript", {
-  valign: "middle",
-  render: (d, box) => {
-    d.rect(box.x, box.y, box.width, 7, { fill: "#e2e8f0", radius: 3.5 });
-    d.rect(box.x, box.y, box.width * 0.9, 7, { fill: "#2563eb", radius: 3.5 });
-    d.y = box.y + 7;                   // report the height you used
+[
+  "TypeScript",
+  {
+    valign: "middle",
+    render: (d, box) => {
+      d.rect(box.x, box.y, box.width, 7, { fill: "#e2e8f0", radius: 3.5 });
+      d.rect(box.x, box.y, box.width * 0.9, 7, { fill: "#2563eb", radius: 3.5 });
+      d.y = box.y + 7; // report the height you used
+    },
   },
-}]
+];
 ```
 
 **From a REST/JSON response** — `objectTable()` turns an array of records
@@ -354,16 +373,21 @@ straight into a table, no manual row mapping:
 ```ts
 const orders = await fetch("/api/orders").then((r) => r.json());
 
-pdf.objectTable(orders);            // columns = keys of the first record
+pdf.objectTable(orders); // columns = keys of the first record
 
-pdf.objectTable(orders, {           // …or pick order, headers, widths, formatting
+pdf.objectTable(orders, {
+  // …or pick order, headers, widths, formatting
   columns: [
-    { key: "id",       header: "No.",    align: "right", width: 60 },
+    { key: "id", header: "No.", align: "right", width: 60 },
     { key: "customer", header: "Customer" },
-    { key: "total",    header: "Amount", align: "right",
-      format: (v) => `${(v as number).toFixed(2)} €` },
+    {
+      key: "total",
+      header: "Amount",
+      align: "right",
+      format: (v) => `${(v as number).toFixed(2)} €`,
+    },
   ],
-  zebraFill: "#f8fafc",             // every option of table() works here too
+  zebraFill: "#f8fafc", // every option of table() works here too
 });
 ```
 
@@ -374,9 +398,9 @@ padding) pass through.
 ### Images
 
 ```ts
-pdf.image(jpegOrPngBytes, { width: 200 });               // flows with the cursor, keeps aspect
-pdf.image(logo, { x: 400, y: 30, width: 120 });          // absolute position
-pdf.image(photo, { width: 200, height: 200, fit: "cover" });  // fill | contain | cover
+pdf.image(jpegOrPngBytes, { width: 200 }); // flows with the cursor, keeps aspect
+pdf.image(logo, { x: 400, y: 30, width: 120 }); // absolute position
+pdf.image(photo, { width: 200, height: 200, fit: "cover" }); // fill | contain | cover
 pdf.image(photo, { width: 100, crop: { x: 50, y: 50, width: 400, height: 400 } });
 pdf.image(stamp, { width: 80, rotate: -15, align: "center" });
 pdf.image(avatar, { width: 120, height: 120, shape: "circle", fit: "cover" });
@@ -400,21 +424,21 @@ to a document you just generated:
 const pdf = new PDFDocument();
 pdf.text("Curriculum Vitae", { size: 24 });
 
-await pdf.append(certificateBytes);                       // original size, 1:1
-await pdf.append(letterBytes, { fit: "page" });           // scaled onto A4
-await pdf.append(scanBytes, { pages: [1, 3] });           // a selection
-await pdf.append(refBytes, { overlay: true });            // and stamp it
+await pdf.append(certificateBytes); // original size, 1:1
+await pdf.append(letterBytes, { fit: "page" }); // scaled onto A4
+await pdf.append(scanBytes, { pages: [1, 3] }); // a selection
+await pdf.append(refBytes, { overlay: true }); // and stamp it
 
-const info = await pdfInfo(uploadBytes);  // { pageCount, pageSizes, encrypted, version }
+const info = await pdfInfo(uploadBytes); // { pageCount, pageSizes, encrypted, version }
 ```
 
-| Option | Meaning |
-|---|---|
-| `pages` | 1-based page numbers to take, in the order given. Default: all. |
-| `fit` | `"keep"` (default) copies pages at their original size; `"page"` scales them to this document's format. |
-| `overlay` | Allow `header()`/`footer()`/`pageNumbers()`/`watermark()` and your own drawing on the appended pages. Default: off for `"keep"`, always on for `"page"`. |
-| `padding` | `fit: "page"` only — inset from the page edge, in points. |
-| `autoRotate` | `fit: "page"` only — give the target page the source's orientation. Default: true. |
+| Option       | Meaning                                                                                                                                                  |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`      | 1-based page numbers to take, in the order given. Default: all.                                                                                          |
+| `fit`        | `"keep"` (default) copies pages at their original size; `"page"` scales them to this document's format.                                                  |
+| `overlay`    | Allow `header()`/`footer()`/`pageNumbers()`/`watermark()` and your own drawing on the appended pages. Default: off for `"keep"`, always on for `"page"`. |
+| `padding`    | `fit: "page"` only — inset from the page edge, in points.                                                                                                |
+| `autoRotate` | `fit: "page"` only — give the target page the source's orientation. Default: true.                                                                       |
 
 - Pages are **copied, not re-rendered**: content streams, fonts and images move
   over byte-for-byte, so an appended page looks exactly like the original and
@@ -438,10 +462,10 @@ pdf.rect(50, 120, 100, 40, { fill: "#3b82f6", radius: 8 });
 pdf.circle(100, 300, 40, { fill: "#ffd166", stroke: "#c79000" });
 pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });
 
-pdf.rect(50, 400, 495, 30, { fill: "#2563eb", opacity: 0.12 });   // any primitive
+pdf.rect(50, 400, 495, 30, { fill: "#2563eb", opacity: 0.12 }); // any primitive
 pdf.clip({ x: 50, y: 450, width: 120, height: 120, radius: 60 }, (d) => {
-  d.image(photo, { x: 50, y: 450, width: 120, height: 120 });     // clipped to the circle
-  d.rect(50, 540, 120, 30, { fill: "#000", opacity: 0.4 });       // …and so is this
+  d.image(photo, { x: 50, y: 450, width: 120, height: 120 }); // clipped to the circle
+  d.rect(50, 540, 120, 30, { fill: "#000", opacity: 0.4 }); // …and so is this
 });
 ```
 
@@ -453,44 +477,51 @@ callback draws to a rectangle — rounded, or a full circle with
 ### Document features
 
 ```ts
-pdf.header("Annual Report", { align: "right" });          // repeats on every page
-pdf.footer("© 2026 ACME");                                //   (or pass a callback)
-pdf.pageNumbers({ format: (n, t) => `${n} / ${t}` });     // bottom center by default
+pdf.header("Annual Report", { align: "right" }); // repeats on every page
+pdf.footer("© 2026 ACME"); //   (or pass a callback)
+pdf.pageNumbers({ format: (n, t) => `${n} / ${t}` }); // bottom center by default
 pdf.watermark("DRAFT", { opacity: 0.1, angle: -45 });
 
-pdf.outline("Chapter 1");                 // PDF bookmarks (nesting via { level })
-pdf.anchor("details");                    // named target for link: "#details"
-pdf.link(50, 50, 200, 20, "#details");    // clickable area (also: URLs)
+pdf.outline("Chapter 1"); // PDF bookmarks (nesting via { level })
+pdf.anchor("details"); // named target for link: "#details"
+pdf.link(50, 50, 200, 20, "#details"); // clickable area (also: URLs)
 
-pdf.toc({ title: "Contents" });           // call last: builds linked TOC pages
-                                          // from outline entries, inserts at front
+pdf.toc({ title: "Contents" }); // call last: builds linked TOC pages
+// from outline entries, inserts at front
 ```
 
 ### Links & buttons
 
 ```ts
-pdf.text("kevinci.github.io/fast-pdf", {   // inline link, style it yourself
+pdf.text("kevinci.github.io/fast-pdf", {
+  // inline link, style it yourself
   link: "https://kevinci.github.io/fast-pdf/",
-  color: "#4f46e5", underline: true,
+  color: "#4f46e5",
+  underline: true,
 });
 
-pdf.link(50, 50, 200, 20, "#details");     // bare clickable area (URL or anchor)
+pdf.link(50, 50, 200, 20, "#details"); // bare clickable area (URL or anchor)
 
-pdf.button("Open the demo", {              // filled, bordered, clickable box
+pdf.button("Open the demo", {
+  // filled, bordered, clickable box
   link: "https://kevinci.github.io/fast-pdf/",
   fill: "#4f46e5",
-  borderColor: "#3730a3",                  // borderWidth defaults to 1 when set
-  color: "#ffffff",                        // label colour (default: white)
-  width: 200,                              // points or "60%"; default: fits the label
+  borderColor: "#3730a3", // borderWidth defaults to 1 when set
+  color: "#ffffff", // label colour (default: white)
+  width: 200, // points or "60%"; default: fits the label
   radius: 6,
-  align: "center",                         // placement in the flow area
+  align: "center", // placement in the flow area
 });
 
-pdf.button("Ghost", {                      // outline style: no fill, dark label
-  link: "#details", fill: "#ffffff", borderColor: "#e4e7ec", color: "#101828",
+pdf.button("Ghost", {
+  // outline style: no fill, dark label
+  link: "#details",
+  fill: "#ffffff",
+  borderColor: "#e4e7ec",
+  color: "#101828",
 });
 
-pdf.button("Sidebar CTA", { link: "…", x: 40, y: 700, width: 120 });  // absolute
+pdf.button("Sidebar CTA", { link: "…", x: 40, y: 700, width: 120 }); // absolute
 ```
 
 Buttons flow like text (and break the page when they no longer fit); passing
@@ -508,7 +539,8 @@ schemes (`javascript:`, `vbscript:`, `data:`, `file:`) are rejected with
 // sign (certificate or Fill & Sign) and send the document back.
 pdf.signature({ label: "Ort, Datum, Unterschrift Auftraggeber" });
 
-pdf.columns([                             // two signers side by side
+pdf.columns([
+  // two signers side by side
   (d) => d.signature({ label: "Auftraggeber" }),
   (d) => d.signature({ label: "Auftragnehmer" }),
 ]);
@@ -519,13 +551,13 @@ pdf.signature({ name: "client", x: 50, y: 700, width: 220, height: 60 });
 Draws a signature line (disable with `line: false`) with an optional small
 `label` underneath; the clickable field sits above the line. Field names
 default to `Signature1`, `Signature2`, … and must be unique. Note that the
-field is *for the recipient to sign* — fast-pdf does not cryptographically
+field is _for the recipient to sign_ — fast-pdf does not cryptographically
 sign the document itself.
 
 ### Encryption & permissions
 
 ```ts
-new PDFDocument({ encrypt: { userPassword: "geheim" } });          // open password
+new PDFDocument({ encrypt: { userPassword: "geheim" } }); // open password
 new PDFDocument({ encrypt: { permissions: { printing: false, copying: false } } });
 new PDFDocument({ encrypt: { userPassword: "x", onUnsupported: "skip" } });
 ```
@@ -551,16 +583,16 @@ All user-facing failures throw `FastPDFError` with a stable machine-readable
 fast-pdf generates documents; it deliberately does not do everything. What it
 cannot do today, so you can decide before you start:
 
-| Not supported | Notes |
-|---|---|
-| Editing existing PDFs | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected. |
-| Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not. |
-| Form fields other than signatures | Text fields, checkboxes and dropdowns are not implemented. |
-| WOFF/WOFF2 fonts | Needs Brotli. Convert to `.ttf` at build time (see above). |
-| Kerning, ligatures, complex-script shaping | Latin sets well; Arabic/Devanagari are *not usable*, not merely suboptimal. |
-| Gradients (`/Shading`), patterns | Flat fills and constant alpha only. |
-| CFF-flavoured OpenType, `.ttc` | Rejected with an actionable error. |
-| Lossy WebP, interlaced PNG | Rejected with `UNSUPPORTED_IMAGE`. |
+| Not supported                                | Notes                                                                                                                                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| Editing existing PDFs                        | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected. |
+| Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not.                                                            |
+| Form fields other than signatures            | Text fields, checkboxes and dropdowns are not implemented.                                                                           |
+| WOFF/WOFF2 fonts                             | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                           |
+| Kerning, ligatures, complex-script shaping   | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                          |
+| Gradients (`/Shading`), patterns             | Flat fills and constant alpha only.                                                                                                  |
+| CFF-flavoured OpenType, `.ttc`               | Rejected with an actionable error.                                                                                                   |
+| Lossy WebP, interlaced PNG                   | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                   |
 
 ## Design
 
@@ -600,14 +632,14 @@ The fastest way to a good-looking document is not the API reference above —
 it's copying the closest example from [`examples/`](examples) and adapting
 it. Each one is a complete, designed document:
 
-| Template | What you get | Run |
-|---|---|---|
-| [`invoice.ts`](examples/invoice.ts) | Invoice with letterhead, item table, totals block, footer | `npx tsx examples/invoice.ts` |
-| [`report.ts`](examples/report.ts) | Design-forward report: full-bleed cover, KPI cards, vector bar chart | `npx tsx examples/report.ts` |
-| [`cv.ts`](examples/cv.ts) | CV/résumé: sidebar via `region()`, circular portrait, measured panel, balanced two-column skill matrix, proficiency bars in table cells | `npx tsx examples/cv.ts` |
-| [`signature.ts`](examples/signature.ts) | Contract with clause sections and clickable AcroForm signature fields | `npx tsx examples/signature.ts` |
-| [`showcase.ts`](examples/showcase.ts) | Feature tour: TOC, outlines, watermark, cell spans, columns, links | `npx tsx examples/showcase.ts` |
-| [`basic.ts`](examples/basic.ts) | Minimal text + table starting point | `npx tsx examples/basic.ts` |
+| Template                                | What you get                                                                                                                            | Run                             |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------- |
+| [`invoice.ts`](examples/invoice.ts)     | Invoice with letterhead, item table, totals block, footer                                                                               | `npx tsx examples/invoice.ts`   |
+| [`report.ts`](examples/report.ts)       | Design-forward report: full-bleed cover, KPI cards, vector bar chart                                                                    | `npx tsx examples/report.ts`    |
+| [`cv.ts`](examples/cv.ts)               | CV/résumé: sidebar via `region()`, circular portrait, measured panel, balanced two-column skill matrix, proficiency bars in table cells | `npx tsx examples/cv.ts`        |
+| [`signature.ts`](examples/signature.ts) | Contract with clause sections and clickable AcroForm signature fields                                                                   | `npx tsx examples/signature.ts` |
+| [`showcase.ts`](examples/showcase.ts)   | Feature tour: TOC, outlines, watermark, cell spans, columns, links                                                                      | `npx tsx examples/showcase.ts`  |
+| [`basic.ts`](examples/basic.ts)         | Minimal text + table starting point                                                                                                     | `npx tsx examples/basic.ts`     |
 
 The templates ship with the npm package (`node_modules/fast-pdf/examples/`).
 In your own project, change the import from `"../src/index"` to `"fast-pdf"` —

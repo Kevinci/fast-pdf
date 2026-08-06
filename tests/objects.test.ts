@@ -19,7 +19,16 @@ describe("parseColor", () => {
     }
   });
 });
-import { Name, PDFString, Ref, escapeString, fmtNumber, latin1Bytes, serialize, textString } from "../src/pdf/objects";
+import {
+  Name,
+  PDFString,
+  Ref,
+  escapeString,
+  fmtNumber,
+  latin1Bytes,
+  serialize,
+  textString,
+} from "../src/pdf/objects";
 
 describe("fmtNumber", () => {
   it("keeps integers plain", () => {

@@ -15,13 +15,38 @@
 import { writeFileSync, mkdirSync } from "node:fs";
 
 const ORDER = [
-  "catalog", "pages", "page1", "page2", "content1", "content2", "resources", "font",
+  "catalog",
+  "pages",
+  "page1",
+  "page2",
+  "content1",
+  "content2",
+  "resources",
+  "font",
   // payloads
-  "openAction", "jsNameTree", "jsNameAction", "pageOpenAction",
-  "aJS", "aMouseoverJS", "aUriJS", "aLaunch", "aSubmit", "aGoToR", "aNamedDest",
-  "aGoToPage2", "aFileAttach", "efSpec", "efStream", "aWidget", "aScreen", "aRichMedia",
+  "openAction",
+  "jsNameTree",
+  "jsNameAction",
+  "pageOpenAction",
+  "aJS",
+  "aMouseoverJS",
+  "aUriJS",
+  "aLaunch",
+  "aSubmit",
+  "aGoToR",
+  "aNamedDest",
+  "aGoToPage2",
+  "aFileAttach",
+  "efSpec",
+  "efStream",
+  "aWidget",
+  "aScreen",
+  "aRichMedia",
   // controls that must survive
-  "okLink", "okSquare", "okHighlight", "okSquareAP",
+  "okLink",
+  "okSquare",
+  "okHighlight",
+  "okSquareAP",
 ];
 const N = Object.fromEntries(ORDER.map((name, i) => [name, i + 1]));
 const R = (name) => `${N[name]} 0 R`;
@@ -29,8 +54,15 @@ const R = (name) => `${N[name]} 0 R`;
 const LINES = [
   ["HOSTILE TEST PDF", 20, true],
   ["Fuer den append()-Filter von fast-pdf. Alle Payloads sind inert.", 10.5, false],
-  ["", 6, false],
-  ["Diese 15 Konstrukte MUESSEN beim Anhaengen verschwinden:", 11.5, true],
+  ["", 4, false],
+  ["ACHTUNG beim Pruefen: die Namen unten sind nur SICHTBARER TEXT auf dieser", 9.5, false],
+  ["Seite. Seiteninhalt wird von append() absichtlich unveraendert kopiert - er", 9.5, false],
+  ["ist Farbe, keine Funktion. Die echten Payloads stecken in der PDF-Struktur", 9.5, false],
+  ['daneben. Wer im Ergebnis nach "/JavaScript" sucht, findet diesen Text und', 9.5, false],
+  ["haelt einen funktionierenden Filter fuer defekt. Pruefe die Struktur:", 9.5, false],
+  ["node scripts/audit-pdf.mjs ergebnis.pdf", 9.5, true],
+  ["", 4, false],
+  ["Diese 14 Konstrukte MUESSEN beim Anhaengen verschwinden:", 11.5, true],
   ["  1  /OpenAction            JavaScript beim Oeffnen des Dokuments", 10, false],
   ["  2  /Names /JavaScript     Auto-Run-Skript im Namensbaum des Katalogs", 10, false],
   ["  3  Seiten-/AA /O          JavaScript beim Aufschlagen der Seite", 10, false],
@@ -41,19 +73,24 @@ const LINES = [
   ["  8  Link /A /S /SubmitForm sendet an evil.example.com", 10, false],
   ["  9  Link /A /S /GoToR      oeffnet eine fremde Datei", 10, false],
   [" 10  Link /Dest             benannte Destination (Namensbaum fehlt danach)", 10, false],
-  [" 11  Link /A /S /GoTo       Sprung auf Seite 2", 10, false],
-  [" 12  /FileAttachment        eingebettete payload.exe", 10, false],
-  [" 13  /Widget                AcroForm-Textfeld", 10, false],
-  [" 14  /Screen                Rendition-Action", 10, false],
-  [" 15  /RichMedia             eingebettetes Medienobjekt", 10, false],
-  ["", 8, false],
+  [" 11  /FileAttachment        eingebettete payload.exe", 10, false],
+  [" 12  /Widget                AcroForm-Textfeld", 10, false],
+  [" 13  /Screen                Rendition-Action", 10, false],
+  [" 14  /RichMedia             eingebettetes Medienobjekt", 10, false],
+  ["", 6, false],
+  ["Ein Sonderfall, der ERHALTEN BLEIBEN DARF:", 11.5, true],
+  ["  S  Link /A /S /GoTo auf Seite 2 dieser Datei. Ein Sprung innerhalb der", 10, false],
+  ["     importierten Seiten ist unschaedlich - er wird auf die neue Seiten-", 10, false],
+  ["     nummer umgebogen. Nur wenn Seite 2 nicht mitkommt (pages: [1]), muss", 10, false],
+  ["     der Link verschwinden, weil sein Ziel fehlt.", 10, false],
+  ["", 6, false],
   ["Diese drei MUESSEN erhalten bleiben (Kontrollgruppe):", 11.5, true],
-  ["  A  Link auf https://example.com/ok", 10, false],
+  ["  A  Link auf https://example.com/ok - ein echter, funktionierender Link", 10, false],
   ["  B  /Square-Markup mit rotem Rahmen (unten auf der Seite)", 10, false],
   ["  C  /Highlight-Markup mit /QuadPoints", 10, false],
-  ["", 8, false],
-  ["Erwartung: die Seite sieht danach genau so aus wie jetzt.", 10, false],
-  ["Nur die Struktur drumherum wird gefiltert.", 10, false],
+  ["", 6, false],
+  ["Erwartung: die Seite sieht danach genau so aus wie jetzt, A/B/C/S wirken", 10, false],
+  ["weiter. Nur die Struktur drumherum ist gefiltert.", 10, false],
 ];
 
 function contentStream() {
@@ -61,7 +98,9 @@ function contentStream() {
   let y = 800;
   for (const [text, size, bold] of LINES) {
     if (text !== "") {
-      parts.push(`/${bold ? "F2" : "F1"} ${size} Tf 1 0 0 1 48 ${y.toFixed(1)} Tm (${text.replace(/([()\\])/g, "\\$1")}) Tj`);
+      parts.push(
+        `/${bold ? "F2" : "F1"} ${size} Tf 1 0 0 1 48 ${y.toFixed(1)} Tm (${text.replace(/([()\\])/g, "\\$1")}) Tj`,
+      );
     }
     y -= size * 1.55;
   }
@@ -69,7 +108,9 @@ function contentStream() {
   // The frame the /Square control annotation sits on, drawn as real content so
   // the page still shows something even where a viewer ignores annotations.
   parts.push("0.7 0.1 0.1 RG 1 w 48 92 300 40 re S");
-  parts.push("BT /F1 9 Tf 1 0 0 1 56 108 Tm (Kontrolle B: hier liegt die /Square-Annotation) Tj ET");
+  parts.push(
+    "BT /F1 9 Tf 1 0 0 1 56 108 Tm (Kontrolle B: hier liegt die /Square-Annotation) Tj ET",
+  );
   return parts.join("\n");
 }
 
@@ -85,9 +126,25 @@ const BODIES = {
     `<< /Type /Page /Parent ${R("pages")} /MediaBox [0 0 595 842] ` +
     `/Contents ${R("content1")} /Resources ${R("resources")} ` +
     `/AA << /O ${R("pageOpenAction")} >> ` +
-    `/Annots [${["aJS", "aMouseoverJS", "aUriJS", "aLaunch", "aSubmit", "aGoToR",
-                 "aNamedDest", "aGoToPage2", "aFileAttach", "aWidget", "aScreen",
-                 "aRichMedia", "okLink", "okSquare", "okHighlight"].map(R).join(" ")}] >>`,
+    `/Annots [${[
+      "aJS",
+      "aMouseoverJS",
+      "aUriJS",
+      "aLaunch",
+      "aSubmit",
+      "aGoToR",
+      "aNamedDest",
+      "aGoToPage2",
+      "aFileAttach",
+      "aWidget",
+      "aScreen",
+      "aRichMedia",
+      "okLink",
+      "okSquare",
+      "okHighlight",
+    ]
+      .map(R)
+      .join(" ")}] >>`,
   page2:
     `<< /Type /Page /Parent ${R("pages")} /MediaBox [0 0 595 842] ` +
     `/Contents ${R("content2")} /Resources ${R("resources")} >>`,
@@ -134,7 +191,10 @@ const BODIES = {
     `<< /Type /Annot /Subtype /FileAttachment /Rect [48 562 68 578] /Name /Paperclip ` +
     `/Contents (Anhang) /FS ${R("efSpec")} >>`,
   efSpec: `<< /Type /Filespec /F (FASTPDF_LEAK_payload.exe) /UF (FASTPDF_LEAK_payload.exe) /EF << /F ${R("efStream")} >> >>`,
-  efStream: { stream: "MZ FASTPDF_LEAK this pretends to be an executable payload", extra: "/Type /EmbeddedFile /Subtype /application#2Foctet-stream" },
+  efStream: {
+    stream: "MZ FASTPDF_LEAK this pretends to be an executable payload",
+    extra: "/Type /EmbeddedFile /Subtype /application#2Foctet-stream",
+  },
   aWidget:
     "<< /Type /Annot /Subtype /Widget /FT /Tx /T (FASTPDF_LEAK_field) /V (geheim) " +
     "/Rect [48 540 300 558] /F 4 /DA (/Helv 10 Tf 0 g) >>",
@@ -180,7 +240,9 @@ for (const name of ORDER) {
     push(`${N[name]} 0 obj\n${body}\nendobj\n`);
   } else {
     const data = body.stream;
-    push(`${N[name]} 0 obj\n<< ${body.extra ?? ""} /Length ${Buffer.byteLength(data, "latin1")} >>\nstream\n${data}\nendstream\nendobj\n`);
+    push(
+      `${N[name]} 0 obj\n<< ${body.extra ?? ""} /Length ${Buffer.byteLength(data, "latin1")} >>\nstream\n${data}\nendstream\nendobj\n`,
+    );
   }
 }
 
@@ -196,4 +258,6 @@ mkdirSync("examples/output", { recursive: true });
 const out = Buffer.concat(chunks);
 writeFileSync("examples/output/hostile.pdf", out);
 console.log(`examples/output/hostile.pdf — ${out.length} Bytes, ${ORDER.length} Objekte, 2 Seiten`);
-console.log(`Payload-Marker im Original: ${(out.toString("latin1").match(/FASTPDF_LEAK/g) ?? []).length}`);
+console.log(
+  `Payload-Marker im Original: ${(out.toString("latin1").match(/FASTPDF_LEAK/g) ?? []).length}`,
+);

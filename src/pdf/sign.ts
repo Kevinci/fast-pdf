@@ -58,7 +58,10 @@ const OID_SIGNING_CERT_V2 = "1.2.840.113549.1.9.16.2.47";
 function subtle(): SubtleCrypto {
   const c = (globalThis as { crypto?: Crypto }).crypto;
   if (!c || !c.subtle) {
-    throw new FastPDFError("Signing requires the Web Crypto API, which this runtime does not provide", "ENCRYPTION_UNSUPPORTED");
+    throw new FastPDFError(
+      "Signing requires the Web Crypto API, which this runtime does not provide",
+      "ENCRYPTION_UNSUPPORTED",
+    );
   }
   return c.subtle;
 }
@@ -150,11 +153,16 @@ async function buildCMS(digest: Uint8Array, opts: SigningOptions): Promise<Uint8
   ];
   const attrsContent = setOf(signedAttrs); // 0x31 ... — this exact encoding is what gets signed
 
-  const signature = new Uint8Array(await subtle().sign({ name: "RSASSA-PKCS1-v1_5" }, key, bs(attrsContent)));
+  const signature = new Uint8Array(
+    await subtle().sign({ name: "RSASSA-PKCS1-v1_5" }, key, bs(attrsContent)),
+  );
 
   // In the SignerInfo the attributes are carried as [0] IMPLICIT, i.e. the same
   // content bytes under tag 0xA0 instead of 0x31.
-  const signedAttrsImplicit = tlv(0xa0, attrsContent.subarray(readTLV(attrsContent, 0).contentStart));
+  const signedAttrsImplicit = tlv(
+    0xa0,
+    attrsContent.subarray(readTLV(attrsContent, 0).contentStart),
+  );
 
   const signerInfo = seq(
     integer(1), // version (issuerAndSerialNumber)

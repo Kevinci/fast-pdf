@@ -44,7 +44,12 @@ pdf.circle(505, 150, 10, { fill: GOLD });
 pdf.circle(120, 700, 220, { stroke: mix(INK, MINT, 0.35), lineWidth: 1 });
 
 pdf.text("ANNUAL REPORT", {
-  x: 60, y: 150, size: 13, color: MINT, letterSpacing: 4, bold: true,
+  x: 60,
+  y: 150,
+  size: 13,
+  color: MINT,
+  letterSpacing: 4,
+  bold: true,
 });
 pdf.text("Growth", { x: 58, y: 250, size: 92, bold: true, color: TEXT });
 pdf.text("Report", { x: 58, y: 340, size: 92, bold: true, color: CORAL });
@@ -96,14 +101,23 @@ const months = ["Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 const values = [52, 61, 58, 74, 83, 100];
 const maxV = 100;
 
-pdf.text("MONTHLY GROWTH INDEX", { x: chartX, y: chartTop - 28, size: 10, color: MUTED, letterSpacing: 2 });
+pdf.text("MONTHLY GROWTH INDEX", {
+  x: chartX,
+  y: chartTop - 28,
+  size: 10,
+  color: MUTED,
+  letterSpacing: 2,
+});
 
 // Faint horizontal grid lines + scale labels.
 for (let g = 0; g <= 4; g++) {
   const gy = chartTop + (chartH * g) / 4;
   pdf.line(chartX, gy, chartX + chartW, gy, { color: mix(INK, MUTED, 0.25), width: 0.5 });
   pdf.text(String(maxV - (maxV / 4) * g), {
-    x: chartX + chartW + 8, y: gy - 5, size: 8, color: MUTED,
+    x: chartX + chartW + 8,
+    y: gy - 5,
+    size: 8,
+    color: MUTED,
   });
 }
 
@@ -113,9 +127,17 @@ values.forEach((v, i) => {
   const h = (v / maxV) * chartH;
   const x = chartX + i * slot + (slot - barW) / 2;
   const y = chartTop + chartH - h;
-  const fill = i === values.length - 1 ? GOLD : mix(mix(INK, MINT, 0.55), CORAL, i / (months.length - 1));
+  const fill =
+    i === values.length - 1 ? GOLD : mix(mix(INK, MINT, 0.55), CORAL, i / (months.length - 1));
   pdf.rect(x, y, barW, h, { fill, radius: 6 });
-  pdf.text(months[i]!, { x, y: chartTop + chartH + 8, width: barW, align: "center", size: 9, color: MUTED });
+  pdf.text(months[i]!, {
+    x,
+    y: chartTop + chartH + 8,
+    width: barW,
+    align: "center",
+    size: 9,
+    color: MUTED,
+  });
 });
 
 // Highlight callout ----------------------------------------------------------
@@ -129,7 +151,11 @@ pdf.text("94", { x: ringX - 30, y: ringY - 22, size: 34, bold: true, color: TEXT
 pdf.text("%", { x: ringX + 26, y: ringY - 14, size: 16, color: MINT });
 
 pdf.text("Documents rendered under 5 ms", {
-  x: M + 180, y: calloutY + 44, size: 16, bold: true, color: TEXT,
+  x: M + 180,
+  y: calloutY + 44,
+  size: 16,
+  bold: true,
+  color: TEXT,
 });
 pdf.text(
   "Direct-to-PDF synthesis keeps 94 % of all generated documents under the " +
@@ -139,9 +165,20 @@ pdf.text(
 
 // Footer rule ----------------------------------------------------------------
 pdf.line(M, 770, PAGE.width - M, 770, { color: mix(INK, MUTED, 0.4), width: 0.75 });
-pdf.text("fast-pdf · Growth Report 2026", { x: M, y: 784, size: 9, color: MUTED, letterSpacing: 1 });
+pdf.text("fast-pdf · Growth Report 2026", {
+  x: M,
+  y: 784,
+  size: 9,
+  color: MUTED,
+  letterSpacing: 1,
+});
 pdf.text("Generated in 0.9 ms", {
-  x: M, y: 784, width: chartW, align: "right", size: 9, color: MUTED,
+  x: M,
+  y: 784,
+  width: chartW,
+  align: "right",
+  size: 9,
+  color: MUTED,
 });
 
 await mkdir("examples/output", { recursive: true });

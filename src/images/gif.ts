@@ -54,10 +54,16 @@ export async function parseGif(bytes: Uint8Array): Promise<ParsedImage> {
   for (;;) {
     const block = bytes[pos++];
     if (block === undefined) {
-      throw new FastPDFError("Invalid GIF: no image data found before end of file", "INVALID_IMAGE_FILE");
+      throw new FastPDFError(
+        "Invalid GIF: no image data found before end of file",
+        "INVALID_IMAGE_FILE",
+      );
     }
     if (block === 0x3b) {
-      throw new FastPDFError("Invalid GIF: trailer reached with no image frame", "INVALID_IMAGE_FILE");
+      throw new FastPDFError(
+        "Invalid GIF: trailer reached with no image frame",
+        "INVALID_IMAGE_FILE",
+      );
     }
     if (block === 0x21) {
       // Extension block: label + sub-blocks.
@@ -75,7 +81,10 @@ export async function parseGif(bytes: Uint8Array): Promise<ParsedImage> {
       continue;
     }
     if (block !== 0x2c) {
-      throw new FastPDFError(`Invalid GIF: unexpected block 0x${block.toString(16)}`, "INVALID_IMAGE_FILE");
+      throw new FastPDFError(
+        `Invalid GIF: unexpected block 0x${block.toString(16)}`,
+        "INVALID_IMAGE_FILE",
+      );
     }
 
     // Image descriptor.
@@ -127,7 +136,8 @@ export async function parseGif(bytes: Uint8Array): Promise<ParsedImage> {
 function skipSubBlocks(bytes: Uint8Array, pos: number): number {
   for (;;) {
     const len = bytes[pos++];
-    if (len === undefined) throw new FastPDFError("Invalid GIF: truncated sub-block", "INVALID_IMAGE_FILE");
+    if (len === undefined)
+      throw new FastPDFError("Invalid GIF: truncated sub-block", "INVALID_IMAGE_FILE");
     if (len === 0) return pos;
     pos += len;
   }
@@ -139,7 +149,8 @@ function collectSubBlocks(bytes: Uint8Array, pos: number): { bytes: Uint8Array; 
   let total = 0;
   for (;;) {
     const len = bytes[pos++];
-    if (len === undefined) throw new FastPDFError("Invalid GIF: truncated image data", "INVALID_IMAGE_FILE");
+    if (len === undefined)
+      throw new FastPDFError("Invalid GIF: truncated image data", "INVALID_IMAGE_FILE");
     if (len === 0) break;
     chunks.push(bytes.subarray(pos, pos + len));
     total += len;
@@ -177,7 +188,10 @@ function interlacedRowOrder(height: number, interlaced: boolean): number[] {
 /** GIF variable-width LZW decode → one palette index per pixel. */
 function lzwDecode(data: Uint8Array, minCodeSize: number, expected: number): Uint8Array {
   if (minCodeSize < 2 || minCodeSize > 8) {
-    throw new FastPDFError(`Invalid GIF: LZW minimum code size ${minCodeSize}`, "INVALID_IMAGE_FILE");
+    throw new FastPDFError(
+      `Invalid GIF: LZW minimum code size ${minCodeSize}`,
+      "INVALID_IMAGE_FILE",
+    );
   }
   const clearCode = 1 << minCodeSize;
   const eoiCode = clearCode + 1;

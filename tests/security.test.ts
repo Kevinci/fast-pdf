@@ -19,14 +19,17 @@ const code = (fn: () => unknown): string => {
 };
 
 describe("link target validation", () => {
-  it.each(["javascript:alert(1)", "JaVaScRiPt:alert(1)", "vbscript:x", "data:text/html,x", "file:///etc/passwd"])(
-    "rejects %s",
-    (target) => {
-      const doc = new PDFDocument();
-      expect(code(() => doc.link(0, 0, 10, 10, target))).toBe("UNSAFE_LINK");
-      expect(code(() => doc.text("hi", { link: target }))).toBe("UNSAFE_LINK");
-    },
-  );
+  it.each([
+    "javascript:alert(1)",
+    "JaVaScRiPt:alert(1)",
+    "vbscript:x",
+    "data:text/html,x",
+    "file:///etc/passwd",
+  ])("rejects %s", (target) => {
+    const doc = new PDFDocument();
+    expect(code(() => doc.link(0, 0, 10, 10, target))).toBe("UNSAFE_LINK");
+    expect(code(() => doc.text("hi", { link: target }))).toBe("UNSAFE_LINK");
+  });
 
   it("rejects schemes disguised with control characters or spaces", () => {
     const doc = new PDFDocument();

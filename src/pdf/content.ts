@@ -122,7 +122,15 @@ export class ContentStream {
    * @param charSpace extra spacing per character code in points (Tc)
    * @param skew horizontal shear factor for synthetic oblique (0 = upright)
    */
-  text(encoded: string, x: number, y: number, fontRes: string, size: number, charSpace = 0, skew = 0): this {
+  text(
+    encoded: string,
+    x: number,
+    y: number,
+    fontRes: string,
+    size: number,
+    charSpace = 0,
+    skew = 0,
+  ): this {
     // Tc survives ET (text state is graphics state) — reset it in-block.
     const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
     const reset = charSpace !== 0 ? " 0 Tc" : "";
@@ -159,7 +167,9 @@ export class ContentStream {
 
   /** Draw an image XObject scaled to w×h at (x, y) = bottom-left corner. */
   image(imageRes: string, x: number, y: number, w: number, h: number): this {
-    this.parts.push(`q ${this.n(w)} 0 0 ${this.n(h)} ${this.n(x)} ${this.n(y)} cm /${imageRes} Do Q`);
+    this.parts.push(
+      `q ${this.n(w)} 0 0 ${this.n(h)} ${this.n(x)} ${this.n(y)} cm /${imageRes} Do Q`,
+    );
     return this;
   }
 

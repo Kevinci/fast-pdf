@@ -50,11 +50,19 @@ async function certificate(): Promise<Uint8Array> {
   const page = doc.pageSize;
   doc.rect(20, 20, page.width - 40, page.height - 40, { stroke: ACCENT, lineWidth: 2 });
   doc.text("CERTIFICATE OF COMPLETION", {
-    y: 120, size: 24, bold: true, align: "center", color: ACCENT, letterSpacing: 2,
+    y: 120,
+    size: 24,
+    bold: true,
+    align: "center",
+    color: ACCENT,
+    letterSpacing: 2,
   });
   doc.text("Erika Mustermann", { y: 190, size: 34, bold: true, align: "center" });
   doc.text("Advanced TypeScript Architecture · 40 hours", {
-    y: 250, size: 13, align: "center", color: MUTED,
+    y: 250,
+    size: 13,
+    align: "center",
+    color: MUTED,
   });
   doc.text("Berlin, 14.05.2026", { y: 330, size: 11, align: "center", color: MUTED });
   return doc.toBuffer();
@@ -65,7 +73,10 @@ const cert = await certificate();
 
 // Inspect an upload before doing anything with it: page count, sizes, whether
 // it is encrypted (an encrypted file cannot be appended).
-for (const [name, bytes] of [["letter", letter], ["certificate", cert]] as const) {
+for (const [name, bytes] of [
+  ["letter", letter],
+  ["certificate", cert],
+] as const) {
   const info = await pdfInfo(bytes);
   const first = info.pageSizes[0]!;
   console.log(

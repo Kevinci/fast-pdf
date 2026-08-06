@@ -86,7 +86,10 @@ describe("table layout", () => {
   });
 
   it("positions colSpan cells across the grid", () => {
-    const rows = [[{ text: "wide", colSpan: 2 }, "c"], ["a", "b", "c"]];
+    const rows = [
+      [{ text: "wide", colSpan: 2 }, "c"],
+      ["a", "b", "c"],
+    ];
     const [first, second] = measureTable(rows, [100, 100, 100], measureOpts);
     expect(first!.cells[0]!.width).toBe(200);
     expect(first!.cells[1]!.x).toBe(200);
@@ -104,10 +107,7 @@ describe("table layout", () => {
   });
 
   it("grows spanned rows when a rowSpan cell needs more height", () => {
-    const rows = [
-      [{ text: "line1\nline2\nline3\nline4", rowSpan: 2 }, "b1"],
-      ["b2"],
-    ];
+    const rows = [[{ text: "line1\nline2\nline3\nline4", rowSpan: 2 }, "b1"], ["b2"]];
     const [first, second] = measureTable(rows, [100, 100], measureOpts);
     const need = 4 * 10 * 1.2 + 10;
     expect(first!.height + second!.height).toBeCloseTo(need, 5);

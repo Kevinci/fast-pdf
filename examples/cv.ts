@@ -112,8 +112,12 @@ pdf.onPage((doc, info) => {
     (d) => {
       const label = (t: string): void => {
         d.text(t, {
-          color: "#7aa2ff", size: 7.5, bold: true, letterSpacing: 1.4,
-          spacingBefore: 22, spacingAfter: 8,
+          color: "#7aa2ff",
+          size: 7.5,
+          bold: true,
+          letterSpacing: 1.4,
+          spacingBefore: 22,
+          spacingAfter: 8,
         });
       };
 
@@ -138,8 +142,12 @@ pdf.onPage((doc, info) => {
 
   // Rotated page marginalia along the spine.
   doc.text(`Seite ${info.pageNumber} / ${info.pageCount}`, {
-    x: 15, y: info.size.height - 46, rotate: -90,
-    color: MUTED, size: 7, letterSpacing: 1.2,
+    x: 15,
+    y: info.size.height - 46,
+    rotate: -90,
+    color: MUTED,
+    size: 7,
+    letterSpacing: 1.2,
   });
 });
 
@@ -150,18 +158,31 @@ pdf.text(PERSON.role, { size: 12, color: ACCENT, spacingAfter: 12 });
 // The summary sits on a tinted panel whose height comes from the text.
 // Note the coordinate mode: with `y` given, `x` is an ABSOLUTE page
 // coordinate — so the inset is `pdf.x + 12`, not `12`.
-const summary = pdf.measureText(PERSON.summary, { size: 9.5, lineHeight: 1.5, width: pdf.width - 24 });
+const summary = pdf.measureText(PERSON.summary, {
+  size: 9.5,
+  lineHeight: 1.5,
+  width: pdf.width - 24,
+});
 pdf.rect(pdf.x, pdf.y, pdf.width, summary.height + 22, { fill: ACCENT, opacity: 0.06, radius: 6 });
 pdf.text(PERSON.summary, {
-  x: pdf.x + 12, y: pdf.y + 11, width: pdf.width - 24, size: 9.5, lineHeight: 1.5, color: BODY,
+  x: pdf.x + 12,
+  y: pdf.y + 11,
+  width: pdf.width - 24,
+  size: 9.5,
+  lineHeight: 1.5,
+  color: BODY,
 });
 pdf.y += summary.height + 22 + 26;
 
 // ── Experience ───────────────────────────────────────────────────────────
 const section = (title: string): void => {
   pdf.text(title, {
-    size: 8, bold: true, letterSpacing: 1.6, color: ACCENT,
-    spacingBefore: 8, spacingAfter: 11,
+    size: 8,
+    bold: true,
+    letterSpacing: 1.6,
+    color: ACCENT,
+    spacingBefore: 8,
+    spacingAfter: 11,
   });
 };
 
@@ -210,8 +231,11 @@ pdf.table(
   ],
   {
     widths: [150, 90, 128],
-    headerFill: "#f1f5f9", headerColor: INK,
-    borderColor: FAINT, fontSize: 9, padding: 7,
+    headerFill: "#f1f5f9",
+    headerColor: INK,
+    borderColor: FAINT,
+    fontSize: 9,
+    padding: 7,
   },
 );
 

@@ -75,7 +75,8 @@ export class EmbeddedFont implements Font {
       h ^= n;
       h = Math.imul(h, 0x01000193) >>> 0;
     };
-    for (let i = 0; i < this.ttf.postScriptName.length; i++) mix(this.ttf.postScriptName.charCodeAt(i));
+    for (let i = 0; i < this.ttf.postScriptName.length; i++)
+      mix(this.ttf.postScriptName.charCodeAt(i));
     for (const gid of [...this.usedGlyphs.keys()].sort((a, b) => a - b)) mix(gid);
     let tag = "";
     for (let i = 0; i < 6; i++) {

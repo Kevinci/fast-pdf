@@ -77,8 +77,16 @@ const isWs = (b: number): boolean =>
   b === 0x20 || b === 0x0a || b === 0x0d || b === 0x09 || b === 0x00 || b === 0x0c;
 
 const isDelim = (b: number): boolean =>
-  b === 0x28 || b === 0x29 || b === 0x3c || b === 0x3e || b === 0x5b ||
-  b === 0x5d || b === 0x7b || b === 0x7d || b === 0x2f || b === 0x25;
+  b === 0x28 ||
+  b === 0x29 ||
+  b === 0x3c ||
+  b === 0x3e ||
+  b === 0x5b ||
+  b === 0x5d ||
+  b === 0x7b ||
+  b === 0x7d ||
+  b === 0x2f ||
+  b === 0x25;
 
 const isRegular = (b: number): boolean => !isWs(b) && !isDelim(b);
 const isDigit = (b: number): boolean => b >= 0x30 && b <= 0x39;
@@ -165,7 +173,9 @@ class Lexer {
       const b = this.at();
       this.pos++;
       if (b === 0x23 && isHex(this.at()) && isHex(this.at(this.pos + 1))) {
-        out += String.fromCharCode(parseInt(latin1String(this.bytes.subarray(this.pos, this.pos + 2)), 16));
+        out += String.fromCharCode(
+          parseInt(latin1String(this.bytes.subarray(this.pos, this.pos + 2)), 16),
+        );
         this.pos += 2;
       } else {
         out += String.fromCharCode(b);
@@ -322,11 +332,16 @@ function utf8OrLatin1(latin1: string): string {
 
 /** Where an object lives: at a byte offset, or inside an object stream. */
 type XrefEntry =
-  | { kind: "offset"; offset: number }
-  | { kind: "instream"; stream: number; index: number };
+  { kind: "offset"; offset: number } | { kind: "instream"; stream: number; index: number };
 
 /** Undo a PNG predictor (used by nearly every cross-reference stream). */
-function unpredict(data: Uint8Array, predictor: number, colors: number, bpc: number, columns: number): Uint8Array {
+function unpredict(
+  data: Uint8Array,
+  predictor: number,
+  colors: number,
+  bpc: number,
+  columns: number,
+): Uint8Array {
   if (predictor < 2) return data;
   const bpp = Math.max(1, Math.ceil((colors * bpc) / 8));
   const rowLen = Math.ceil((colors * bpc * columns) / 8);
@@ -336,7 +351,8 @@ function unpredict(data: Uint8Array, predictor: number, colors: number, bpc: num
     const rows = Math.floor(data.length / rowLen);
     for (let r = 0; r < rows; r++) {
       const row = r * rowLen;
-      for (let i = bpp; i < rowLen; i++) data[row + i] = (data[row + i]! + data[row + i - bpp]!) & 0xff;
+      for (let i = bpp; i < rowLen; i++)
+        data[row + i] = (data[row + i]! + data[row + i - bpp]!) & 0xff;
     }
     return data;
   }
@@ -355,10 +371,18 @@ function unpredict(data: Uint8Array, predictor: number, colors: number, bpc: num
       const upLeft = i >= bpp ? prev[i - bpp]! : 0;
       let value: number;
       switch (type) {
-        case 0: value = raw; break;
-        case 1: value = raw + left; break;
-        case 2: value = raw + up; break;
-        case 3: value = raw + ((left + up) >> 1); break;
+        case 0:
+          value = raw;
+          break;
+        case 1:
+          value = raw + left;
+          break;
+        case 2:
+          value = raw + up;
+          break;
+        case 3:
+          value = raw + ((left + up) >> 1);
+          break;
         case 4: {
           const p = left + up - upLeft;
           const pa = Math.abs(p - left);
@@ -367,7 +391,8 @@ function unpredict(data: Uint8Array, predictor: number, colors: number, bpc: num
           value = raw + (pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft);
           break;
         }
-        default: bad(`Unknown PNG predictor row filter ${type}`);
+        default:
+          bad(`Unknown PNG predictor row filter ${type}`);
       }
       out[dst + i] = value & 0xff;
     }
@@ -381,7 +406,10 @@ export class PDFReader {
   private readonly xref = new Map<number, XrefEntry>();
   private readonly cache = new Map<number, PDFObject>();
   /** objStm object number → decoded bytes and the offsets of its members. */
-  private readonly objStms = new Map<number, { bytes: Uint8Array; offsets: { num: number; at: number }[] }>();
+  private readonly objStms = new Map<
+    number,
+    { bytes: Uint8Array; offsets: { num: number; at: number }[] }
+  >();
   /** Object numbers currently being fetched — breaks reference cycles. */
   private readonly loading = new Set<number>();
   private trailer: PDFDict = {};
@@ -466,9 +494,14 @@ export class PDFReader {
           const at = lexer.integer();
           const gen = lexer.integer();
           if (at === null || gen === null) bad("Truncated xref entry");
-          const type = lexer.eatKeyword("n") ? "n" : lexer.eatKeyword("f") ? "f" : bad("Bad xref entry type");
+          const type = lexer.eatKeyword("n")
+            ? "n"
+            : lexer.eatKeyword("f")
+              ? "f"
+              : bad("Bad xref entry type");
           const num = first + i;
-          if (type === "n" && !this.xref.has(num)) this.xref.set(num, { kind: "offset", offset: at });
+          if (type === "n" && !this.xref.has(num))
+            this.xref.set(num, { kind: "offset", offset: at });
         }
       }
       lexer.skipWs();
@@ -666,7 +699,11 @@ export class PDFReader {
   }
 
   /** Read one member of an object stream (`/Type /ObjStm`). */
-  private async fromObjectStream(streamNum: number, index: number, wanted: number): Promise<PDFObject> {
+  private async fromObjectStream(
+    streamNum: number,
+    index: number,
+    wanted: number,
+  ): Promise<PDFObject> {
     let parsed = this.objStms.get(streamNum);
     if (parsed === undefined) {
       const stream = await this.object(streamNum);
@@ -674,7 +711,8 @@ export class PDFReader {
       const bytes = await this.decode(stream);
       const count = this.resolveSync(stream.dict.N);
       const first = this.resolveSync(stream.dict.First);
-      if (typeof count !== "number" || typeof first !== "number") bad("Object stream without /N and /First");
+      if (typeof count !== "number" || typeof first !== "number")
+        bad("Object stream without /N and /First");
       const header = new Lexer(bytes);
       const offsets: { num: number; at: number }[] = [];
       for (let i = 0; i < count; i++) {
@@ -687,9 +725,10 @@ export class PDFReader {
       this.objStms.set(streamNum, parsed);
     }
     // The index is authoritative, but a wrong one is recoverable by number.
-    const entry = parsed.offsets[index]?.num === wanted
-      ? parsed.offsets[index]
-      : parsed.offsets.find((o) => o.num === wanted);
+    const entry =
+      parsed.offsets[index]?.num === wanted
+        ? parsed.offsets[index]
+        : parsed.offsets.find((o) => o.num === wanted);
     if (entry === undefined) return null;
     const lexer = new Lexer(parsed.bytes);
     lexer.pos = entry.at;
@@ -728,7 +767,13 @@ export class PDFReader {
           const value = this.resolveSync(parms[key]);
           return typeof value === "number" ? value : fallback;
         };
-        data = unpredict(data, num("Predictor", 1), num("Colors", 1), num("BitsPerComponent", 8), num("Columns", 1));
+        data = unpredict(
+          data,
+          num("Predictor", 1),
+          num("Colors", 1),
+          num("BitsPerComponent", 8),
+          num("Columns", 1),
+        );
       }
     }
     return data;
@@ -795,7 +840,12 @@ export class PDFReader {
   }
 
   /** Recursive page-tree walk. Inheritable attributes flow down into `inherited`. */
-  private async walk(ref: Ref, inherited: PDFDict, out: SourcePage[], seen: Set<number>): Promise<void> {
+  private async walk(
+    ref: Ref,
+    inherited: PDFDict,
+    out: SourcePage[],
+    seen: Set<number>,
+  ): Promise<void> {
     if (seen.has(ref.num) || out.length > 20000) return;
     seen.add(ref.num);
     const dict = await this.resolveDict(ref);
@@ -929,7 +979,8 @@ export async function pdfInfo(bytes: Uint8Array): Promise<PDFInfo> {
 export function asDict(value: PDFValue | PDFObject | undefined): PDFDict | undefined {
   if (value === null || value === undefined || typeof value !== "object") return undefined;
   if (Array.isArray(value) || value instanceof Ref || value instanceof Name) return undefined;
-  if (value instanceof PDFString || value instanceof HexString || value instanceof PDFStream) return undefined;
+  if (value instanceof PDFString || value instanceof HexString || value instanceof PDFStream)
+    return undefined;
   return value as PDFDict;
 }
 

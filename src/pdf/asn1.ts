@@ -52,7 +52,8 @@ export const octetString = (content: Uint8Array): Uint8Array => tlv(0x04, conten
 export const nullValue = (): Uint8Array => new Uint8Array([0x05, 0x00]);
 
 /** Context-specific constructed tag [n] wrapping content (e.g. [0] EXPLICIT). */
-export const contextConstructed = (n: number, content: Uint8Array): Uint8Array => tlv(0xa0 | n, content);
+export const contextConstructed = (n: number, content: Uint8Array): Uint8Array =>
+  tlv(0xa0 | n, content);
 
 /** Small unsigned INTEGER (used for version fields). */
 export function integer(n: number): Uint8Array {

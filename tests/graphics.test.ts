@@ -57,7 +57,11 @@ describe("opacity", () => {
       (d: PDFDocument) => d.line(0, 0, 10, 10, { opacity: 0.5 }),
       (d: PDFDocument) => d.text("halbdurchsichtig", { opacity: 0.5 }),
       (d: PDFDocument) => d.image(png, { width: 20, opacity: 0.5 }),
-      (d: PDFDocument) => d.svg('<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>', { width: 20, opacity: 0.5 }),
+      (d: PDFDocument) =>
+        d.svg('<svg viewBox="0 0 10 10"><rect width="10" height="10"/></svg>', {
+          width: 20,
+          opacity: 0.5,
+        }),
     ]) {
       const pdf = raw();
       draw(pdf);
@@ -99,9 +103,13 @@ describe("clip()", () => {
 
   it("rounds the clip with a radius (Bézier corners, not a plain re)", async () => {
     const square = raw();
-    square.clip({ x: 0, y: 0, width: 100, height: 100 }, (d) => d.rect(0, 0, 100, 100, { fill: "#000" }));
+    square.clip({ x: 0, y: 0, width: 100, height: 100 }, (d) =>
+      d.rect(0, 0, 100, 100, { fill: "#000" }),
+    );
     const round = raw();
-    round.clip({ x: 0, y: 0, width: 100, height: 100, radius: 50 }, (d) => d.rect(0, 0, 100, 100, { fill: "#000" }));
+    round.clip({ x: 0, y: 0, width: 100, height: 100, radius: 50 }, (d) =>
+      d.rect(0, 0, 100, 100, { fill: "#000" }),
+    );
     const squareText = await rendered(square);
     const roundText = await rendered(round);
     expect((squareText.match(/ c\n/g) ?? []).length).toBe(0);
@@ -122,7 +130,9 @@ describe("clip()", () => {
   it("caps the radius at half the shorter side", async () => {
     const pdf = raw();
     // Radius 999 on a 40×20 box must not produce a self-intersecting path.
-    pdf.clip({ x: 0, y: 0, width: 40, height: 20, radius: 999 }, (d) => d.rect(0, 0, 40, 20, { fill: "#000" }));
+    pdf.clip({ x: 0, y: 0, width: 40, height: 20, radius: 999 }, (d) =>
+      d.rect(0, 0, 40, 20, { fill: "#000" }),
+    );
     const text = await rendered(pdf);
     expect(text).not.toContain("NaN");
     expect(text).not.toContain("999");

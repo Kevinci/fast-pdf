@@ -158,8 +158,19 @@ describe("fontMetrics()", () => {
 describe("lastBlockHeight", () => {
   it("reports the height of a flow text block", () => {
     const pdf = raw();
-    pdf.text("Zwei Zeilen Text, die hier sicher umbrechen werden.", { width: 100, size: 10, lineHeight: 1.2 });
-    expect(pdf.lastBlockHeight).toBeCloseTo(pdf.measureText("Zwei Zeilen Text, die hier sicher umbrechen werden.", { width: 100, size: 10, lineHeight: 1.2 }).height, 6);
+    pdf.text("Zwei Zeilen Text, die hier sicher umbrechen werden.", {
+      width: 100,
+      size: 10,
+      lineHeight: 1.2,
+    });
+    expect(pdf.lastBlockHeight).toBeCloseTo(
+      pdf.measureText("Zwei Zeilen Text, die hier sicher umbrechen werden.", {
+        width: 100,
+        size: 10,
+        lineHeight: 1.2,
+      }).height,
+      6,
+    );
   });
 
   it("reports the height of an ABSOLUTE block, where the cursor never moves", () => {
@@ -194,7 +205,10 @@ describe("lastBlockHeight", () => {
     pdf.image(png, { width: 60, height: 40, spacingAfter: 20 });
     expect(pdf.lastBlockHeight).toBeCloseTo(40, 6);
     const before = pdf.y;
-    pdf.table([["a", "b"], ["1", "2"]]);
+    pdf.table([
+      ["a", "b"],
+      ["1", "2"],
+    ]);
     expect(pdf.lastBlockHeight).toBeCloseTo(pdf.y - before, 6);
   });
 });

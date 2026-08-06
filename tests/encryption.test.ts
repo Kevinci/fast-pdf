@@ -37,7 +37,11 @@ function cat(...parts: Uint8Array[]): Uint8Array {
   }
   return out;
 }
-async function hash2B(password: Uint8Array, salt: Uint8Array, udata: Uint8Array): Promise<Uint8Array> {
+async function hash2B(
+  password: Uint8Array,
+  salt: Uint8Array,
+  udata: Uint8Array,
+): Promise<Uint8Array> {
   let k: Uint8Array = await sha(256, cat(password, salt, udata));
   let e: Uint8Array = new Uint8Array(0);
   for (let round = 0; round < 64 || e[e.length - 1]! > round - 32; round++) {
@@ -96,13 +100,20 @@ describe("AES-256 encryption", () => {
     const s = latin1String(await pdf.render());
     const U = hexField(s, "U");
     const validationSalt = U.subarray(32, 40);
-    const expected = await hash2B(new TextEncoder().encode(password), validationSalt, new Uint8Array(0));
+    const expected = await hash2B(
+      new TextEncoder().encode(password),
+      validationSalt,
+      new Uint8Array(0),
+    );
     expect(bytesToHex(expected)).toBe(bytesToHex(U.subarray(0, 32)));
   });
 
   it("maps permission flags into /P", async () => {
     const pdf = new PDFDocument({
-      encrypt: { ownerPassword: "owner", permissions: { printing: true, copying: false, modifying: false } },
+      encrypt: {
+        ownerPassword: "owner",
+        permissions: { printing: true, copying: false, modifying: false },
+      },
     });
     pdf.text("hi");
     const s = latin1String(await pdf.render());

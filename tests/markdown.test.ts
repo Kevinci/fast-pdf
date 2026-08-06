@@ -4,7 +4,11 @@ import { parseInline, parseMarkdown, type MdBlock } from "../src/markdown/parse"
 
 import { makePng } from "./helpers";
 
-function block<T extends MdBlock["type"]>(blocks: MdBlock[], i: number, type: T): Extract<MdBlock, { type: T }> {
+function block<T extends MdBlock["type"]>(
+  blocks: MdBlock[],
+  i: number,
+  type: T,
+): Extract<MdBlock, { type: T }> {
   const b = blocks[i]!;
   expect(b.type).toBe(type);
   return b as Extract<MdBlock, { type: T }>;
@@ -23,7 +27,11 @@ describe("parseMarkdown blocks", () => {
   it("parses paragraphs and merges wrapped lines", () => {
     const b = parseMarkdown("one\ntwo\n\nthree");
     expect(b).toHaveLength(2);
-    expect(block(b, 0, "paragraph").inline.map((r) => r.text).join("")).toBe("one\ntwo");
+    expect(
+      block(b, 0, "paragraph")
+        .inline.map((r) => r.text)
+        .join(""),
+    ).toBe("one\ntwo");
   });
 
   it("parses unordered and ordered lists", () => {
@@ -59,7 +67,11 @@ describe("parseMarkdown blocks", () => {
   });
 
   it("parses GFM tables with column alignment", () => {
-    const t = block(parseMarkdown("| A | B | C |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |"), 0, "table");
+    const t = block(
+      parseMarkdown("| A | B | C |\n|:--|:-:|--:|\n| 1 | 2 | 3 |\n| 4 | 5 | 6 |"),
+      0,
+      "table",
+    );
     expect(t.aligns).toEqual(["left", "center", "right"]);
     expect(t.headers.map((h) => h.map((r) => r.text).join(""))).toEqual(["A", "B", "C"]);
     expect(t.rows).toHaveLength(2);
@@ -107,7 +119,9 @@ describe("PDFDocument.markdown", () => {
 
   it("renders a full document to a valid PDF", async () => {
     const doc = new PDFDocument();
-    doc.markdown("# H1\n\nText with **bold**, _italic_, `code` and a [link](https://x.io).\n\n- a\n- b\n\n> quote\n\n```\ncode\n```\n\n| x | y |\n|---|---|\n| 1 | 2 |");
+    doc.markdown(
+      "# H1\n\nText with **bold**, _italic_, `code` and a [link](https://x.io).\n\n- a\n- b\n\n> quote\n\n```\ncode\n```\n\n| x | y |\n|---|---|\n| 1 | 2 |",
+    );
     const bytes = await doc.render();
     expect(decode(bytes.subarray(0, 8))).toContain("%PDF-1.");
     expect(doc.y).toBeGreaterThan(0);

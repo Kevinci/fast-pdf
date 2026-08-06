@@ -4,6 +4,32 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.7.1] — 2026-08-05
+
+### Changed
+
+- **A `/Link` left without a destination by the annotation filter is now dropped**
+  instead of being copied as an inert rectangle. Its behaviour had sat in `/AA`
+  (mouse-enter JavaScript), which is never copied — so the action was already
+  gone in 0.7.0 and clicking did nothing. But the link rectangle survived, and
+  viewers still show a hand cursor over it, which reads as "the filter did not
+  work". A link with no destination has no purpose, so it goes too. Purely a
+  clarity fix: no security-relevant behaviour changed between 0.7.0 and 0.7.1.
+
+### Added
+
+- **`docs/APPEND-SECURITY.md`** — technical report on what `append()` reads,
+  copies and discards, why it is a whitelist rather than a blocklist, and how to
+  verify it independently. Includes the three observations that regularly look
+  like a broken filter and are not: visible page text that spells out payload
+  names (page content is copied verbatim by design), a deliberately harmless
+  control link, and an in-document `/GoTo` jump that is retargeted rather than
+  removed.
+- **`scripts/audit-pdf.mjs`** (`npm run audit -- file.pdf …`) — lists the
+  security-relevant structures of any PDF. Deliberately dependency-free and
+  independent of fast-pdf, so it can be used as a second opinion. Strips stream
+  payloads before scanning, so visible page text cannot produce false hits.
+
 ## [0.7.0] — 2026-08-05
 
 Appending existing PDFs — the last thing that forced a second library into a
@@ -19,10 +45,10 @@ No breaking changes: existing documents render as before.
   attached to the generated résumé.
 
   ```ts
-  await pdf.append(certificateBytes);                   // original size, 1:1
-  await pdf.append(letterBytes, { fit: "page" });       // scaled to A4
-  await pdf.append(scanBytes, { pages: [1, 3] });       // a selection
-  await pdf.append(refBytes, { overlay: true });         // and stamp it
+  await pdf.append(certificateBytes); // original size, 1:1
+  await pdf.append(letterBytes, { fit: "page" }); // scaled to A4
+  await pdf.append(scanBytes, { pages: [1, 3] }); // a selection
+  await pdf.append(refBytes, { overlay: true }); // and stamp it
   ```
 
   Pages are **copied, not re-rendered**: their content streams, fonts and
@@ -51,6 +77,7 @@ No breaking changes: existing documents render as before.
   plain web link or a jump inside the imported pages, so a `/Launch` or
   `/JavaScript` action cannot travel out of an upload and into the output.
   Decompression is bounded at 64 MB per stream.
+
 - **`pdfInfo(pdfBytes)`** → `{ version, pageCount, pageSizes, encrypted }`.
   Inspect an upload — reject a 500-page file, show "3 pages", detect a
   password-protected file — without importing anything.
@@ -89,15 +116,16 @@ No breaking changes: existing documents render as before.
   breaker — two greedy implementations that must agree exactly or blocks
   overlap.
 
-  `measureText(content, options)` wraps through the *same* engine `text()`
+  `measureText(content, options)` wraps through the _same_ engine `text()`
   draws with and returns `{ lines, width, height, lineHeight, baseline }`.
   `measureBlock(fn, { width })` lays arbitrary flow content out on a
   throwaway page and reports its height, rolling back anchors, bookmarks and
   images the dry run created. `lastBlockHeight` reports what the previous
   block consumed — including for absolute blocks, where the cursor stands
   still. Together they make a duplicate layout engine unnecessary.
+
 - **`fontMetrics({ font, size, … })`** → `{ baseline, ascent, descent,
-  capHeight, lineGap, lineHeight }` in points. Optical alignment (centring a
+capHeight, lineGap, lineHeight }` in points. Optical alignment (centring a
   bullet against a text line) no longer needs a reverse-engineered constant.
 - **Browser build behind the `browser` export condition.** `save()` used a
   dynamic `import("node:fs/promises")` guarded by a runtime check. Bundlers
@@ -124,7 +152,7 @@ No breaking changes: existing documents render as before.
   of the bottom edge. `spacingBefore` collapses at the top of a page, column
   or region — the behaviour `spacingAfter` cannot express in flowing documents.
 - **`region({ x, y, width, height, clip }, fn)`** — flow content with its own
-  cursor inside any rectangle, *including inside `onPage()` decorators*, where
+  cursor inside any rectangle, _including inside `onPage()` decorators_, where
   no flow cursor exists. Returns `{ usedHeight, remaining, overflow }`, so a
   sidebar that no longer fits says so instead of quietly dropping blocks.
 - **`flowColumns(items, options)`** — newspaper-style multi-column flow.
@@ -141,7 +169,7 @@ No breaking changes: existing documents render as before.
 - **Rotated text** — `text({ rotate })` for vertical marginalia, turned column
   heads and spine labels. Previously only `watermark()` could rotate.
 - **Table `valign` and self-drawing cells.** Cells take `valign: "top" |
-  "middle" | "bottom"` (per cell or per table) and a `render: (doc, box) => …`
+"middle" | "bottom"` (per cell or per table) and a `render: (doc, box) => …`
   callback for progress bars, badges or logos. The row is sized from the
   measured content or an explicit `height`, and the callback runs with its own
   cursor, so moving `doc.y` inside a cell cannot shift the rows below it.
@@ -190,7 +218,7 @@ No breaking changes: existing documents render as before.
 - `Font` implementations expose `capHeight` and `lineGap`; real cap heights
   are recorded for the standard 14 fonts and read from `OS/2` / `hhea` for
   embedded ones.
-- Shapes emit their colour and line-width operators *before* the path is
+- Shapes emit their colour and line-width operators _before_ the path is
   constructed, matching PDF's graphics object model (only construction and
   painting operators belong between `re`/`m` and `f`/`S`/`B`). Rendered
   output is visually identical, but the operator order inside content
