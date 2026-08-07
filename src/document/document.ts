@@ -1070,6 +1070,12 @@ export class PDFDocument {
       frameTop: this.frameTop,
       lastBlock: this.lastBlock,
     };
+    // The initialiser is what keeps the binding alive for the return below —
+    // the real assignment sits inside the `try`, which `no-useless-assignment`
+    // reads as making this one dead. Autofixing it away turns region() into a
+    // ReferenceError, so the rule is off for this line and only this line.
+    // eslint-disable-next-line no-useless-assignment
+    let usedHeight = 0;
     const clip = rect.clip ?? false;
     const page = this.page;
     if (clip) {
