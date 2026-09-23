@@ -291,7 +291,7 @@
     <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">
       fast-<span class="text-(--accent)">pdf</span>
     </div>
-    <div class="mb-3 font-mono text-xs text-(--muted)">v0.7.1 · Demo &amp; Guide</div>
+    <div class="mb-3 font-mono text-xs text-(--muted)">v0.8.0 · Demo &amp; Guide</div>
 
     <label class="mb-4 block">
       <span class="sr-only">Language / Sprache / 语言</span>
@@ -313,6 +313,14 @@
       <li><a class="nav-link" href="#fonts">Custom fonts</a></li>
       <li><a class="nav-link" href="#layout">Layout engine</a></li>
       <li><a class="nav-link" href="#tabellen">Tables</a></li>
+      <li>
+        <a class="nav-link" href="#tabelle-pdf"
+          >HTML table → PDF<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="New: tableToPDF()"
+          ></span
+        ></a>
+      </li>
       <li>
         <a class="nav-link" href="#bilder"
           >Images<span
@@ -370,6 +378,14 @@
       <li><a class="nav-link" href="#layout">Layout-Engine</a></li>
       <li><a class="nav-link" href="#tabellen">Tabellen</a></li>
       <li>
+        <a class="nav-link" href="#tabelle-pdf"
+          >HTML-Tabelle → PDF<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="New: tableToPDF()"
+          ></span
+        ></a>
+      </li>
+      <li>
         <a class="nav-link" href="#bilder"
           >Bilder<span
             class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
@@ -425,6 +441,14 @@
       <li><a class="nav-link" href="#fonts">自定义字体</a></li>
       <li><a class="nav-link" href="#layout">布局引擎</a></li>
       <li><a class="nav-link" href="#tabellen">表格</a></li>
+      <li>
+        <a class="nav-link" href="#tabelle-pdf"
+          >HTML 表格 → PDF<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="New: tableToPDF()"
+          ></span
+        ></a>
+      </li>
       <li>
         <a class="nav-link" href="#bilder"
           >图片<span
@@ -1693,19 +1717,941 @@ pdf.objectTable(orders, {           // …… 或完全自定义
       </div>
     </section>
 
+    <section id="tabelle-pdf" class="doc-section">
+      <h2 data-lang="en" class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">08</span>HTML table → PDF<span class="chip"
+          >new</span
+        >
+      </h2>
+      <h2 data-lang="de" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">08</span>HTML-Tabelle → PDF<span
+          class="chip"
+          >neu</span
+        >
+      </h2>
+      <h2 data-lang="zh" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">08</span>HTML 表格 → PDF<span class="chip"
+          >新</span
+        >
+      </h2>
+
+      <p data-lang="en">
+        A table is already on the page, and somebody wants it as a PDF. That usually ends in a
+        screenshot library, a headless browser on the server, or a second data pipeline that
+        rebuilds the same rows by hand. <code>tableToPDF()</code> takes the
+        <code>&lt;table&gt;</code> itself — structure <em>and</em> computed CSS — and renders real
+        PDF text: selectable, searchable, a few kilobytes, no server involved.
+      </p>
+      <p data-lang="de" hidden>
+        Eine Tabelle steht bereits auf der Seite, und jemand möchte sie als PDF. Üblicherweise endet
+        das in einer Screenshot-Bibliothek, einem Headless-Browser auf dem Server oder einer zweiten
+        Datenstrecke, die dieselben Zeilen noch einmal von Hand aufbaut.
+        <code>tableToPDF()</code> nimmt die <code>&lt;table&gt;</code> selbst — Struktur
+        <em>und</em> berechnetes CSS — und erzeugt echten PDF-Text: markierbar, durchsuchbar, wenige
+        Kilobyte, ohne Server.
+      </p>
+      <p data-lang="zh" hidden>
+        表格已经在页面上，而有人想要一份
+        PDF。通常的结局是引入截图库、在服务器上跑无头浏览器，或者再搭一条数据管线把同样的行重新拼一遍。<code
+          >tableToPDF()</code
+        >
+        直接读取 <code>&lt;table&gt;</code> 本身——结构<em>和</em>计算后的 CSS——生成真正的 PDF
+        文本：可选中、可搜索、只有几 KB，且无需服务器。
+      </p>
+
+      <h3 data-lang="en" class="doc-h3">Try it</h3>
+      <h3 data-lang="de" hidden class="doc-h3">Ausprobieren</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">试一试</h3>
+
+      <p data-lang="en">
+        The button below is not a picture. It runs fast-pdf in your browser, reads the table next to
+        it and hands you the file:
+      </p>
+      <p data-lang="de" hidden>
+        Der Knopf darunter ist kein Bild. Er führt fast-pdf in deinem Browser aus, liest die Tabelle
+        daneben und gibt dir die Datei:
+      </p>
+      <p data-lang="zh" hidden>
+        下面的按钮不是图片。它在你的浏览器里运行 fast-pdf，读取旁边的表格并交给你文件：
+      </p>
+
+      <div class="demo-wrap">
+        <div class="demo-controls">
+          <div class="ctl-field">
+            <span class="ctl-label">
+              <span data-lang="en">Button position</span>
+              <span data-lang="de" hidden>Position des Knopfes</span>
+              <span data-lang="zh" hidden>按钮位置</span>
+            </span>
+            <span class="ctl-group" data-control="position">
+              <button class="ctl-btn" type="button" data-value="top-left" aria-pressed="false">
+                <span data-lang="en">Top left</span>
+                <span data-lang="de" hidden>Oben links</span>
+                <span data-lang="zh" hidden>左上</span>
+              </button>
+              <button class="ctl-btn" type="button" data-value="top-right" aria-pressed="false">
+                <span data-lang="en">Top right</span>
+                <span data-lang="de" hidden>Oben rechts</span>
+                <span data-lang="zh" hidden>右上</span>
+              </button>
+              <button class="ctl-btn" type="button" data-value="bottom-left" aria-pressed="true">
+                <span data-lang="en">Bottom left</span>
+                <span data-lang="de" hidden>Unten links</span>
+                <span data-lang="zh" hidden>左下</span>
+              </button>
+              <button class="ctl-btn" type="button" data-value="bottom-right" aria-pressed="false">
+                <span data-lang="en">Bottom right</span>
+                <span data-lang="de" hidden>Unten rechts</span>
+                <span data-lang="zh" hidden>右下</span>
+              </button>
+            </span>
+          </div>
+
+          <div class="ctl-field">
+            <span class="ctl-label">
+              <span data-lang="en">Appearance</span>
+              <span data-lang="de" hidden>Darstellung</span>
+              <span data-lang="zh" hidden>外观</span>
+            </span>
+            <span class="ctl-group" data-control="look">
+              <button class="ctl-btn" type="button" data-value="label" aria-pressed="true">
+                <span data-lang="en">Label</span>
+                <span data-lang="de" hidden>Label</span>
+                <span data-lang="zh" hidden>文字</span>
+              </button>
+              <button class="ctl-btn" type="button" data-value="icon" aria-pressed="false">
+                <span data-lang="en">Icon only</span>
+                <span data-lang="de" hidden>Nur Icon</span>
+                <span data-lang="zh" hidden>仅图标</span>
+              </button>
+              <button class="ctl-btn" type="button" data-value="both" aria-pressed="false">
+                <span data-lang="en">Icon + label</span>
+                <span data-lang="de" hidden>Icon + Label</span>
+                <span data-lang="zh" hidden>图标 + 文字</span>
+              </button>
+            </span>
+          </div>
+        </div>
+
+        <table id="demo-invoice" class="demo">
+          <thead>
+            <tr>
+              <th>Position</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Coffee beans<br />Arabica, 1 kg</td>
+              <td class="num">3</td>
+              <td class="num">8.00 €</td>
+              <td class="num">24.00 €</td>
+            </tr>
+            <tr>
+              <td>Filter papers</td>
+              <td class="num">12</td>
+              <td class="num">0.40 €</td>
+              <td class="num">4.80 €</td>
+            </tr>
+            <tr>
+              <td>Grinder service</td>
+              <td class="num">1</td>
+              <td class="num">45.00 €</td>
+              <td class="num">45.00 €</td>
+            </tr>
+            <tr class="no-print">
+              <td>Internal note — never leaves the screen</td>
+              <td class="num">0</td>
+              <td class="num">0.00 €</td>
+              <td class="num">0.00 €</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="3">Total</td>
+              <td class="num">73.80 €</td>
+            </tr>
+          </tfoot>
+        </table>
+        <p class="mt-3 text-[12.5px] text-(--muted)">
+          <span data-lang="en"
+            >The button is not in this page's markup — fast-pdf creates it and places it where the
+            switches above say. The row marked "internal note" is dropped via
+            <code>skip: ".no-print"</code>.</span
+          >
+          <span data-lang="de" hidden
+            >Der Knopf steht nicht im Markup dieser Seite — fast-pdf erzeugt ihn und setzt ihn
+            dorthin, wo die Schalter oben es sagen. Die als interne Notiz markierte Zeile fällt über
+            <code>skip: ".no-print"</code> raus.</span
+          >
+          <span data-lang="zh" hidden
+            >按钮并不在本页的标记里——它由 fast-pdf 创建，并放在上方开关所指定的位置。
+            标记为内部备注的那一行通过 <code>skip: ".no-print"</code> 被剔除。</span
+          >
+        </p>
+        <pre class="code-block mb-0" id="demo-invoice-code"><code></code></pre>
+      </div>
+
+      <h3 data-lang="en" class="doc-h3">In your framework</h3>
+      <h3 data-lang="de" hidden class="doc-h3">In deinem Framework</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">在你的框架里</h3>
+
+      <div class="tabs" data-tabs data-lang="en">
+        <div class="tab-list" role="tablist">
+          <button class="tab-btn" type="button" role="tab" data-tab="react" aria-selected="true">
+            React
+          </button>
+          <button class="tab-btn" type="button" role="tab" data-tab="vue" aria-selected="false">
+            Vue
+          </button>
+          <button class="tab-btn" type="button" role="tab" data-tab="vanilla" aria-selected="false">
+            Vanilla / HTML
+          </button>
+        </div>
+        <pre class="code-block" data-panel="react"><code>import { useRef } from "react";
+import { attachTablePdfButton, downloadTablePDF } from "fast-pdf";
+
+export function RevenueTable({ rows }) {
+  const table = useRef(null);
+
+  return (
+    &lt;&gt;
+      &lt;table ref={table} className="report"&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {rows.map((r) =&gt; (
+            &lt;tr key={r.id}&gt;
+              &lt;td&gt;{r.label}&lt;/td&gt;
+              &lt;td className="num"&gt;{r.qty}&lt;/td&gt;
+              &lt;td className="num"&gt;{r.total}&lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+
+      &lt;button
+        onClick={() =&gt;
+          downloadTablePDF(table.current, {
+            title: "Revenue 2026",
+            header: "Acme GmbH",
+            footer: "Confidential",
+            pageNumbers: true,
+            filename: "revenue.pdf",
+          })
+        }
+      &gt;
+        Download PDF
+      &lt;/button&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+        <pre class="code-block" data-panel="vue" hidden><code>&lt;script setup&gt;
+import { ref } from "vue";
+import { downloadTablePDF } from "fast-pdf";
+
+const table = ref(null);
+
+function download() {
+  return downloadTablePDF(table.value, {
+    title: "Revenue 2026",
+    header: "Acme GmbH",
+    footer: "Confidential",
+    pageNumbers: true,
+    filename: "revenue.pdf",
+  });
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;table ref="table" class="report"&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+      &lt;tr v-for="row in rows" :key="row.id"&gt;
+        &lt;td&gt;{{ row.label }}&lt;/td&gt;
+        &lt;td class="num"&gt;{{ row.qty }}&lt;/td&gt;
+        &lt;td class="num"&gt;{{ row.total }}&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+
+  &lt;button @click="download"&gt;Download PDF&lt;/button&gt;
+&lt;/template&gt;</code></pre>
+        <pre
+          class="code-block"
+          data-panel="vanilla"
+          hidden
+        ><code>&lt;table id="revenue" class="report"&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;&lt;td&gt;Coffee beans&lt;/td&gt;&lt;td class="num"&gt;3&lt;/td&gt;&lt;td class="num"&gt;24.00&lt;/td&gt;&lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;script type="module"&gt;
+  import { attachTablePdfButton } from "fast-pdf";
+
+  // Creates the button, puts it after the table and wires the click.
+  attachTablePdfButton("#revenue", {
+    label: "Download PDF",
+    filename: "revenue.pdf",
+    title: "Revenue 2026",
+    header: "Acme GmbH",
+    footer: "Confidential",
+    pageNumbers: true,
+  });
+&lt;/script&gt;</code></pre>
+      </div>
+      <div class="tabs" data-tabs data-lang="de" hidden>
+        <div class="tab-list" role="tablist">
+          <button class="tab-btn" type="button" role="tab" data-tab="react" aria-selected="true">
+            React
+          </button>
+          <button class="tab-btn" type="button" role="tab" data-tab="vue" aria-selected="false">
+            Vue
+          </button>
+          <button class="tab-btn" type="button" role="tab" data-tab="vanilla" aria-selected="false">
+            Vanilla / HTML
+          </button>
+        </div>
+        <pre class="code-block" data-panel="react"><code>import { useRef } from "react";
+import { attachTablePdfButton, downloadTablePDF } from "fast-pdf";
+
+export function RevenueTable({ rows }) {
+  const table = useRef(null);
+
+  return (
+    &lt;&gt;
+      &lt;table ref={table} className="report"&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {rows.map((r) =&gt; (
+            &lt;tr key={r.id}&gt;
+              &lt;td&gt;{r.label}&lt;/td&gt;
+              &lt;td className="num"&gt;{r.qty}&lt;/td&gt;
+              &lt;td className="num"&gt;{r.total}&lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+
+      &lt;button
+        onClick={() =&gt;
+          downloadTablePDF(table.current, {
+            title: "Revenue 2026",
+            header: "Acme GmbH",
+            footer: "Confidential",
+            pageNumbers: true,
+            filename: "revenue.pdf",
+          })
+        }
+      &gt;
+        Download PDF
+      &lt;/button&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+        <pre class="code-block" data-panel="vue" hidden><code>&lt;script setup&gt;
+import { ref } from "vue";
+import { downloadTablePDF } from "fast-pdf";
+
+const table = ref(null);
+
+function download() {
+  return downloadTablePDF(table.value, {
+    title: "Revenue 2026",
+    header: "Acme GmbH",
+    footer: "Confidential",
+    pageNumbers: true,
+    filename: "revenue.pdf",
+  });
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;table ref="table" class="report"&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+      &lt;tr v-for="row in rows" :key="row.id"&gt;
+        &lt;td&gt;{{ row.label }}&lt;/td&gt;
+        &lt;td class="num"&gt;{{ row.qty }}&lt;/td&gt;
+        &lt;td class="num"&gt;{{ row.total }}&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+
+  &lt;button @click="download"&gt;Download PDF&lt;/button&gt;
+&lt;/template&gt;</code></pre>
+        <pre
+          class="code-block"
+          data-panel="vanilla"
+          hidden
+        ><code>&lt;table id="revenue" class="report"&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;&lt;td&gt;Coffee beans&lt;/td&gt;&lt;td class="num"&gt;3&lt;/td&gt;&lt;td class="num"&gt;24.00&lt;/td&gt;&lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;script type="module"&gt;
+  import { attachTablePdfButton } from "fast-pdf";
+
+  // Creates the button, puts it after the table and wires the click.
+  attachTablePdfButton("#revenue", {
+    label: "Download PDF",
+    filename: "revenue.pdf",
+    title: "Revenue 2026",
+    header: "Acme GmbH",
+    footer: "Confidential",
+    pageNumbers: true,
+  });
+&lt;/script&gt;</code></pre>
+      </div>
+      <div class="tabs" data-tabs data-lang="zh" hidden>
+        <div class="tab-list" role="tablist">
+          <button class="tab-btn" type="button" role="tab" data-tab="react" aria-selected="true">
+            React
+          </button>
+          <button class="tab-btn" type="button" role="tab" data-tab="vue" aria-selected="false">
+            Vue
+          </button>
+          <button class="tab-btn" type="button" role="tab" data-tab="vanilla" aria-selected="false">
+            Vanilla / HTML
+          </button>
+        </div>
+        <pre class="code-block" data-panel="react"><code>import { useRef } from "react";
+import { attachTablePdfButton, downloadTablePDF } from "fast-pdf";
+
+export function RevenueTable({ rows }) {
+  const table = useRef(null);
+
+  return (
+    &lt;&gt;
+      &lt;table ref={table} className="report"&gt;
+        &lt;thead&gt;
+          &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+        &lt;/thead&gt;
+        &lt;tbody&gt;
+          {rows.map((r) =&gt; (
+            &lt;tr key={r.id}&gt;
+              &lt;td&gt;{r.label}&lt;/td&gt;
+              &lt;td className="num"&gt;{r.qty}&lt;/td&gt;
+              &lt;td className="num"&gt;{r.total}&lt;/td&gt;
+            &lt;/tr&gt;
+          ))}
+        &lt;/tbody&gt;
+      &lt;/table&gt;
+
+      &lt;button
+        onClick={() =&gt;
+          downloadTablePDF(table.current, {
+            title: "Revenue 2026",
+            header: "Acme GmbH",
+            footer: "Confidential",
+            pageNumbers: true,
+            filename: "revenue.pdf",
+          })
+        }
+      &gt;
+        Download PDF
+      &lt;/button&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+        <pre class="code-block" data-panel="vue" hidden><code>&lt;script setup&gt;
+import { ref } from "vue";
+import { downloadTablePDF } from "fast-pdf";
+
+const table = ref(null);
+
+function download() {
+  return downloadTablePDF(table.value, {
+    title: "Revenue 2026",
+    header: "Acme GmbH",
+    footer: "Confidential",
+    pageNumbers: true,
+    filename: "revenue.pdf",
+  });
+}
+&lt;/script&gt;
+
+&lt;template&gt;
+  &lt;table ref="table" class="report"&gt;
+    &lt;thead&gt;
+      &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+    &lt;/thead&gt;
+    &lt;tbody&gt;
+      &lt;tr v-for="row in rows" :key="row.id"&gt;
+        &lt;td&gt;{{ row.label }}&lt;/td&gt;
+        &lt;td class="num"&gt;{{ row.qty }}&lt;/td&gt;
+        &lt;td class="num"&gt;{{ row.total }}&lt;/td&gt;
+      &lt;/tr&gt;
+    &lt;/tbody&gt;
+  &lt;/table&gt;
+
+  &lt;button @click="download"&gt;Download PDF&lt;/button&gt;
+&lt;/template&gt;</code></pre>
+        <pre
+          class="code-block"
+          data-panel="vanilla"
+          hidden
+        ><code>&lt;table id="revenue" class="report"&gt;
+  &lt;thead&gt;
+    &lt;tr&gt;&lt;th&gt;Position&lt;/th&gt;&lt;th&gt;Qty&lt;/th&gt;&lt;th&gt;Total&lt;/th&gt;&lt;/tr&gt;
+  &lt;/thead&gt;
+  &lt;tbody&gt;
+    &lt;tr&gt;&lt;td&gt;Coffee beans&lt;/td&gt;&lt;td class="num"&gt;3&lt;/td&gt;&lt;td class="num"&gt;24.00&lt;/td&gt;&lt;/tr&gt;
+  &lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;script type="module"&gt;
+  import { attachTablePdfButton } from "fast-pdf";
+
+  // Creates the button, puts it after the table and wires the click.
+  attachTablePdfButton("#revenue", {
+    label: "Download PDF",
+    filename: "revenue.pdf",
+    title: "Revenue 2026",
+    header: "Acme GmbH",
+    footer: "Confidential",
+    pageNumbers: true,
+  });
+&lt;/script&gt;</code></pre>
+      </div>
+
+      <h3 data-lang="en" class="doc-h3">Header, footer and page numbers</h3>
+      <h3 data-lang="de" hidden class="doc-h3">Header, Footer und Seitenzahlen</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">页眉、页脚与页码</h3>
+
+      <p data-lang="en">
+        <code>header</code> and <code>footer</code> take a string or a draw callback and run on
+        every page; <code>pageNumbers</code> adds the count. A table that outgrows one page repeats
+        its <code>&lt;thead&gt;</code> at the top of the next one, and a wide table turns the paper
+        to landscape on its own — only when the columns genuinely do not fit, not because the layout
+        happens to be wide:
+      </p>
+      <p data-lang="de" hidden>
+        <code>header</code> und <code>footer</code> nehmen einen String oder eine Zeichenfunktion
+        und laufen auf jeder Seite; <code>pageNumbers</code> ergänzt die Zählung. Eine Tabelle, die
+        über eine Seite hinauswächst, wiederholt ihren <code>&lt;thead&gt;</code> oben auf der
+        nächsten, und eine breite Tabelle dreht das Blatt selbst ins Querformat — nur wenn die
+        Spalten wirklich nicht passen, nicht weil das Layout zufällig breit ist:
+      </p>
+      <p data-lang="zh" hidden>
+        <code>header</code> 与 <code>footer</code> 接受字符串或绘制回调，并在每一页生效；<code
+          >pageNumbers</code
+        >
+        负责页码。超过一页的表格会在下一页顶部重复
+        <code>&lt;thead&gt;</code
+        >；较宽的表格会自行转为横向——仅当列确实放不下时，而不是因为布局恰好很宽：
+      </p>
+
+      <pre class="code-block"><code>import { tableToPDF } from "fast-pdf";
+
+const pdf = tableToPDF("#revenue", {
+  title: "Revenue 2026",
+  header: "Acme GmbH · Q1 report",
+  footer: (doc, page) =&gt; doc.text(`Printed ${new Date().toLocaleDateString()}`),
+  pageNumbers: { position: "bottom", align: "right" },
+  skip: ".no-print",
+});
+
+await pdf.save("revenue.pdf");</code></pre>
+
+      <h3 data-lang="en" class="doc-h3">What comes from the CSS</h3>
+      <h3 data-lang="de" hidden class="doc-h3">Was aus dem CSS kommt</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">哪些内容来自 CSS</h3>
+
+      <p data-lang="en">
+        Cell backgrounds, text colors, per-side borders, font sizes, weights, italics, padding,
+        alignment and the column proportions all come from <code>getComputedStyle()</code> —
+        including modern color spaces like <code>oklch()</code> and
+        <code>color(display-p3 …)</code>. Rows hidden by CSS stay out, and a selector (<code
+          >skip: ".no-print"</code
+        >) drops whatever else does not belong in the file. The surface counts too: a row without
+        its own background is transparent in the browser and shows the card or page behind it, so
+        the PDF page is painted in that colour. Without it, a table from a dark interface would
+        arrive as light text on white paper. <code>background</code> takes a colour of your own, or
+        <code>false</code> to keep the paper white.
+      </p>
+      <p data-lang="de" hidden>
+        Zellhintergründe, Textfarben, Rahmen pro Seite, Schriftgrößen, -schnitte, Kursivstellung,
+        Padding, Ausrichtung und die Spaltenverhältnisse kommen alle aus
+        <code>getComputedStyle()</code> — auch moderne Farbräume wie <code>oklch()</code> und
+        <code>color(display-p3 …)</code>. Per CSS versteckte Zeilen bleiben draußen, und ein
+        Selektor (<code>skip: ".no-print"</code>) wirft alles Weitere raus, was nicht in die Datei
+        gehört. Auch der Untergrund zählt: Eine Zeile ohne eigenen Hintergrund ist im Browser
+        durchsichtig und zeigt die Karte oder Seite dahinter — deshalb wird die PDF-Seite in genau
+        dieser Farbe eingefärbt. Ohne das käme eine Tabelle aus einem dunklen Interface als heller
+        Text auf weißem Papier an. <code>background</code> nimmt eine eigene Farbe, oder
+        <code>false</code> für weißes Papier.
+      </p>
+      <p data-lang="zh" hidden>
+        单元格背景、文字颜色、逐边框线、字号、字重、斜体、内边距、对齐方式以及列宽比例，全部来自
+        <code>getComputedStyle()</code>——包括 <code>oklch()</code> 和
+        <code>color(display-p3 …)</code> 这类现代色彩空间。被 CSS
+        隐藏的行不会进入文件，再用一个选择器（<code>skip: ".no-print"</code
+        >）剔除其余不该出现的内容。背景同样重要：没有自身背景色的行在浏览器中是透明的，
+        显示的是其后的卡片或页面，因此 PDF 页面会被填充为该颜色。否则，
+        来自深色界面的表格就会变成白纸上的浅色文字。<code>background</code> 可指定自定义颜色，<code
+          >false</code
+        >
+        则保持白色纸张。
+      </p>
+
+      <p data-lang="en">
+        One thing genuinely cannot travel: web font <em>files</em>. CSS names a font, it never hands
+        over its bytes, so a family the document does not carry is mapped onto the closest built-in
+        one. Register the real file with <code>registerFont()</code> and pass it as
+        <code>table.font</code> when the typeface has to match exactly.
+      </p>
+      <p data-lang="de" hidden>
+        Eines kann wirklich nicht mit: Webfont-<em>Dateien</em>. CSS nennt eine Schrift, liefert
+        aber nie ihre Bytes — eine Familie, die das Dokument nicht mitbringt, wird auf die
+        nächstliegende eingebaute abgebildet. Wenn die Schrift exakt stimmen muss, registriere die
+        Datei mit <code>registerFont()</code> und übergib sie als <code>table.font</code>.
+      </p>
+      <p data-lang="zh" hidden>
+        确实有一样东西带不走：Web 字体<em>文件</em>。CSS
+        只给出字体名称，从不交出字节，因此文档未携带的字族会被映射到最接近的内置字体。若字体必须完全一致，请用
+        <code>registerFont()</code> 注册真实文件，并作为 <code>table.font</code> 传入。
+      </p>
+
+      <h3 data-lang="en" class="doc-h3">The four entry points</h3>
+      <h3 data-lang="de" hidden class="doc-h3">Die vier Einstiege</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">四个入口</h3>
+
+      <p data-lang="en">Three entry points, depending on how much you want to hand over:</p>
+      <p data-lang="de" hidden>Drei Einstiege, je nachdem wie viel du abgeben willst:</p>
+      <p data-lang="zh" hidden>三个入口，取决于你想交出多少控制权：</p>
+      <div data-lang="en">
+        <table class="api">
+          <tr>
+            <td>attachTablePdfButton(table, options)</td>
+            <td>
+              Creates the button, puts it next to the table, wires the click. Pass
+              <code>button</code> to use one you built yourself.
+            </td>
+          </tr>
+          <tr>
+            <td>downloadTablePDF(table, options)</td>
+            <td>Renders and hands the browser the file — for a button you wired yourself.</td>
+          </tr>
+          <tr>
+            <td>tableToPDF(table, options)</td>
+            <td>
+              Returns the <code>PDFDocument</code>. Keep drawing on it, append pages, encrypt or
+              sign it before saving.
+            </td>
+          </tr>
+          <tr>
+            <td>tableToRows(table, options)</td>
+            <td>
+              Just the rows plus matching <code>table()</code> options — to drop the table into a
+              document you are already building.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden>
+        <table class="api">
+          <tr>
+            <td>attachTablePdfButton(table, options)</td>
+            <td>
+              Erzeugt den Knopf, setzt ihn neben die Tabelle, verdrahtet den Klick. Mit
+              <code>button</code> nimmt er einen, den du selbst gebaut hast.
+            </td>
+          </tr>
+          <tr>
+            <td>downloadTablePDF(table, options)</td>
+            <td>
+              Rendert und gibt dem Browser die Datei — für einen Knopf, den du selbst verdrahtest.
+            </td>
+          </tr>
+          <tr>
+            <td>tableToPDF(table, options)</td>
+            <td>
+              Gibt das <code>PDFDocument</code> zurück. Weiterzeichnen, Seiten anhängen,
+              verschlüsseln oder signieren, bevor du speicherst.
+            </td>
+          </tr>
+          <tr>
+            <td>tableToRows(table, options)</td>
+            <td>
+              Nur die Zeilen samt passender <code>table()</code>-Optionen — um die Tabelle in ein
+              Dokument zu übernehmen, das du ohnehin baust.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden>
+        <table class="api">
+          <tr>
+            <td>attachTablePdfButton(table, options)</td>
+            <td>创建按钮、放到表格旁边并绑定点击。传入 <code>button</code> 可使用你自己的按钮。</td>
+          </tr>
+          <tr>
+            <td>downloadTablePDF(table, options)</td>
+            <td>渲染并把文件交给浏览器——适合你自己接管按钮的场景。</td>
+          </tr>
+          <tr>
+            <td>tableToPDF(table, options)</td>
+            <td>返回 <code>PDFDocument</code>。保存前可继续绘制、追加页面、加密或签名。</td>
+          </tr>
+          <tr>
+            <td>tableToRows(table, options)</td>
+            <td>仅返回行与配套的 <code>table()</code> 选项——便于并入你正在构建的文档。</td>
+          </tr>
+        </table>
+      </div>
+
+      <h3 data-lang="en" class="doc-h3">Options</h3>
+      <h3 data-lang="de" hidden class="doc-h3">Optionen</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">选项</h3>
+
+      <p data-lang="en">Everything the two functions accept:</p>
+      <p data-lang="de" hidden>Alles, was die beiden Funktionen entgegennehmen:</p>
+      <p data-lang="zh" hidden>两个函数可接受的全部选项：</p>
+      <div data-lang="en">
+        <table class="api">
+          <tr>
+            <td>title</td>
+            <td>Heading above the table, and the PDF's title</td>
+          </tr>
+          <tr>
+            <td>header / footer</td>
+            <td>String or draw callback, repeated on every page</td>
+          </tr>
+          <tr>
+            <td>pageNumbers</td>
+            <td><code>true</code>, or the usual page-number options</td>
+          </tr>
+          <tr>
+            <td>orientation</td>
+            <td>
+              <code>"auto"</code> (default), <code>"portrait"</code>, <code>"landscape"</code>
+            </td>
+          </tr>
+          <tr>
+            <td>format / margins</td>
+            <td>Page format and margins — <code>"A4"</code> and 40 pt by default</td>
+          </tr>
+          <tr>
+            <td>skip</td>
+            <td>CSS selector for rows and cells to leave out</td>
+          </tr>
+          <tr>
+            <td>includeHidden</td>
+            <td>Take rows hidden by CSS along. Default: false</td>
+          </tr>
+          <tr>
+            <td>styles</td>
+            <td><code>false</code> ignores the CSS and uses fast-pdf's own table style</td>
+          </tr>
+          <tr>
+            <td>background</td>
+            <td>
+              The page's surface: <code>"auto"</code> (default) takes the colour behind the table, a
+              colour forces one, <code>false</code> keeps the paper white
+            </td>
+          </tr>
+          <tr>
+            <td>table</td>
+            <td>Passed straight to <code>table()</code> — wins over everything read from CSS</td>
+          </tr>
+          <tr>
+            <td>filename / label</td>
+            <td>File name and button caption (button helper only)</td>
+          </tr>
+          <tr>
+            <td>mount / position</td>
+            <td>
+              Where the created button goes. <code>position</code>: one of the four corners
+              (<code>"top-left"</code>, <code>"top-right"</code>, <code>"bottom-left"</code>,
+              <code>"bottom-right"</code>), or <code>"after"</code>/<code>"before"</code> as a
+              sibling, or <code>"append"</code>/<code>"prepend"</code> inside.
+              <code>mount</code> points all of it at any element or selector
+            </td>
+          </tr>
+          <tr>
+            <td>icon / ariaLabel</td>
+            <td>
+              <code>true</code> for the built-in glyph or your own markup; without
+              <code>label</code> the button is icon-only and takes its name from
+              <code>ariaLabel</code>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden>
+        <table class="api">
+          <tr>
+            <td>title</td>
+            <td>Überschrift über der Tabelle und Titel des PDFs</td>
+          </tr>
+          <tr>
+            <td>header / footer</td>
+            <td>String oder Zeichenfunktion, auf jeder Seite wiederholt</td>
+          </tr>
+          <tr>
+            <td>pageNumbers</td>
+            <td><code>true</code> oder die gewohnten Seitenzahl-Optionen</td>
+          </tr>
+          <tr>
+            <td>orientation</td>
+            <td>
+              <code>"auto"</code> (Standard), <code>"portrait"</code>, <code>"landscape"</code>
+            </td>
+          </tr>
+          <tr>
+            <td>format / margins</td>
+            <td>Seitenformat und Ränder — Standard <code>"A4"</code> und 40 pt</td>
+          </tr>
+          <tr>
+            <td>skip</td>
+            <td>CSS-Selektor für Zeilen und Zellen, die draußen bleiben</td>
+          </tr>
+          <tr>
+            <td>includeHidden</td>
+            <td>Per CSS versteckte Zeilen mitnehmen. Standard: false</td>
+          </tr>
+          <tr>
+            <td>styles</td>
+            <td><code>false</code> ignoriert das CSS und nutzt fast-pdfs eigenen Tabellenstil</td>
+          </tr>
+          <tr>
+            <td>background</td>
+            <td>
+              Der Untergrund der Seite: <code>"auto"</code> (Standard) nimmt die Farbe hinter der
+              Tabelle, eine Farbe erzwingt sie, <code>false</code> lässt das Papier weiß
+            </td>
+          </tr>
+          <tr>
+            <td>table</td>
+            <td>Direkt an <code>table()</code> — gewinnt gegen alles aus dem CSS Gelesene</td>
+          </tr>
+          <tr>
+            <td>filename / label</td>
+            <td>Dateiname und Beschriftung des Knopfes (nur Button-Helfer)</td>
+          </tr>
+          <tr>
+            <td>mount / position</td>
+            <td>
+              Wohin der erzeugte Knopf kommt. <code>position</code>: eine der vier Ecken
+              (<code>"top-left"</code>, <code>"top-right"</code>, <code>"bottom-left"</code>,
+              <code>"bottom-right"</code>), oder <code>"after"</code>/<code>"before"</code> daneben,
+              oder <code>"append"</code>/<code>"prepend"</code> hinein. <code>mount</code> richtet
+              das alles auf ein beliebiges Element oder einen Selektor
+            </td>
+          </tr>
+          <tr>
+            <td>icon / ariaLabel</td>
+            <td>
+              <code>true</code> für das eingebaute Glyph oder eigenes Markup; ohne
+              <code>label</code> ist der Knopf reines Icon und bekommt seinen Namen aus
+              <code>ariaLabel</code>
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden>
+        <table class="api">
+          <tr>
+            <td>title</td>
+            <td>表格上方的标题，同时作为 PDF 标题</td>
+          </tr>
+          <tr>
+            <td>header / footer</td>
+            <td>字符串或绘制回调，在每页重复</td>
+          </tr>
+          <tr>
+            <td>pageNumbers</td>
+            <td><code>true</code>，或常规的页码选项</td>
+          </tr>
+          <tr>
+            <td>orientation</td>
+            <td><code>"auto"</code>（默认）、<code>"portrait"</code>、<code>"landscape"</code></td>
+          </tr>
+          <tr>
+            <td>format / margins</td>
+            <td>页面格式与页边距——默认 <code>"A4"</code> 和 40 pt</td>
+          </tr>
+          <tr>
+            <td>skip</td>
+            <td>用于排除行与单元格的 CSS 选择器</td>
+          </tr>
+          <tr>
+            <td>includeHidden</td>
+            <td>将被 CSS 隐藏的行一并纳入。默认：false</td>
+          </tr>
+          <tr>
+            <td>styles</td>
+            <td><code>false</code> 忽略 CSS，改用 fast-pdf 自带的表格样式</td>
+          </tr>
+          <tr>
+            <td>background</td>
+            <td>
+              页面底色：<code>"auto"</code>（默认）取表格背后的颜色，指定颜色则强制使用，
+              <code>false</code> 保持白色纸张
+            </td>
+          </tr>
+          <tr>
+            <td>table</td>
+            <td>直接传给 <code>table()</code>——优先于从 CSS 读取的一切</td>
+          </tr>
+          <tr>
+            <td>filename / label</td>
+            <td>文件名与按钮文字（仅按钮辅助函数）</td>
+          </tr>
+          <tr>
+            <td>mount / position</td>
+            <td>
+              创建的按钮放在哪里。<code>position</code>：四个角之一（<code>"top-left"</code>、
+              <code>"top-right"</code>、<code>"bottom-left"</code>、<code>"bottom-right"</code>），
+              或 <code>"after"</code>/<code>"before"</code> 置于其旁，或 <code>"append"</code>/<code
+                >"prepend"</code
+              >
+              置于其内。<code>mount</code>
+              可将上述位置指向任意元素或选择器
+            </td>
+          </tr>
+          <tr>
+            <td>icon / ariaLabel</td>
+            <td>
+              <code>true</code> 使用内置图标，或传入自定义标记；未提供
+              <code>label</code> 时按钮为纯图标，其无障碍名称取自 <code>ariaLabel</code>
+            </td>
+          </tr>
+        </table>
+      </div>
+    </section>
+
     <section id="bilder" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">08</span>Images<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">09</span>Images<span class="chip"
           >New: GIF &amp; WebP</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">08</span>Bilder<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">09</span>Bilder<span class="chip"
           >Neu: GIF &amp; WebP</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">08</span>图片<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">09</span>图片<span class="chip"
           >新增：GIF 与 WebP</span
         >
       </h2>
@@ -1842,13 +2788,13 @@ pdf.image(stamp, { width: 80, rotate: -15, align: "center" });</code></pre>
 
     <section id="formen" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">09</span>Shapes
+        <span class="mr-2.5 font-normal text-(--muted)">10</span>Shapes
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">09</span>Formen
+        <span class="mr-2.5 font-normal text-(--muted)">10</span>Formen
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">09</span>图形
+        <span class="mr-2.5 font-normal text-(--muted)">10</span>图形
       </h2>
 
       <pre
@@ -1890,17 +2836,17 @@ pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
 
     <section id="svg" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">10</span>SVG graphics<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">11</span>SVG graphics<span class="chip"
           >New: svg()</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">10</span>SVG-Grafiken<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">11</span>SVG-Grafiken<span class="chip"
           >Neu: svg()</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">10</span>SVG 图形<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">11</span>SVG 图形<span class="chip"
           >新增：svg()</span
         >
       </h2>
@@ -1989,17 +2935,17 @@ pdf.svg(icon, { width: 14, color: "#2e5ce6" });</code></pre>
 
     <section id="markdown" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">11</span>Markdown<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">12</span>Markdown<span class="chip"
           >New: markdown()</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">11</span>Markdown<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">12</span>Markdown<span class="chip"
           >Neu: markdown()</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">11</span>Markdown<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">12</span>Markdown<span class="chip"
           >新增：markdown()</span
         >
       </h2>
@@ -2115,13 +3061,13 @@ Der Umsatz wuchs um **12 %** — Details im [Anhang](#anhang).
 
     <section id="features" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">12</span>Document features
+        <span class="mr-2.5 font-normal text-(--muted)">13</span>Document features
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">12</span>Dokumentfeatures
+        <span class="mr-2.5 font-normal text-(--muted)">13</span>Dokumentfeatures
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">12</span>文档功能
+        <span class="mr-2.5 font-normal text-(--muted)">13</span>文档功能
       </h2>
 
       <p data-lang="en">
@@ -2409,17 +3355,17 @@ pdf.signature({ name: "initials-p1", width: 86, height: 32, line: false });  // 
 
     <section id="anhaengen" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">13</span>Appending PDFs<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">14</span>Appending PDFs<span class="chip"
           >New: append()</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">13</span>PDFs anhängen<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">14</span>PDFs anhängen<span class="chip"
           >Neu: append()</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">13</span>追加 PDF<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">14</span>追加 PDF<span class="chip"
           >新增：append()</span
         >
       </h2>
@@ -2779,13 +3725,13 @@ pdf.text("附信");                                    // → 落在新的一页
 
     <section id="fehler" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">14</span>Error handling
+        <span class="mr-2.5 font-normal text-(--muted)">15</span>Error handling
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">14</span>Fehlerbehandlung
+        <span class="mr-2.5 font-normal text-(--muted)">15</span>Fehlerbehandlung
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">14</span>错误处理
+        <span class="mr-2.5 font-normal text-(--muted)">15</span>错误处理
       </h2>
 
       <p data-lang="en">
@@ -2835,17 +3781,17 @@ try {
 
     <section id="security" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">15</span>Security<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">16</span>Security<span class="chip"
           >New: encryption &amp; signatures</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">15</span>Sicherheit<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">16</span>Sicherheit<span class="chip"
           >Neu: Verschlüsselung &amp; Signaturen</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">15</span>安全<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">16</span>安全<span class="chip"
           >新增：加密与签名</span
         >
       </h2>
@@ -3092,13 +4038,13 @@ try {
 
     <section id="performance" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">16</span>Performance
+        <span class="mr-2.5 font-normal text-(--muted)">17</span>Performance
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">16</span>Performance
+        <span class="mr-2.5 font-normal text-(--muted)">17</span>Performance
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">16</span>性能
+        <span class="mr-2.5 font-normal text-(--muted)">17</span>性能
       </h2>
 
       <p data-lang="en">
@@ -3241,13 +4187,13 @@ try {
 
     <section id="ergebnis" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">17</span>See it rendered
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>See it rendered
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">17</span>So sieht’s aus
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>So sieht’s aus
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">17</span>效果展示
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>效果展示
       </h2>
 
       <p data-lang="en">
@@ -3316,13 +4262,13 @@ try {
 
     <section id="templates" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>Templates &amp; AI skill
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>Templates &amp; AI skill
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>Templates &amp; AI-Skill
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>Templates &amp; AI-Skill
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>模板与 AI 技能
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>模板与 AI 技能
       </h2>
 
       <p data-lang="en">
@@ -3470,7 +4416,7 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
     <!-- Changelog: bewusst nur auf Englisch — Release-Notes werden nicht übersetzt,
      damit sie 1:1 der CHANGELOG.md des Repos entsprechen. -->
     <section id="changelog" class="doc-section">
-      <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">19</span>Changelog</h2>
+      <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">20</span>Changelog</h2>
 
       <p class="text-(--muted)">
         Release notes, newest first — kept in English so they match <code>CHANGELOG.md</code> in the
@@ -3481,6 +4427,65 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
         <a class="text-(--accent) no-underline hover:underline" href="https://semver.org/">SemVer</a
         >.
       </p>
+
+      <details class="fold" open>
+        <summary>
+          <span class="fold-head"
+            ><b class="text-[13px] text-(--ink)">0.8.0</b
+            ><span class="ml-auto tabular-nums">2026-09-23</span></span
+          ><span class="fold-peek"
+            ><span class="fold-peek-text"
+              >An HTML table on the page becomes a PDF — structure and computed CSS — plus CSS
+              colors everywhere and per-cell styling in the table engine.</span
+            ></span
+          >
+        </summary>
+        <div class="cl-body">
+          <p class="cl-h">Added</p>
+          <ul class="cl-list">
+            <li>
+              <b>tableToPDF(table, options)</b> — a table that is already on the page becomes a PDF.
+              The output is real PDF text, selectable and searchable and a few kilobytes in size,
+              and it looks like what the reader is looking at: cell backgrounds, text colors,
+              per-side borders, font sizes, weights, italics, padding, alignment and the column
+              proportions are read from <code>getComputedStyle()</code> rather than guessed.
+              <code>&lt;thead&gt;</code> repeats on every page, <code>&lt;tfoot&gt;</code> is drawn
+              once, <code>colspan</code>/<code>rowspan</code> carry over, CSS-hidden rows stay out,
+              <code>skip</code> drops whatever else does not belong in the file, and a table whose
+              columns genuinely do not fit turns the page to landscape by itself.
+            </li>
+            <li>
+              <b>attachTablePdfButton()</b>, <b>downloadTablePDF()</b> and <b>tableToRows()</b> —
+              the button next to the table, the one-liner for a button you built yourself, and the
+              rows plus matching <code>table()</code> options for a document you are already
+              building. <code>header</code>, <code>footer</code> and <code>pageNumbers</code> apply
+              to all of them.
+            </li>
+            <li>
+              <b>CSS colors everywhere.</b> Every <code>color</code>, <code>fill</code> and
+              <code>borderColor</code> option now understands what a browser hands back: the 148
+              named colors, <code>rgb()</code>/<code>rgba()</code> old and new, <code>hsl()</code>,
+              <code>hwb()</code>, <code>oklab()</code>, <code>oklch()</code>, <code>lab()</code>,
+              <code>lch()</code> and <code>color(srgb …)</code> / <code>color(display-p3 …)</code>,
+              converted to sRGB and clipped to gamut.
+            </li>
+            <li>
+              <b>Per-cell styling in table().</b> <code>TableCell</code> gained
+              <code>fontSize</code>, <code>padding</code> (one value or separate
+              <code>{ x, y }</code> insets) and <code>borders</code> — per side, each with its own
+              width and color, a side left out simply not painted.
+            </li>
+          </ul>
+          <p class="cl-h">Changed</p>
+          <ul class="cl-list">
+            <li>
+              <code>parseColor()</code> accepts more than it did: strings that previously threw
+              <code>INVALID_COLOR</code> — <code>"red"</code>, <code>"rgb(0 0 0)"</code> — are now
+              valid colors. Anything that is genuinely not a color still throws.
+            </li>
+          </ul>
+        </div>
+      </details>
 
       <details class="fold">
         <summary>
@@ -4216,4 +5221,121 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
       return '<span class="' + cls + '">' + m + "</span>";
     });
   });
+</script>
+
+<script>
+  // Framework-Reiter über den Codebeispielen. Der Zustand steht in
+  // aria-selected, damit Screenreader und CSS dieselbe Quelle lesen.
+  document.querySelectorAll("[data-tabs]").forEach(function (group) {
+    var buttons = group.querySelectorAll(".tab-btn");
+    var panels = group.querySelectorAll("[data-panel]");
+    buttons.forEach(function (button) {
+      button.addEventListener("click", function () {
+        buttons.forEach(function (other) {
+          other.setAttribute("aria-selected", String(other === button));
+        });
+        panels.forEach(function (panel) {
+          panel.hidden = panel.getAttribute("data-panel") !== button.getAttribute("data-tab");
+        });
+      });
+    });
+  });
+</script>
+
+<!-- fast-pdf selbst, eingebettet vom Demo-Build: der Knopf an der
+     Beispieltabelle erzeugt damit ein echtes PDF im Browser des Lesers. -->
+<script type="module">
+  __FASTPDF_JS__;
+
+  var LABELS = {
+    en: { label: "Download PDF", busy: "Rendering…", failed: "Failed — see the console" },
+    de: { label: "PDF herunterladen", busy: "Wird erzeugt…", failed: "Fehlgeschlagen — Konsole" },
+    zh: { label: "下载 PDF", busy: "生成中…", failed: "生成失败——请查看控制台" },
+  };
+
+  function lang() {
+    var value = document.documentElement.lang;
+    return value === "zh-CN" ? "zh" : LABELS[value] ? value : "en";
+  }
+
+  var options = {
+    filename: "fast-pdf-demo-invoice.pdf",
+    title: "Invoice 2026-041",
+    header: "Acme Coffee GmbH · Hamburg",
+    footer: "Generated with fast-pdf — no server involved",
+    pageNumbers: true,
+    skip: ".no-print",
+  };
+
+  // Was die Schalter über der Tabelle gerade sagen.
+  var choice = { position: "bottom-left", look: "label" };
+  var handle = null;
+  var codeBlock = document.querySelector("#demo-invoice-code code");
+
+  function buildOptions() {
+    var text = LABELS[lang()].label;
+    var result = Object.assign({}, options, {
+      position: choice.position,
+      className: choice.look === "icon" ? "dl-btn dl-icon" : "dl-btn",
+    });
+    if (choice.look !== "icon") result.label = text;
+    if (choice.look !== "label") result.icon = true;
+    if (choice.look === "icon") result.ariaLabel = text;
+    return result;
+  }
+
+  /** Die gezeigten Optionen sind dieselben, die der Knopf gerade benutzt. */
+  function showCode(used) {
+    if (!codeBlock) return;
+    var lines = [
+      'import { attachTablePdfButton } from "fast-pdf";',
+      "",
+      'attachTablePdfButton("#invoice", {',
+    ];
+    ["label", "icon", "ariaLabel", "position", "filename", "title", "header", "footer"].forEach(
+      function (key) {
+        if (used[key] === undefined) return;
+        var value = used[key] === true ? "true" : JSON.stringify(used[key]);
+        lines.push("  " + key + ": " + value + ",");
+      },
+    );
+    lines.push("  pageNumbers: true,");
+    lines.push('  skip: ".no-print",');
+    lines.push("});");
+    codeBlock.textContent = lines.join("\n");
+  }
+
+  function render() {
+    if (handle) handle.destroy();
+    var used = buildOptions();
+    handle = attachTablePdfButton("#demo-invoice", {
+      ...used,
+      onError: function (error) {
+        console.error(error);
+        handle.button.textContent = LABELS[lang()].failed;
+      },
+    });
+    showCode(used);
+  }
+
+  if (document.getElementById("demo-invoice")) {
+    document.querySelectorAll(".demo-controls [data-control]").forEach(function (group) {
+      var buttons = group.querySelectorAll(".ctl-btn");
+      buttons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          buttons.forEach(function (other) {
+            other.setAttribute("aria-pressed", String(other === button));
+          });
+          choice[group.getAttribute("data-control")] = button.getAttribute("data-value");
+          render();
+        });
+      });
+    });
+
+    // Sprachwechsel: der Knopf trägt seinen Text selbst, also neu aufbauen.
+    var picker = document.getElementById("lang-select");
+    if (picker) picker.addEventListener("change", render);
+
+    render();
+  }
 </script>

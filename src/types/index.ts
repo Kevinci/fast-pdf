@@ -1,6 +1,7 @@
 /** Shared public types. Pure data — no platform APIs. */
 
 import { FastPDFError } from "../errors";
+import { parseCssColor } from "./css-color";
 
 /** A color: hex string ("#rgb", "#rrggbb"), or RGB components 0–255. */
 export type ColorInput = string | { r: number; g: number; b: number };
@@ -93,17 +94,23 @@ export function parseColor(input: ColorInput): RGB {
   if (/^[0-9a-fA-F]{3}$/.test(hex)) {
     hex = hex[0]! + hex[0]! + hex[1]! + hex[1]! + hex[2]! + hex[2]!;
   }
-  if (!/^[0-9a-fA-F]{6}$/.test(hex)) {
-    throw new FastPDFError(
-      `Invalid color: "${input}" (expected "#rgb", "#rrggbb" or {r,g,b})`,
-      "INVALID_COLOR",
-    );
+  if (/^[0-9a-fA-F]{6}$/.test(hex)) {
+    return {
+      r: parseInt(hex.slice(0, 2), 16) / 255,
+      g: parseInt(hex.slice(2, 4), 16) / 255,
+      b: parseInt(hex.slice(4, 6), 16) / 255,
+    };
   }
-  return {
-    r: parseInt(hex.slice(0, 2), 16) / 255,
-    g: parseInt(hex.slice(2, 4), 16) / 255,
-    b: parseInt(hex.slice(4, 6), 16) / 255,
-  };
+  // Anything else goes to the CSS parser: named colors, rgb()/hsl(), and the
+  // modern spaces a browser hands back from getComputedStyle (oklch, lab,
+  // color(display-p3 …)). Alpha is dropped — opacity lives in the graphics
+  // state, not in a fill color.
+  const css = parseCssColor(input);
+  if (css) return css.rgb;
+  throw new FastPDFError(
+    `Invalid color: "${input}" (expected "#rgb", "#rrggbb", {r,g,b} or a CSS color)`,
+    "INVALID_COLOR",
+  );
 }
 
 function clamp01(n: number): number {

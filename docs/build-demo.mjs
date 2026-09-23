@@ -3,13 +3,33 @@
  *  - docs/demo-src.html   (Markup mit Tailwind-Klassen + Design-Tokens)
  *  - docs/demo.tw.css     (generiertes Tailwind-CSS — via `npm run docs:demo`)
  *  - docs/assets/demo-*.png (Screenshots, als data-URIs eingebettet)
+ *  - dist/index.browser.js  (die Bibliothek selbst, damit der
+ *    "PDF herunterladen"-Knopf der Beispieltabelle wirklich läuft)
  */
-import { readFileSync, writeFileSync } from "node:fs";
+import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const docs = dirname(fileURLToPath(import.meta.url));
 const read = (name) => readFileSync(join(docs, name));
+
+/**
+ * Die Seite bleibt eine einzige Datei — also wandert auch die Bibliothek
+ * hinein. Ohne sie wäre die Beispieltabelle nur ein Screenshot; mit ihr
+ * erzeugt der Knopf im Browser des Lesers ein echtes PDF.
+ */
+function library() {
+  const path = join(docs, "..", "dist", "index.browser.js");
+  if (!existsSync(path)) {
+    throw new Error(
+      "dist/index.browser.js fehlt — bitte zuerst `npm run build`, " +
+        "sonst hätte die Demo-Tabelle keinen funktionierenden Download-Knopf.",
+    );
+  }
+  // Die Source-Map liegt nicht neben der HTML-Datei; der Verweis würde in
+  // den DevTools nur einen 404 erzeugen.
+  return readFileSync(path, "utf8").replace(/^\/\/# sourceMappingURL=.*$/gm, "");
+}
 
 let html = read("demo-src.html").toString("utf8");
 const css = read("demo.tw.css").toString("utf8");
@@ -22,7 +42,8 @@ html = html
   .replace("__TW_CSS__", () => css)
   .replace("__QUICKSTART_B64__", () => read("assets/demo-quickstart.png").toString("base64"))
   .replace("__COVER_B64__", () => read("assets/demo-cover.png").toString("base64"))
-  .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"));
+  .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"))
+  .replace("__FASTPDF_JS__", () => library());
 
 // Favicon: weißes Blatt mit Eselsohr und Akzent-Blitz auf der Akzentfarbe.
 // Drei Formen, mehr überlebt 16 px nicht; der Blitz bleibt vollständig

@@ -47,7 +47,30 @@ export type {
 
 export { FastPDFError, type FastPDFErrorCode } from "./errors";
 
-export type { CellValue, TableCell, TableOptions, CellBox, VerticalAlign } from "./layout/table";
+export type {
+  CellValue,
+  TableCell,
+  TableOptions,
+  CellBox,
+  CellBorders,
+  CellBorderSide,
+  VerticalAlign,
+} from "./layout/table";
+
+// HTML table → PDF (browser).
+export {
+  tableToPDF,
+  tableToRows,
+  downloadTablePDF,
+  attachTablePdfButton,
+  type TableSource,
+  type TablePDFOptions,
+  type TablePdfButtonOptions,
+  type TablePdfButtonHandle,
+  type StyleReader,
+} from "./dom/table";
+
+export { parseCssColor, type ParsedCssColor } from "./types/css-color";
 
 export {
   PAGE_FORMATS,

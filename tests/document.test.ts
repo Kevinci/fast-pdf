@@ -161,3 +161,31 @@ describe("deterministic output", () => {
     expect(a).not.toBe(b);
   });
 });
+
+describe("pageBackground", () => {
+  it("paints every page underneath the content", async () => {
+    const pdf = new PDFDocument({ compress: false, format: "A4" });
+    pdf.pageBackground("#101820");
+    pdf.text("first");
+    pdf.addPage();
+    pdf.text("second");
+    const text = latin1String(await pdf.render());
+
+    // 0x10/0x18/0x20 as PDF fill colour, covering the whole A4 page.
+    const paint = "0.0627 0.0941 0.1255 rg\n0 0 595.28 841.89 re\nf";
+    expect(text.split(paint).length - 1).toBe(2);
+
+    // Underneath: on each page the fill precedes that page's own text.
+    for (const part of text.split(paint).slice(1)) {
+      const nextPaint = part.indexOf("endstream");
+      expect(part.indexOf("BT")).toBeGreaterThan(0);
+      expect(part.indexOf("BT")).toBeLessThan(nextPaint);
+    }
+  });
+
+  it("leaves the paper white when it is not asked", async () => {
+    const pdf = new PDFDocument({ compress: false });
+    pdf.text("plain");
+    expect(latin1String(await pdf.render())).not.toContain("0 0 595.28 841.89 re");
+  });
+});

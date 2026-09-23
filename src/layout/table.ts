@@ -24,6 +24,24 @@ export interface CellBox {
   height: number;
 }
 
+/** One painted edge of a cell. */
+export interface CellBorderSide {
+  width: number;
+  color: ColorInput;
+}
+
+/**
+ * Per-cell borders. A side left out (or set to `null`) is not painted, which
+ * is how `border: none` on a single cell survives the trip from CSS.
+ * Setting `borders` at all replaces the table-wide border for that cell.
+ */
+export interface CellBorders {
+  top?: CellBorderSide | null;
+  right?: CellBorderSide | null;
+  bottom?: CellBorderSide | null;
+  left?: CellBorderSide | null;
+}
+
 export interface TableCell {
   /** Cell text. Optional when `render` draws the cell instead. */
   text?: string;
@@ -44,6 +62,16 @@ export interface TableCell {
   render?: (doc: PDFDocument, box: CellBox) => void;
   /** Fixed content height in points for a `render` cell (skips measuring). */
   height?: number;
+  /** Font size in points for this cell. Default: the table's `fontSize`. */
+  fontSize?: number;
+  /**
+   * Inner padding in points for this cell — one value, or separate
+   * horizontal and vertical insets (CSS `padding: 6px 12px`).
+   * Default: the table's `padding`.
+   */
+  padding?: number | { x: number; y: number };
+  /** Per-side borders, replacing the table-wide border for this cell. */
+  borders?: CellBorders;
   /** Number of grid columns this cell spans. Default: 1. */
   colSpan?: number;
   /** Number of rows this cell spans. Default: 1. */
@@ -89,6 +117,12 @@ export interface MeasuredCell {
   height: number;
   /** Height of the cell's own content, excluding padding. */
   contentHeight: number;
+  /** Resolved font size — the cell's own, or the table's. */
+  fontSize: number;
+  /** Resolved horizontal padding. */
+  padX: number;
+  /** Resolved vertical padding. */
+  padY: number;
 }
 
 export interface MeasuredRow {
@@ -182,11 +216,15 @@ export function measureTable(
       const rowSpan = Math.max(1, Math.min(cell.rowSpan ?? 1, rows.length - rowIndex));
       const width = xOf[col + colSpan]! - xOf[col]!;
       const font = opts.resolveFont(cell.bold ?? (isHeader || isFooter), cell.italic ?? false);
-      const innerWidth = Math.max(1, width - 2 * opts.padding);
-      const lines = cell.render ? [] : wrapText(cell.text ?? "", font, opts.fontSize, innerWidth);
+      const fontSize = cell.fontSize ?? opts.fontSize;
+      const pad = cell.padding ?? opts.padding;
+      const padX = typeof pad === "number" ? pad : pad.x;
+      const padY = typeof pad === "number" ? pad : pad.y;
+      const innerWidth = Math.max(1, width - 2 * padX);
+      const lines = cell.render ? [] : wrapText(cell.text ?? "", font, fontSize, innerWidth);
       const contentHeight = cell.render
         ? (cell.height ?? opts.measureRender?.(cell, innerWidth) ?? 0)
-        : lines.length * opts.fontSize * opts.lineHeight;
+        : lines.length * fontSize * opts.lineHeight;
       cells.push({
         cell,
         lines,
@@ -197,6 +235,9 @@ export function measureTable(
         rowSpan,
         height: 0,
         contentHeight,
+        fontSize,
+        padX,
+        padY,
       });
       if (rowSpan > 1) {
         for (let c = col; c < col + colSpan; c++) occupancy[c] = rowSpan;
@@ -204,13 +245,14 @@ export function measureTable(
       col += colSpan;
     }
     // Height from cells that end in this row; spanning cells are handled below.
-    const own = cells.filter((c) => c.rowSpan === 1).map((c) => c.contentHeight);
-    const minRow = opts.fontSize * opts.lineHeight; // never collapse below one line
+    // A cell's padding is its own, so the row is measured on full box heights.
+    const own = cells.filter((c) => c.rowSpan === 1).map((c) => c.contentHeight + 2 * c.padY);
+    const minRow = opts.fontSize * opts.lineHeight + 2 * opts.padding; // never below one line
     const maxContent = Math.max(minRow, ...own);
     for (let c = 0; c < columns; c++) if (occupancy[c]! > 0) occupancy[c]!--;
     measured.push({
       cells,
-      height: maxContent + 2 * opts.padding,
+      height: maxContent,
       isHeader,
       isFooter,
       keepWithNext: occupancy.some((o) => o > 0),
@@ -222,7 +264,7 @@ export function measureTable(
   measured.forEach((row, i) => {
     for (const cell of row.cells) {
       if (cell.rowSpan <= 1) continue;
-      const need = cell.contentHeight + 2 * opts.padding;
+      const need = cell.contentHeight + 2 * cell.padY;
       const spanned = measured.slice(i, i + cell.rowSpan);
       const sum = spanned.reduce((a, r) => a + r.height, 0);
       if (need > sum) spanned[spanned.length - 1]!.height += need - sum;

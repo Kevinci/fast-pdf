@@ -29,6 +29,7 @@ await pdf.save("document.pdf");
 | Runs on                  | Node, Bun, Deno, browser, edge                           | Node + browser; edge runtimes are tricky     | servers that can run a browser       |
 | 3-page document          | **~1.6 ms**                                              | element tree → flexbox layout → PDF lib      | ~1000 ms+ (browser startup + render) |
 | Tables                   | built-in: repeating headers, col/row spans, JSON → table | hand-built from flexbox views                | HTML/CSS                             |
+| Existing HTML table      | **`tableToPDF()`** — reads the DOM incl. computed CSS    | —                                            | re-renders the whole page            |
 | Signature form fields    | ✅ AcroForm                                              | —                                            | ❌ printed output has no form fields |
 | TOC, outlines, watermark | ✅ built-in                                              | partly                                       | ❌                                   |
 | Bundle                   | ~94 KB ESM, tree-shakeable                               | several 100 KB + the framework               | n/a                                  |
@@ -395,6 +396,99 @@ pdf.objectTable(orders, {
 computed cells. All other `table()` options (header/footer, zebra, borders,
 padding) pass through.
 
+### HTML tables → PDF (browser)
+
+A table is already on the page and somebody wants it as a PDF. Instead of a
+screenshot library or a headless browser on the server, hand fast-pdf the
+`<table>` itself:
+
+```ts
+import { attachTablePdfButton } from "fast-pdf";
+
+attachTablePdfButton("#revenue", {
+  label: "Download PDF",
+  filename: "revenue.pdf",
+  title: "Revenue 2026",
+  header: "Acme GmbH", // running header on every page
+  footer: "Confidential", // running footer
+  pageNumbers: true,
+  skip: ".no-print", // rows/cells that stay on screen
+});
+```
+
+That creates the button, puts it next to the table and wires the click. The
+button lands wherever you want it, and it can carry an icon instead of a
+caption:
+
+```ts
+attachTablePdfButton("#revenue", {
+  position: "top-right", // any of the table's four corners
+  icon: true, // the built-in glyph — or your own SVG markup
+  ariaLabel: "Download revenue as PDF", // the name a screen reader reads
+});
+```
+
+`position` takes the four corners — `"top-left"`, `"top-right"`,
+`"bottom-left"`, `"bottom-right"` — which put the button in a flex row above or
+below the table, pushed to the left or right edge. That row is a
+`<div class="fast-pdf-download-row">`, so its spacing is yours to style; the
+alignment itself is the one place this helper writes inline CSS, because
+aligning is what the option is for.
+
+Plain placements work too: `"after"` and `"before"` make the button a sibling,
+`"append"` and `"prepend"` put it inside. `mount` points all of that at any
+other element — a toolbar, a card header — by element or selector:
+
+```ts
+attachTablePdfButton("#revenue", { mount: "#toolbar", position: "prepend" });
+```
+
+Three more entry points, depending on how much you want to hand over:
+
+```ts
+await downloadTablePDF("#revenue", { title: "Revenue 2026" }); // your own button
+const pdf = tableToPDF("#revenue"); // the PDFDocument, to keep working on
+const { rows, options } = tableToRows("#revenue", { width: pdf.width });
+pdf.table(rows, options); // into a document you are already building
+```
+
+The output is **real PDF text** — selectable, searchable, a few kilobytes — and
+it looks like what the reader sees: cell backgrounds, text colors, per-side
+borders, font sizes, weights, italics, padding, alignment and the column
+proportions are all read from `getComputedStyle()`, including modern color
+spaces like `oklch()` and `color(display-p3 …)`. `<thead>` repeats on every
+page, `<tfoot>` is drawn once, `colspan`/`rowspan` carry over, rows hidden by
+CSS stay out, and a table whose columns genuinely do not fit turns the page to
+landscape by itself (`orientation: "portrait"` forces it back).
+
+| Option               | Meaning                                                                                                                                                                                                                                                          |
+| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `title`              | Heading above the table, and the PDF's title                                                                                                                                                                                                                     |
+| `header` / `footer`  | String or draw callback, repeated on every page                                                                                                                                                                                                                  |
+| `pageNumbers`        | `true`, or the usual page-number options                                                                                                                                                                                                                         |
+| `orientation`        | `"auto"` (default), `"portrait"`, `"landscape"`                                                                                                                                                                                                                  |
+| `format` / `margins` | Page format and margins — `"A4"` and 40 pt by default                                                                                                                                                                                                            |
+| `skip`               | CSS selector for rows and cells to leave out                                                                                                                                                                                                                     |
+| `includeHidden`      | Take CSS-hidden rows along. Default: `false`                                                                                                                                                                                                                     |
+| `styles`             | `false` ignores the CSS and uses fast-pdf's own table style                                                                                                                                                                                                      |
+| `background`         | The page's surface: `"auto"` (default) takes the color behind the table, a color forces one, `false` keeps the paper white                                                                                                                                       |
+| `table`              | Passed to `table()` — wins over everything read from CSS                                                                                                                                                                                                         |
+| `filename` / `label` | File name and button caption (button helper only)                                                                                                                                                                                                                |
+| `mount` / `position` | Where the created button goes. `position`: one of the four corners (`"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"`), or `"after"`/`"before"` as a sibling, or `"append"`/`"prepend"` inside. `mount` points all of it at any element or selector |
+| `icon` / `ariaLabel` | `true` for the built-in glyph or your own markup; without `label` the button is icon-only and takes its name from `ariaLabel`                                                                                                                                    |
+
+The surface counts too. A row without its own background is transparent in the
+browser and shows the card or page behind it — so `tableToPDF()` walks up from
+the table until it finds a real color and paints the PDF page in it. Without
+that step a table from a dark interface would arrive as light text on white
+paper, which is how "1:1" usually falls apart. `background` takes a color of
+your own, or `false` to keep the paper white.
+
+One thing genuinely cannot come along: web font **files**. CSS names a font, it
+never hands over its bytes, so a family the document does not carry is mapped
+onto the closest built-in one — register the real file with `registerFont()` and
+pass it as `table.font` when the typeface has to match.
+
 ### Images
 
 ```ts
@@ -583,16 +677,17 @@ All user-facing failures throw `FastPDFError` with a stable machine-readable
 fast-pdf generates documents; it deliberately does not do everything. What it
 cannot do today, so you can decide before you start:
 
-| Not supported                                | Notes                                                                                                                                |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| Editing existing PDFs                        | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected. |
-| Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not.                                                            |
-| Form fields other than signatures            | Text fields, checkboxes and dropdowns are not implemented.                                                                           |
-| WOFF/WOFF2 fonts                             | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                           |
-| Kerning, ligatures, complex-script shaping   | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                          |
-| Gradients (`/Shading`), patterns             | Flat fills and constant alpha only.                                                                                                  |
-| CFF-flavoured OpenType, `.ttc`               | Rejected with an actionable error.                                                                                                   |
-| Lossy WebP, interlaced PNG                   | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                   |
+| Not supported                                | Notes                                                                                                                                       |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editing existing PDFs                        | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.        |
+| Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not.                                                                   |
+| Form fields other than signatures            | Text fields, checkboxes and dropdowns are not implemented.                                                                                  |
+| WOFF/WOFF2 fonts                             | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                                  |
+| Kerning, ligatures, complex-script shaping   | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                                 |
+| Gradients (`/Shading`), patterns             | Flat fills and constant alpha only.                                                                                                         |
+| CFF-flavoured OpenType, `.ttc`               | Rejected with an actionable error.                                                                                                          |
+| Lossy WebP, interlaced PNG                   | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                          |
+| HTML pages → PDF                             | `tableToPDF()` reads a `<table>`, not a whole page. There is no general HTML/CSS layout engine, and web font files cannot be read from CSS. |
 
 ## Design
 

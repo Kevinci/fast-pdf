@@ -118,3 +118,113 @@
 .cl-note {
   @apply max-w-[68ch] text-[13.5px] leading-[1.55] text-(--muted);
 }
+
+/* Framework-Tabs (React / Vue / Vanilla) über den Codebeispielen. Der aktive
+   Reiter trägt aria-selected="true" — der Zustand liegt damit dort, wo ihn
+   auch ein Screenreader liest, und das CSS hängt sich an dieselbe Stelle. */
+.tabs {
+  @apply my-3.5;
+}
+.tab-list {
+  @apply flex flex-wrap gap-1 border-b border-(--hairline);
+}
+.tab-btn {
+  @apply -mb-px cursor-pointer rounded-t-md border border-transparent border-b-(--hairline) bg-transparent px-3 py-1.5 font-mono text-[12.5px] text-(--muted);
+}
+.tab-btn:hover {
+  @apply text-(--ink);
+}
+.tab-btn[aria-selected="true"] {
+  @apply border-(--hairline) border-b-(--surface) bg-(--surface) font-semibold text-(--accent);
+}
+.tab-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+.tabs > .code-block {
+  @apply mt-0 rounded-t-none;
+}
+
+/* Die Beispieltabelle der Demo — bewusst durchgestaltet, damit sichtbar ist,
+   was der Leser gleich im PDF wiederfindet. */
+.demo-wrap {
+  @apply my-4 overflow-x-auto rounded-lg border border-(--hairline) bg-(--surface) p-4;
+}
+table.demo {
+  @apply w-full border-collapse text-[13.5px];
+}
+table.demo thead th {
+  @apply bg-(--accent) px-3 py-2.5 text-left font-semibold text-white;
+}
+table.demo tbody td {
+  @apply border-b border-(--hairline) px-3 py-2 text-(--ink);
+}
+table.demo tbody tr:nth-child(even) td {
+  @apply bg-(--accent-soft);
+}
+table.demo td.num {
+  @apply text-right tabular-nums;
+}
+table.demo tfoot td {
+  @apply border-t-2 border-(--muted) bg-(--ground) px-3 py-2.5 font-semibold text-(--ink);
+}
+/* Der Download-Knopf. inline-flex, damit Icon und Beschriftung nebeneinander
+   stehen statt untereinander; der vertikale Abstand sitzt an der Zeile, die
+   fast-pdf um den Knopf legt — sonst fehlte er, sobald der Knopf über der
+   Tabelle steht. */
+.dl-btn {
+  @apply inline-flex cursor-pointer items-center gap-1.5 rounded-md border-0 bg-(--accent) px-4 py-2 font-mono text-[13px] font-semibold text-white;
+}
+.dl-btn:hover {
+  @apply brightness-110;
+}
+.dl-btn[disabled] {
+  @apply cursor-wait opacity-60;
+}
+.dl-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+/* Icon-only: quadratisch statt in die Breite gezogen. */
+.dl-btn.dl-icon {
+  @apply justify-center px-2.5 py-2;
+}
+.dl-btn svg {
+  @apply block;
+}
+/* Die Zeile, die fast-pdf für eine Eck-Position anlegt (display/justify setzt
+   die Bibliothek selbst — hier kommt nur der Abstand dazu). */
+.fast-pdf-download-row {
+  @apply my-3;
+}
+
+/* Schalterleiste über der Beispieltabelle: Position und Darstellung des
+   Knopfes zum Ausprobieren. Der Zustand steht in aria-pressed. */
+.demo-controls {
+  @apply mb-4 flex flex-wrap items-center gap-x-6 gap-y-3;
+}
+.ctl-field {
+  @apply flex flex-wrap items-center gap-2;
+}
+.ctl-label {
+  @apply font-mono text-[11.5px] tracking-[0.06em] text-(--muted) uppercase;
+}
+.ctl-group {
+  @apply inline-flex overflow-hidden rounded-md border border-(--hairline);
+}
+.ctl-btn {
+  @apply cursor-pointer border-0 border-l border-(--hairline) bg-(--surface) px-2.5 py-1 font-mono text-[12px] whitespace-nowrap text-(--muted);
+}
+.ctl-btn:first-child {
+  @apply border-l-0;
+}
+.ctl-btn:hover {
+  @apply text-(--ink);
+}
+.ctl-btn[aria-pressed="true"] {
+  @apply bg-(--accent-soft) font-semibold text-(--accent);
+}
+.ctl-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}

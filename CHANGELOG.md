@@ -4,6 +4,105 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.8.0] — 2026-09-23
+
+The table is already on the page. Now it can leave as a PDF.
+
+No breaking changes: existing documents render as before.
+
+### Added
+
+- **`tableToPDF(table, options)` — an HTML table becomes a PDF.** The case that
+  keeps pulling a second library into a project: a report, an invoice preview or
+  a dashboard grid is already rendered in the browser, and somebody wants it as
+  a file. Until now that meant a screenshot library, a headless browser on the
+  server, or a second data path that rebuilds the same rows by hand.
+
+  ```ts
+  import { attachTablePdfButton } from "fast-pdf";
+
+  attachTablePdfButton("#revenue", {
+    label: "Download PDF",
+    title: "Revenue 2026",
+    header: "Acme GmbH", // running header on every page
+    footer: "Confidential",
+    pageNumbers: true,
+    skip: ".no-print",
+  });
+  ```
+
+  The output is **real PDF text** — selectable, searchable, a few kilobytes
+  rather than a megabyte-sized image — and it looks like what the reader is
+  looking at, because the appearance is read from the browser's own layout
+  rather than guessed: cell backgrounds, text colors, per-side borders, font
+  sizes, weights, italics, padding, horizontal and vertical alignment and the
+  column proportions all come from `getComputedStyle()`.
+
+  `<thead>` repeats at the top of every page, `<tfoot>` is drawn once,
+  `colspan`/`rowspan` carry over, rows hidden by CSS stay out, `skip` drops
+  whatever else does not belong in the file, and a table whose columns genuinely
+  cannot be squeezed into the text column turns the page to landscape on its own
+  — the decision rests on the narrowest the table could be, not on how wide the
+  surrounding layout happens to render it.
+
+  Four entry points, depending on how much you hand over:
+  `attachTablePdfButton()` creates the button, places it next to the table and
+  wires the click (or takes one you built via `button`); `downloadTablePDF()`
+  renders and hands the browser the file; `tableToPDF()` returns the
+  `PDFDocument`, so it can still be drawn on, appended to, encrypted or signed;
+  and `tableToRows()` returns just the rows plus matching `table()` options, to
+  drop an on-screen table into a document that is being built anyway.
+
+  The created button goes where you want it: `position` takes the four corners
+  — `"top-left"`, `"top-right"`, `"bottom-left"`, `"bottom-right"` — which put
+  it in a `<div class="fast-pdf-download-row">` above or below the table,
+  pushed to the left or right edge, or the plain placements `"after"` /
+  `"before"` (sibling) and `"append"` / `"prepend"` (inside). `mount` points
+  all of that at any other element or selector, so the button can live in a
+  toolbar or a card header rather than next to the table. `icon` replaces the
+  caption with the built-in glyph or markup of your own — combined with `label`
+  the icon leads the text, on its own the button is icon-only and takes its
+  accessible name from `ariaLabel`, because an icon button without one is
+  invisible to a screen reader.
+
+  The surface counts as much as the cells. A row without its own background is
+  transparent in the browser and shows the card or page behind it, so the
+  reader walks up from the table until it finds a real colour and paints the
+  PDF page in it — otherwise a table from a dark interface would arrive as
+  light text on white paper, which is exactly where "looks like the screen"
+  usually breaks. The heading follows the table's own text colour for the same
+  reason. `background` overrides it with a colour of your own, or `false`
+  keeps the paper white.
+
+  One thing deliberately does not come along: web font **files**. CSS names a
+  font, it never hands over its bytes, so an unregistered family maps onto the
+  closest built-in one — register the file with `registerFont()` and pass it as
+  `table.font` when the typeface has to match exactly. `styles: false` skips
+  the CSS entirely and renders the structure in fast-pdf's own table style.
+
+- **CSS colors everywhere.** `parseColor()` — and with it every `color`, `fill`
+  and `borderColor` option in the library — now understands what a browser hands
+  back: the 148 named colors, `rgb()`/`rgba()` in both the legacy and the modern
+  syntax, `hsl()`, `hwb()`, the perceptual spaces `oklab()`, `oklch()`, `lab()`
+  and `lch()`, and `color(srgb …)`/`color(display-p3 …)`, all converted to sRGB
+  and clipped to gamut. Exported as `parseCssColor()` for reading alpha, which a
+  fill color has no room for.
+
+- **`pageBackground(color)`** — paint every page in one colour, underneath
+  everything else. Appended pages keep their own look, because painting over a
+  document someone else signed would hide the content it was appended for.
+
+- **Per-cell styling in `table()`.** `TableCell` gained `fontSize`, `padding`
+  (one value, or separate `{ x, y }` insets) and `borders` — per side, each with
+  its own width and color, where a side left out is simply not painted. This is
+  what carries CSS into the table engine, and it is just as usable by hand.
+
+### Changed
+
+- **`parseColor()` accepts more than it did.** Strings that previously threw
+  `INVALID_COLOR` — `"red"`, `"rgb(0 0 0)"` — are now valid colors. Anything
+  that is genuinely not a color still throws `INVALID_COLOR`.
+
 ## [0.7.1] — 2026-08-05
 
 ### Changed

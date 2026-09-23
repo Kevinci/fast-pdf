@@ -1,6 +1,7 @@
 # fast-pdf – Enterprise Roadmap (v1.0 → v3.0)
 
-> Ergänzende Langfrist-Roadmap zur schlanken [ROADMAP.md](./ROADMAP.md) (v1.0-Fokus).
+> Langfrist-Roadmap. Der Stand des ausgelieferten Funktionsumfangs steht im
+> [README](../README.md) und im [CHANGELOG](../CHANGELOG.md).
 > Diese Datei beschreibt den Weg von einem schnellen PDF-Generator hin zu einer
 > Referenzbibliothek für sichere, deterministische und regulatorisch taugliche
 > PDF-Erzeugung im JavaScript-Ökosystem.
@@ -17,6 +18,10 @@ Branchen.
 ## Phase 1 – Foundation (v1.0)
 
 **Ziel:** Solides, schnelles Fundament.
+
+> Stand 2026-09-23: Core und PDF-Features sind vollständig ausgeliefert (0.7.1).
+> Offen bleiben Snapshot-/Performance-Tests, das 95-%-Coverage-Ziel und
+> Migration Guides.
 
 ### Core
 
@@ -36,35 +41,35 @@ Branchen.
 
 ### PDF Features
 
-- [ ] Text
-- [ ] Fonts
-- [ ] Images
-- [ ] Shapes
-- [ ] Tables
-- [ ] Headers & Footers
-- [ ] Pagination
-- [ ] Links
-- [ ] Metadata
-- [ ] Multi Page Support
+- [x] Text
+- [x] Fonts (Standard-14 + eingebettete TrueType-Subsets)
+- [x] Images (PNG, JPEG, GIF, WebP)
+- [x] Shapes
+- [x] Tables
+- [x] Headers & Footers
+- [x] Pagination (`pageNumbers()`)
+- [x] Links (inkl. Buttons und Bookmarks)
+- [x] Metadata (`/Info`: Title, Author, Subject, Keywords, Producer)
+- [x] Multi Page Support
 
 ### Qualität
 
-- [ ] Unit Tests
-- [ ] Integration Tests
-- [ ] Snapshot Tests
-- [ ] Performance Tests
-- [ ] API Tests
-- [ ] 95 %+ Test Coverage
+- [x] Unit Tests (`tests/`, 23 Dateien / 395 Tests)
+- [x] Integration Tests (End-to-End-Strukturtests über das fertige PDF)
+- [ ] Snapshot Tests (bisher keine — Struktur wird assertiv geprüft)
+- [ ] Performance Tests (`npm run bench` misst, bricht aber bei Regression nicht ab)
+- [x] API Tests
+- [ ] 95 %+ Test Coverage (Stand: 92,08 % Lines / 83,8 % Branches; Schwellen 90/80)
 
 ### Developer Experience
 
-- [ ] Vollständige TypeScript-Dokumentation
-- [ ] API Reference
-- [ ] Beispiele
-- [ ] Playground
-- [ ] Benchmarks
+- [x] Vollständige TypeScript-Dokumentation (JSDoc an der gesamten öffentlichen API)
+- [x] API Reference (README)
+- [x] Beispiele (`examples/`: invoice, cv, report, showcase, append, signature)
+- [x] Playground (`docs/demo.html`, `docs/append-playground.html`)
+- [x] Benchmarks (`bench/bench.ts`)
 - [ ] Migration Guides
-- [ ] Changelog
+- [x] Changelog
 
 ---
 
@@ -280,6 +285,10 @@ Automatisch:
 
 ## Phase 8 – Supply Chain Security (v3.0)
 
+> Stand 2026-09-23: Auf npm stehen 0.5.0 bis 0.7.1, im Repository enden die
+> Git-Tags bei `v0.4.0` — für vier veröffentlichte Versionen fehlt der Tag
+> ganz. Das nachzuholen ist die Voraussetzung für alles Weitere hier.
+
 ### Sichere Releases
 
 - [ ] Signierte Git Tags
@@ -290,11 +299,11 @@ Automatisch:
 
 ### Security
 
-- [ ] SECURITY.md
-- [ ] Responsible Disclosure
+- [x] SECURITY.md (Threat Model, Import-Parser, Supply Chain)
+- [x] Responsible Disclosure (privat über GitHub Security Advisories / E-Mail)
 - [ ] CVE-Prozess
 - [ ] Security Advisories
-- [ ] Security Policy
+- [x] Security Policy (SECURITY.md — Supported Versions + Meldeweg)
 
 ---
 
@@ -312,7 +321,7 @@ folgende Maßnahmen ergänzt werden:
 
 - [ ] NOTICE-Datei
 - [ ] AUTHORS
-- [ ] SECURITY.md
+- [x] SECURITY.md
 - [ ] CODE_OF_CONDUCT.md
 - [ ] CONTRIBUTING.md
 - [ ] SUPPORTED_VERSIONS.md

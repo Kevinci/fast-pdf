@@ -20,6 +20,7 @@ export type FastPDFErrorCode =
   | "ENCRYPTED_PDF"
   | "UNSUPPORTED_PDF"
   | "DECOMPRESSION_UNSUPPORTED"
+  | "NO_TABLE"
   | "INTERNAL";
 
 export class FastPDFError extends Error {

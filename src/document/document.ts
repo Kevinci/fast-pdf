@@ -642,6 +642,10 @@ export class PDFDocument {
   private measuring = 0;
   /** Page decorators, applied to every page at render time. */
   private readonly decorators: PageDecorator[] = [];
+  /** Colour painted under every page, set by pageBackground(). */
+  private background?: RGB;
+  /** The background is painted once, however often render() is called. */
+  private backgrounded = false;
   private decorated = false;
   /** Bookmark entries in document order. */
   private readonly outlines: { title: string; level: number; page: Page; y: number }[] = [];
@@ -1864,7 +1868,29 @@ export class PDFDocument {
             .rect(x, this.page.ty(yTop + mc.height), mc.width, mc.height)
             .fill();
         }
-        if (borderWidth > 0) {
+        const sides = mc.cell.borders;
+        if (sides) {
+          // Per-side borders come from CSS, where each edge has its own width
+          // and color and "no border" is a real state. Each edge is stroked on
+          // its own, so a single-line rectangle is never assumed.
+          const top = this.page.ty(yTop);
+          const bottom = this.page.ty(yTop + mc.height);
+          const edges: [typeof sides.top, number, number, number, number][] = [
+            [sides.top, x, top, x + mc.width, top],
+            [sides.bottom, x, bottom, x + mc.width, bottom],
+            [sides.left, x, top, x, bottom],
+            [sides.right, x + mc.width, top, x + mc.width, bottom],
+          ];
+          for (const [side, x1, y1, x2, y2] of edges) {
+            if (!side || side.width <= 0) continue;
+            this.page.content
+              .strokeColor(parseColor(side.color))
+              .lineWidth(side.width)
+              .moveTo(x1, y1)
+              .lineTo(x2, y2)
+              .stroke();
+          }
+        } else if (borderWidth > 0) {
           this.page.content
             .strokeColor(borderColor)
             .lineWidth(borderWidth)
@@ -1881,14 +1907,14 @@ export class PDFDocument {
             : row.isHeader
               ? headerColor
               : this.defaults.color;
-        const innerWidth = mc.width - 2 * padding;
+        const innerWidth = mc.width - 2 * mc.padX;
         // Vertical placement inside the (possibly taller) cell box.
-        const slack = Math.max(0, mc.height - 2 * padding - mc.contentHeight);
+        const slack = Math.max(0, mc.height - 2 * mc.padY - mc.contentHeight);
         const vShift = mc.valign === "middle" ? slack / 2 : mc.valign === "bottom" ? slack : 0;
         if (mc.cell.render) {
           const box = {
-            x: x + padding,
-            y: yTop + padding + vShift,
+            x: x + mc.padX,
+            y: yTop + mc.padY + vShift,
             width: innerWidth,
             height: mc.contentHeight,
           };
@@ -1897,22 +1923,22 @@ export class PDFDocument {
           this.region(box, () => mc.cell.render!(this, box));
           continue;
         }
-        let lineY = yTop + padding + vShift;
+        let lineY = yTop + mc.padY + vShift;
         for (const line of mc.lines) {
           if (line !== "") {
-            const offset = alignOffset(font.widthOf(line, fontSize), innerWidth, mc.align);
-            const baseline = this.page.ty(lineY + (font.ascent * fontSize) / 1000);
+            const offset = alignOffset(font.widthOf(line, mc.fontSize), innerWidth, mc.align);
+            const baseline = this.page.ty(lineY + (font.ascent * mc.fontSize) / 1000);
             this.page.content
               .fillColor(color)
               .text(
                 font.encode(line),
-                x + padding + offset,
+                x + mc.padX + offset,
                 baseline,
                 this.page.fontRes(font),
-                fontSize,
+                mc.fontSize,
               );
           }
-          lineY += fontSize * lineHeight;
+          lineY += mc.fontSize * lineHeight;
         }
       }
       this.cursorY += row.height;
@@ -2587,6 +2613,22 @@ export class PDFDocument {
   // ── Document features ────────────────────────────────────────────────
 
   /**
+   * Paint every page in one colour, underneath everything else.
+   *
+   * Pages are white paper by default. This is for documents that carry their
+   * own surface — a dark report, a tinted form — where transparent content
+   * would otherwise sit on white. Appended pages keep their own background.
+   *
+   * ```ts
+   * pdf.pageBackground("#0f1218");
+   * ```
+   */
+  pageBackground(color: ColorInput): this {
+    this.background = parseColor(color);
+    return this;
+  }
+
+  /**
    * Register a decorator that draws on every page at render time —
    * the general mechanism behind headers, footers and watermarks.
    */
@@ -2972,6 +3014,7 @@ export class PDFDocument {
 
   /** Render the document to PDF bytes. */
   async render(): Promise<Uint8Array> {
+    this.applyBackground();
     this.applyDecorators();
     const writer = new PDFWriter();
 
@@ -3335,6 +3378,21 @@ export class PDFDocument {
       });
     }
     return out;
+  }
+
+  /** Paint the page background under everything already drawn. */
+  private applyBackground(): void {
+    const color = this.background;
+    if (!color || this.backgrounded) return;
+    this.backgrounded = true;
+    for (const page of this.pages) {
+      // An appended page carries its own look; painting over it would hide
+      // the very content it was appended for.
+      if (this.imported.has(page)) continue;
+      const fill = new ContentStream();
+      fill.fillColor(color).rect(0, 0, page.size.width, page.size.height).fill();
+      page.content.insertAt(0, fill);
+    }
   }
 
   /** Run page decorators exactly once, over the final page order. */

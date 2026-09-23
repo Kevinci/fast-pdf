@@ -9,9 +9,14 @@ describe("parseColor", () => {
     expect(parseColor({ r: 300, g: -5, b: 128 })).toEqual({ r: 1, g: 0, b: 128 / 255 });
   });
 
+  it("accepts CSS named and functional colors", () => {
+    expect(parseColor("rebeccapurple")).toEqual({ r: 102 / 255, g: 51 / 255, b: 153 / 255 });
+    expect(parseColor("rgb(255 0 0)")).toEqual({ r: 1, g: 0, b: 0 });
+  });
+
   it("throws a typed error on malformed input", () => {
     try {
-      parseColor("rebeccapurple");
+      parseColor("rebeccaturquoise");
       expect.unreachable();
     } catch (e) {
       expect(e).toBeInstanceOf(FastPDFError);
