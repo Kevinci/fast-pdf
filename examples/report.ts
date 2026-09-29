@@ -147,8 +147,23 @@ const ringX = M + 82;
 const ringY = calloutY + 75;
 pdf.circle(ringX, ringY, 56, { stroke: mix(PANEL, MUTED, 0.4), lineWidth: 2 }); // faint outer track
 pdf.circle(ringX, ringY, 46, { stroke: MINT, lineWidth: 7 }); // mint progress ring
-pdf.text("94", { x: ringX - 30, y: ringY - 22, size: 34, bold: true, color: TEXT });
-pdf.text("%", { x: ringX + 26, y: ringY - 14, size: 16, color: MINT });
+// "94" + "%" centered as one group: measure both, share one baseline, and
+// place the digits' cap height (≈ ascent) symmetrically around the ring centre.
+const kpi = { size: 34, bold: true } as const;
+const unit = { size: 16 } as const;
+const gap = 2;
+const kpiW = pdf.widthOfText("94", kpi);
+const unitW = pdf.widthOfText("%", unit);
+const kpiAscent = pdf.measureText("94", kpi).baseline;
+const baseline = ringY + kpiAscent / 2;
+const kpiX = ringX - (kpiW + gap + unitW) / 2;
+pdf.text("94", { ...kpi, x: kpiX, y: baseline - kpiAscent, color: TEXT });
+pdf.text("%", {
+  ...unit,
+  x: kpiX + kpiW + gap,
+  y: baseline - pdf.measureText("%", unit).baseline,
+  color: MINT,
+});
 
 pdf.text("Documents rendered under 5 ms", {
   x: M + 180,
