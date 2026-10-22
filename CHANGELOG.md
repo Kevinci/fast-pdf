@@ -4,6 +4,20 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.8.1] - 2026-10-22
+
+### Security
+
+- Updated development dependencies to address known security vulnerabilities.
+- Resolved dependency audit issues.
+
+### Maintenance
+
+- Updated Vitest and related testing dependencies.
+- Improved TypeScript configuration and compatibility.
+- Verified the release with the full test suite, linting, formatting, and production build checks.
+- `npm audit` reports zero vulnerabilities.
+
 ## [0.8.0] — 2026-09-23
 
 The table is already on the page. Now it can leave as a PDF.
