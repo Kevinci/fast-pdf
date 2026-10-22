@@ -13,7 +13,7 @@
     "skipLibCheck": true,
     "declaration": true,
     "noEmit": true,
-    "types": []
+    "types": ["node"]
   },
   "include": ["src", "tests", "examples", "bench"]
 }
