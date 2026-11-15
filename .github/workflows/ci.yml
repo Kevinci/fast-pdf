@@ -1,0 +1,338 @@
+# fast-pdf — Continuous Integration
+#
+# Four independent jobs, deliberately not chained with `needs:` so that one run
+# shows every problem at once instead of hiding the later ones behind the first
+# failure:
+#
+#   quality        the toolchain (format, lint, types, tests, build)
+#   pdf-structure  the external gate: qpdf inspects the PDFs we actually produce
+#   engines        does the shipped bundle still run on the oldest supported Node?
+#   runtimes       Bun and Deno, non-blocking
+#
+# Why pdf-structure exists: the unit tests assert self-generated PDF structure
+# against self-authored expectations. If an expectation is wrong, the test is
+# green and the PDF is broken. Wrong /Length values, bad xref offsets and
+# corrupt stream encodings are invisible to that approach by construction.
+# qpdf is the independent second opinion that can see them.
+
+name: CI
+
+# `push` is restricted to main while `pull_request` covers everything else, so
+# each commit is built exactly once. An unfiltered `push:` would run every
+# pull request from this repository twice.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# This workflow only reads the repository; it publishes nothing.
+permissions:
+  contents: read
+
+# Superseded pull-request runs are pointless once a new commit lands. Pushes to
+# main are left alone so the history of the main line stays complete.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  quality:
+    name: Node ${{ matrix.node }}
+    runs-on: ubuntu-24.04
+
+    strategy:
+      # Without this, the first failing Node version cancels the others and the
+      # run no longer answers the question it was asked: *which* versions break.
+      fail-fast: false
+      matrix:
+        # This matrix covers the versions the DEV TOOLCHAIN supports, which is
+        # not the same set as the versions the PACKAGE supports.
+        #
+        # MEASURED, 2026-10-31, against this lockfile: ESLint 10 and Vitest 5
+        # both require `util.styleText`, which Node 18 does not have:
+        #   eslint  -> TypeError: util.styleText is not a function
+        #   vitest  -> SyntaxError: 'node:util' does not provide an export
+        #              named 'styleText'
+        # tsc, prettier and tsup are fine on 18; Node 20.20.2 runs everything
+        # (451 tests pass). So contributing to this repository needs Node >= 20.
+        #
+        # The package itself still supports Node >= 18 as `engines` promises —
+        # that is a statement about the published bundle, not about eslint, and
+        # it is verified against dist/index.js in the `engines` job below.
+        node: ["20", "22"]
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: ${{ matrix.node }}
+          # Caches ~/.npm keyed on package-lock.json. Safe with `npm ci`, which
+          # installs exactly what the lockfile pins.
+          cache: npm
+
+      # `npm ci` rather than `npm install`: it honours the lockfile exactly and
+      # fails if package.json and package-lock.json have drifted apart.
+      - name: Install dependencies
+        run: npm ci
+
+      # The order is cheapest-and-most-specific first. A formatting or lint
+      # error should not cost a full test run to discover. Each check is its own
+      # step so the failing one is named in the job summary.
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      # Coverage rather than a plain `npm test`: the thresholds in
+      # vitest.config.ts (90 % statements/lines/functions, 80 % branches) are
+      # only enforced on this script, and a threshold nobody runs is not a
+      # threshold.
+      - name: Test with coverage
+        run: npm run test:coverage
+
+      # Last, because a green build over code that fails its own tests tells us
+      # nothing. This also proves tsup can still produce both the Node and the
+      # browser bundle.
+      - name: Build
+        run: npm run build
+
+  pdf-structure:
+    name: PDF structure (qpdf --check)
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # One Node version is enough: this job validates the generated PDF bytes,
+      # not Node compatibility. That is the other jobs' concern.
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Not pre-installed on the GitHub runner images. Apache-2.0, a plain apt
+      # package, no JVM, well under 100 ms per file. Ghostscript and mutool were
+      # rejected: AGPL, and mutool repairs rather than reports.
+      # See docs/research/validatoren-ci.md.
+      - name: Install qpdf
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qpdf
+          qpdf --version
+
+      # The examples import ../src/index directly through tsx, so no build is
+      # needed here. `basic` and `signature` have no npm script, so all six are
+      # invoked uniformly instead of mixing `npm run` with direct calls.
+      # `--no-install` keeps npx from silently fetching tsx from the network if
+      # the devDependency ever disappears.
+      - name: Render the six example documents
+        run: |
+          mkdir -p examples/output
+          for example in basic invoice report cv showcase signature; do
+            echo "::group::render $example"
+            npx --no-install tsx "examples/$example.ts"
+            echo "::endgroup::"
+          done
+
+      # Exit codes, verified locally against qpdf 12.4.2:
+      #   0  clean
+      #   2  errors   (e.g. a corrupted content stream)
+      #   3  warnings (e.g. a bad startxref offset that qpdf silently repairs)
+      #
+      # Exit 3 is treated as FAILURE here, so `--warning-exit-0` is deliberately
+      # NOT used. Rationale: fast-pdf is a PDF *writer* and emits every byte
+      # itself. A qpdf warning about our own output is not a quirk of a foreign
+      # file we have to tolerate — it means we wrote something a reader has to
+      # repair before it can be used. That is exactly the defect class this gate
+      # exists to catch, and all six examples are at exit 0 today, so this costs
+      # nothing and only ever fires on a real regression.
+      #
+      # The loop checks every file before failing, so one run lists every bad
+      # document instead of only the first.
+      - name: qpdf --check (warnings count as failures)
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(examples/output/*.pdf)
+
+          # Guard against a vacuously green gate: if a render silently produced
+          # nothing, an empty loop would "pass" without checking anything.
+          if [ "${#files[@]}" -ne 6 ]; then
+            echo "::error::Expected 6 rendered PDFs, found ${#files[@]}: ${files[*]}"
+            exit 1
+          fi
+
+          failed=0
+          for file in "${files[@]}"; do
+            echo "::group::qpdf --check $file"
+            # `|| rc=$?` keeps the step's `set -e` from aborting on the first
+            # non-zero exit, which would skip the remaining files.
+            rc=0
+            qpdf --check "$file" || rc=$?
+            echo "::endgroup::"
+
+            case "$rc" in
+              0) echo "OK       $file" ;;
+              3) echo "::error file=$file::qpdf reported warnings (exit 3)"; failed=1 ;;
+              *) echo "::error file=$file::qpdf reported errors (exit $rc)"; failed=1 ;;
+            esac
+          done
+
+          exit "$failed"
+
+      # `always()`: the upload is most valuable precisely when the gate failed,
+      # because then you need the offending file to see what qpdf tripped over.
+      - name: Upload the rendered PDFs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: example-pdfs
+          path: examples/output/*.pdf
+          if-no-files-found: warn
+          retention-days: 14
+
+  engines:
+    name: engines — Node 18 runs the shipped bundle
+    runs-on: ubuntu-24.04
+
+    # BLOCKING on purpose. `engines: node >= 18` lives in package.json and is
+    # enforced by npm, which makes it a harder promise than the README's prose
+    # about Bun and Deno. The right test of that promise is whether the
+    # published artifact renders a PDF on Node 18 — not whether the dev
+    # toolchain runs there (it does not; see the `quality` matrix).
+    #
+    # If this job ever goes red, `engines` has become a false claim and the
+    # minimum must be raised deliberately. Do not quietly drop Node 18 here.
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Built on a current Node, because tsup and its toolchain need >= 20 …
+      - name: Set up Node for the build
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      # … then run the result on the oldest Node we claim to support. No
+      # `cache: npm` here: the cache was already restored and saved above.
+      - name: Switch to the oldest supported Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "18"
+
+      - name: Render with Node 18
+        run: |
+          node --version
+          mkdir -p examples/output
+          node .github/scripts/runtime-smoke.mjs examples/output/smoke-node18.pdf
+
+      # "It did not throw" is not evidence that the bytes are a valid PDF, so
+      # the same external check that guards the example documents guards this.
+      - name: Verify the result with qpdf
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qpdf
+          rc=0
+          qpdf --check examples/output/smoke-node18.pdf || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::qpdf rejected the Node 18 output (exit $rc)"
+            exit 1
+          fi
+
+      - name: Upload the rendered PDF
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: smoke-node18
+          path: examples/output/smoke-node18.pdf
+          if-no-files-found: warn
+          retention-days: 14
+
+  runtimes:
+    name: ${{ matrix.runtime }} (non-blocking)
+    runs-on: ubuntu-24.04
+
+    # Non-blocking by design: a hosted Bun or Deno installer having a bad day
+    # must not hold up a release, and README prose is a softer promise than the
+    # `engines` field. A red cross here is a signal to investigate, not a gate.
+    # Both `continue-on-error` (marks the job neutral) and `fail-fast: false`
+    # (keeps the other runtime running) are needed.
+    continue-on-error: true
+
+    strategy:
+      fail-fast: false
+      matrix:
+        runtime: [bun, deno]
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # Node is still required: the bundle under test is produced by tsup.
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies and build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Set up Bun
+        if: matrix.runtime == 'bun'
+        uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: latest
+
+      - name: Set up Deno
+        if: matrix.runtime == 'deno'
+        uses: denoland/setup-deno@22d081ff2d3a40755e97629de92e3bcbfa7cf2ed # v2.0.5
+        with:
+          deno-version: v2.x
+
+      # The smoke test loads dist/index.js — the artifact npm actually ships —
+      # instead of the TypeScript sources, because that is what a Bun or Deno
+      # consumer gets. Deno needs explicit write permission for save().
+      - name: Render a PDF with ${{ matrix.runtime }}
+        run: |
+          mkdir -p examples/output
+          if [ "${{ matrix.runtime }}" = "bun" ]; then
+            bun run .github/scripts/runtime-smoke.mjs examples/output/smoke-bun.pdf
+          else
+            deno run --allow-read --allow-write --allow-env \
+              .github/scripts/runtime-smoke.mjs examples/output/smoke-deno.pdf
+          fi
+
+      - name: Verify the result with qpdf
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qpdf
+          rc=0
+          qpdf --check "examples/output/smoke-${{ matrix.runtime }}.pdf" || rc=$?
+          if [ "$rc" -ne 0 ]; then
+            echo "::error::qpdf rejected the ${{ matrix.runtime }} output (exit $rc)"
+            exit 1
+          fi
