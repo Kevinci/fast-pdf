@@ -597,6 +597,18 @@ const DEFAULT_MARGIN = 50;
 /** Bézier circle approximation constant: 4/3 · (√2 − 1). */
 const KAPPA = 0.5522847498;
 
+/**
+ * Annotation flags (/F) for every annotation fast-pdf writes itself: bit 3,
+ * "Print", set — nothing else.
+ *
+ * PDF/A demands both halves of that. ISO 19005-3 [6.3.2-1]: every annotation
+ * dictionary other than /Popup "shall contain the F key". [6.3.2-2]: "the F
+ * key's Print flag bit shall be set to 1 and its Hidden, Invisible,
+ * ToggleNoView, and NoView flag bits shall be set to 0" — which leaves exactly
+ * 1 << 2. See docs/research/pdfa3b-anforderungen.md, section F.
+ */
+const ANNOT_PRINT = 1 << 2;
+
 /** Markdown rendering palette and relative heading sizes. */
 const MD_HEADING_SCALE = [1.9, 1.55, 1.3, 1.15, 1.0, 0.9];
 const MD_LINK_COLOR: RGB = { r: 0.13, g: 0.4, b: 0.85 };
@@ -3149,7 +3161,7 @@ export class PDFDocument {
           T: textString(field.name),
           V: sigValueRef,
           Rect: annotTransform !== undefined ? transformRect(annotTransform, box) : box,
-          F: 4, // print
+          F: ANNOT_PRINT,
           P: pageRefs[i],
           AP: { N: apRef },
         });
@@ -3447,6 +3459,7 @@ export class PDFDocument {
       Subtype: new Name("Link"),
       Rect: rect,
       Border: [0, 0, 0],
+      F: ANNOT_PRINT,
     };
     let target = link.target;
     if (typeof target === "string" && target.startsWith("#")) {

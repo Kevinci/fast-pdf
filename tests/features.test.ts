@@ -497,3 +497,47 @@ describe("document features (M8)", () => {
     expect(second.match(/\(1 \/ 1\) Tj/g)!.length).toBe(first.match(/\(1 \/ 1\) Tj/g)!.length);
   });
 });
+
+describe("annotation flags (PDF/A-3b [6.3.2-1], [6.3.2-2])", () => {
+  /** Every annotation object fast-pdf wrote, as its raw dictionary body. */
+  function annots(text: string): string[] {
+    return [...text.matchAll(/\d+ 0 obj\n(<<.*?>>)\nendobj/gs)]
+      .map((m) => m[1]!)
+      .filter((body) => body.includes("/Type /Annot"));
+  }
+
+  it("sets the print flag on link annotations", async () => {
+    const pdf = raw();
+    pdf.text("Website", { link: "https://example.com" });
+    const text = await rendered(pdf);
+    const [link] = annots(text);
+    expect(link).toContain("/Subtype /Link");
+    expect(link).toContain("/F 4");
+  });
+
+  it("sets the print flag on signature widgets", async () => {
+    const pdf = raw();
+    pdf.signature();
+    const text = await rendered(pdf);
+    const [widget] = annots(text);
+    expect(widget).toContain("/Subtype /Widget");
+    expect(widget).toContain("/F 4");
+  });
+
+  it("gives every annotation it writes a /F with Print set and the hiding bits clear", async () => {
+    const pdf = raw();
+    pdf.text("extern", { link: "https://example.com" });
+    pdf.text("intern", { link: "#ziel" });
+    pdf.button("Knopf", { link: "https://example.com/go" });
+    pdf.signature();
+    pdf.addPage().anchor("ziel").text("Ziel");
+    const found = annots(await rendered(pdf));
+    expect(found.length).toBe(4);
+    for (const body of found) {
+      const flags = Number(/\/F (\d+)/.exec(body)![1]);
+      expect(flags & 0b100).toBe(0b100); // Print (bit 3)
+      // Invisible (1), Hidden (2), NoView (6), ToggleNoView (9) must be 0.
+      expect(flags & 0b1_0010_0011).toBe(0);
+    }
+  });
+});

@@ -4,6 +4,19 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- Link annotations now carry `/F 4` (annotation flag bit 3, "Print"), like the
+  signature widgets already did. PDF/A requires the key on every annotation
+  that is not a `/Popup` and requires Print set with Hidden, Invisible,
+  ToggleNoView and NoView clear (ISO 19005-3 `[6.3.2-1]`, `[6.3.2-2]`), so
+  every document with a link, a button, a table of contents or an outline jump
+  used to fail validation. The flag is a constant, so `deterministic` output
+  stays byte-identical across runs. Annotations copied from an appended PDF are
+  left exactly as they were found.
+
 ## [0.9.0] — 2026-10-31
 
 The release that makes the documentation true and cuts the public API down to
