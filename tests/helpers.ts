@@ -15,6 +15,14 @@ export async function makeObjStmPdf(
     rotate?: number;
     /** Put /MediaBox and /Rotate on the page *tree node*, to be inherited. */
     inherit?: boolean;
+    /** Filler bytes inside the object stream — used to test the inflate cap. */
+    objStmPadding?: number;
+    /** Claim a different /Filter on the object stream (to test rejection). */
+    objStmFilter?: string;
+    /** Row filter for the cross-reference stream's PNG predictor (0–4). */
+    rowFilter?: 0 | 1 | 2 | 3 | 4;
+    /** Use the TIFF predictor (2) rather than the PNG one (12). */
+    tiffPredictor?: boolean;
   } = {},
 ): Promise<Uint8Array> {
   const content = options.content ?? "0 0 1 rg 20 20 120 60 re f";
@@ -44,7 +52,14 @@ export async function makeObjStmPdf(
     index += `${member.num} ${payload.length} `;
     payload += `${member.text}\n`;
   }
-  const objStm = (await deflate(latin1Bytes(index + payload)))!;
+  const head = latin1Bytes(index + payload);
+  // Padding inflates the decoded size without changing the member offsets, so
+  // a bomb-sized stream still looks structurally ordinary.
+  const padding = options.objStmPadding ?? 0;
+  const objStmPlain = new Uint8Array(head.length + padding);
+  objStmPlain.set(head, 0);
+  objStmPlain.fill(0x20, head.length);
+  const objStm = (await deflate(objStmPlain))!;
 
   const chunks: Uint8Array[] = [];
   let offset = 0;
@@ -62,7 +77,8 @@ export async function makeObjStmPdf(
 
   offsets[2] = offset;
   push(
-    `2 0 obj\n<< /Type /ObjStm /N ${members.length} /First ${index.length} /Filter /FlateDecode /Length ${objStm.length} >>\nstream\n`,
+    `2 0 obj\n<< /Type /ObjStm /N ${members.length} /First ${index.length} ` +
+      `/Filter ${options.objStmFilter ?? "/FlateDecode"} /Length ${objStm.length} >>\nstream\n`,
   );
   push(objStm);
   push("\nendstream\nendobj\n");
@@ -78,21 +94,159 @@ export async function makeObjStmPdf(
     [2, 0, 2, 0, 2],
     [1, offsets[6]! >> 8, offsets[6]! & 0xff, 0, 0],
   ];
-  const encoded: number[] = [];
-  let previous = new Array<number>(5).fill(0);
-  for (const row of rows) {
-    encoded.push(2); // PNG "Up" filter
-    for (let i = 0; i < 5; i++) encoded.push((row[i]! - previous[i]!) & 0xff);
-    previous = row;
-  }
+  const encoded = options.tiffPredictor
+    ? encodeTiffRows(rows)
+    : encodePngRows(rows, options.rowFilter ?? 2);
   const xref = (await deflate(new Uint8Array(encoded)))!;
+  const predictor = options.tiffPredictor ? 2 : 12;
   push(
     `6 0 obj\n<< /Type /XRef /Size ${rows.length} /W [1 2 2] /Root 3 0 R /Filter /FlateDecode ` +
-      `/DecodeParms << /Predictor 12 /Columns 5 >> /Length ${xref.length} >>\nstream\n`,
+      `/DecodeParms << /Predictor ${predictor} /Columns 5 >> /Length ${xref.length} >>\nstream\n`,
   );
   push(xref);
   push("\nendstream\nendobj\n");
   push(`startxref\n${offsets[6]}\n%%EOF\n`);
+
+  const out = new Uint8Array(offset);
+  let at = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, at);
+    at += chunk.length;
+  }
+  return out;
+}
+
+// Cross-reference stream rows are five bytes wide (/W [1 2 2]) with one
+// 8-bit colour, so the predictor's bytes-per-pixel is 1.
+const XREF_ROW_LEN = 5;
+const XREF_BPP = 1;
+
+/** Apply one PNG row filter (0–4) to every row, as a /Predictor 12 stream. */
+function encodePngRows(rows: number[][], type: 0 | 1 | 2 | 3 | 4): number[] {
+  const out: number[] = [];
+  let prev = new Array<number>(XREF_ROW_LEN).fill(0);
+  for (const row of rows) {
+    out.push(type);
+    for (let i = 0; i < XREF_ROW_LEN; i++) {
+      const raw = row[i]!;
+      const left = i >= XREF_BPP ? row[i - XREF_BPP]! : 0;
+      const up = prev[i]!;
+      const upLeft = i >= XREF_BPP ? prev[i - XREF_BPP]! : 0;
+      let value: number;
+      switch (type) {
+        case 0:
+          value = raw;
+          break;
+        case 1:
+          value = raw - left;
+          break;
+        case 2:
+          value = raw - up;
+          break;
+        case 3:
+          value = raw - ((left + up) >> 1);
+          break;
+        default: {
+          const p = left + up - upLeft;
+          const pa = Math.abs(p - left);
+          const pb = Math.abs(p - up);
+          const pc = Math.abs(p - upLeft);
+          value = raw - (pa <= pb && pa <= pc ? left : pb <= pc ? up : upLeft);
+        }
+      }
+      out.push(value & 0xff);
+    }
+    prev = row;
+  }
+  return out;
+}
+
+/** Apply the TIFF predictor (/Predictor 2): each byte minus the one before it. */
+function encodeTiffRows(rows: number[][]): number[] {
+  const out: number[] = [];
+  for (const row of rows) {
+    for (let i = 0; i < XREF_ROW_LEN; i++) {
+      out.push((row[i]! - (i >= XREF_BPP ? row[i - XREF_BPP]! : 0)) & 0xff);
+    }
+  }
+  return out;
+}
+
+/** One object body: a literal dictionary/value, or a stream with its extra keys. */
+export type RawObject = string | { stream: string | Uint8Array; dict?: string };
+
+/**
+ * Assemble a PDF byte-for-byte from object bodies with a classic cross-
+ * reference table.
+ *
+ * Unlike `makeObjStmPdf` this makes no assumptions about the structure, so a
+ * test can hand the reader a deliberately hostile or damaged file — which is
+ * exactly what an upload is. `xref` and `trailer` control the two things real
+ * broken files get wrong.
+ */
+export function makeRawPdf(
+  objects: Record<number, RawObject>,
+  options: {
+    /** Object number of the catalog (default 1). */
+    root?: number;
+    header?: string;
+    /** Extra trailer keys, e.g. " /Encrypt 9 0 R". */
+    trailerExtra?: string;
+    /** "classic" writes a table, "none" omits it, "broken" points past EOF. */
+    xref?: "classic" | "none" | "broken";
+    /** Shift every xref offset by this many bytes, to make them stale. */
+    offsetSkew?: number;
+    /** Omit the trailer dictionary entirely. */
+    trailer?: boolean;
+  } = {},
+): Uint8Array {
+  const nums = Object.keys(objects)
+    .map(Number)
+    .sort((a, b) => a - b);
+  const max = nums[nums.length - 1] ?? 0;
+  const chunks: Uint8Array[] = [];
+  let offset = 0;
+  const push = (data: string | Uint8Array): void => {
+    const b = typeof data === "string" ? latin1Bytes(data) : data;
+    chunks.push(b);
+    offset += b.length;
+  };
+
+  push(options.header ?? "%PDF-1.7\n%\xe2\xe3\xcf\xd3\n");
+  const offsets: Record<number, number> = {};
+  for (const num of nums) {
+    const body = objects[num]!;
+    offsets[num] = offset;
+    if (typeof body === "string") {
+      push(`${num} 0 obj\n${body}\nendobj\n`);
+    } else {
+      const data = typeof body.stream === "string" ? latin1Bytes(body.stream) : body.stream;
+      push(`${num} 0 obj\n<< ${body.dict ?? ""} /Length ${data.length} >>\nstream\n`);
+      push(data);
+      push("\nendstream\nendobj\n");
+    }
+  }
+
+  const xrefAt = offset;
+  if (options.xref !== "none") {
+    const skew = options.offsetSkew ?? 0;
+    let table = `xref\n0 ${max + 1}\n0000000000 65535 f \n`;
+    for (let i = 1; i <= max; i++) {
+      const at = offsets[i];
+      table +=
+        at === undefined
+          ? "0000000000 65535 f \n"
+          : `${String(at + skew).padStart(10, "0")} 00000 n \n`;
+    }
+    push(table);
+  }
+  if (options.trailer !== false) {
+    push(
+      `trailer\n<< /Size ${max + 1} /Root ${options.root ?? 1} 0 R` +
+        `${options.trailerExtra ?? ""} >>\n`,
+    );
+  }
+  push(`startxref\n${options.xref === "broken" ? 9_999_999 : xrefAt}\n%%EOF\n`);
 
   const out = new Uint8Array(offset);
   let at = 0;

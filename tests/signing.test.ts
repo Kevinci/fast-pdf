@@ -111,6 +111,28 @@ describe("PAdES-B digital signatures", () => {
     expect(c! + d!).toBe(file.length); // second range runs to EOF
   });
 
+  it("fits the CMS into the reserved /Contents space with room to spare", async () => {
+    // /Contents is a fixed-width hex run reserved before the signature exists,
+    // so its size cannot depend on the signature. If a longer key or a longer
+    // certificate chain ever outgrew the reserve, signing would start failing
+    // for some inputs and not others — the headroom is the thing worth
+    // asserting, not the exact size.
+    const file = await signedPdf();
+    const s = latin1String(file);
+    const hexStart = s.indexOf("/Contents <") + "/Contents <".length;
+    const hexEnd = s.indexOf(">", hexStart);
+    const reserved = hexEnd - hexStart;
+
+    const der = hexToBytes(s.slice(hexStart, hexEnd));
+    const cmsLen = readTLV(der, 0).end;
+    expect(cmsLen).toBeGreaterThan(0);
+    // Everything past the DER has to be the zero padding — a non-zero tail
+    // would mean the CMS was written short and the rest left as placeholder.
+    expect(der.subarray(cmsLen).every((b) => b === 0)).toBe(true);
+    // RSA-2048 plus one certificate must leave at least a factor of two spare.
+    expect(cmsLen * 2).toBeLessThan(reserved / 2);
+  });
+
   it("produces a CMS signature that verifies against the certificate", async () => {
     const { content, cms } = extract(await signedPdf());
 
