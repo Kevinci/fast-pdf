@@ -187,3 +187,74 @@ describe("font input hardening", () => {
     expect(doc.pageCount).toBe(1);
   });
 });
+
+describe("passive document invariant", () => {
+  /**
+   * PDF names that would make a document do something rather than show
+   * something: carry a payload (`/EmbeddedFiles`, `/FileAttachment`,
+   * `/RichMedia`, `/Movie`, `/Sound`), run code (`/JavaScript`, `/JS`,
+   * `/Launch`), fire on their own (`/AA`, `/OpenAction`) or reach outside the
+   * file (`/GoToR`, `/SubmitForm`). None of them may appear in a document
+   * fast-pdf renders without being asked — that is the promise in
+   * README §Security and SECURITY.md §Threat model.
+   */
+  const ACTIVE_NAMES = [
+    "EmbeddedFiles",
+    "FileAttachment",
+    "RichMedia",
+    "Movie",
+    "Sound",
+    "JavaScript",
+    "JS",
+    "Launch",
+    "AA",
+    "OpenAction",
+    "GoToR",
+    "SubmitForm",
+  ];
+
+  /** Which of those names occur as a PDF name token in the given file. */
+  const activeNames = (pdf: string): string[] =>
+    // A name token ends at a delimiter, so `/AA` must not match `/AAAAAA+Font`.
+    ACTIVE_NAMES.filter((name) => new RegExp(`/${name}(?![A-Za-z0-9])`).test(pdf));
+
+  /** Everything a normal document is made of, in one file. */
+  async function wideDocument(): Promise<Uint8Array> {
+    const doc = new PDFDocument({ compress: false, metadata: { title: "Invariant" } });
+    doc.outline("Chapter");
+    doc.anchor("top");
+    doc.text("Passive by design", { size: 18, bold: true, link: "https://example.com" });
+    doc.table([
+      ["Item", "Price"],
+      ["Laptop", "999 €"],
+    ]);
+    doc.image(await makePng(4, 4, 6, [1, 2, 3, 4]), { width: 40 });
+    doc.link(40, 40, 80, 20, "#top");
+    doc.signature({ label: "Ort, Datum, Unterschrift" });
+    return doc.render();
+  }
+
+  it("renders text, tables, images, links, outlines and a signature field — and nothing active", async () => {
+    const pdf = latin1String(await wideDocument());
+
+    // The features really are in the file, so the absence below means something.
+    expect(pdf).toContain("/Subtype /Image");
+    expect(pdf).toContain("/Subtype /Link");
+    expect(pdf).toContain("/Subtype /Widget"); // the signature field
+    expect(pdf).toContain("/AcroForm");
+    expect(pdf).toContain("/Outlines");
+
+    expect(activeNames(pdf)).toEqual([]);
+  });
+
+  it("the scan catches each name when a document does carry it", async () => {
+    // Without this, the test above would also pass if `activeNames` were broken.
+    const clean = latin1String(await wideDocument());
+    expect(clean).toContain("/Type /Catalog");
+    for (const name of ACTIVE_NAMES) {
+      // Splice the name into the catalog, exactly where a real one would sit.
+      const tampered = clean.replace("/Type /Catalog", `/Type /Catalog /${name} 99 0 R`);
+      expect(activeNames(tampered)).toContain(name);
+    }
+  });
+});

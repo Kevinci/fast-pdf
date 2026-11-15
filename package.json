@@ -1,6 +1,6 @@
 {
   "name": "fast-pdf",
-  "version": "0.8.1",
+  "version": "0.9.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
   "author": "Kevin Imig <kevinci.coding@gmail.com>",
@@ -28,6 +28,18 @@
     "./browser": {
       "types": "./dist/index.d.ts",
       "default": "./dist/index.browser.js"
+    },
+    "./dom": {
+      "types": "./dist/dom.d.ts",
+      "browser": "./dist/dom.browser.js",
+      "import": "./dist/dom.js",
+      "default": "./dist/dom.js"
+    },
+    "./internal": {
+      "types": "./dist/internal.d.ts",
+      "browser": "./dist/internal.browser.js",
+      "import": "./dist/internal.js",
+      "default": "./dist/internal.js"
     },
     "./package.json": "./package.json"
   },
@@ -61,7 +73,7 @@
   "scripts": {
     "build": "rm -rf dist && tsup",
     "prepare": "rm -rf dist && tsup",
-    "prepublishOnly": "npm run format:check && npm run lint && npm run typecheck && npm test && npm run build",
+    "prepublishOnly": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

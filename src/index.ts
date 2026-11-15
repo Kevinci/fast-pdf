@@ -1,8 +1,14 @@
 /**
  * fast-pdf — fast, dependency-free, direct-to-PDF generation.
  *
- * Public API surface. Everything not exported here is internal and may
- * change between minor versions.
+ * The public API: everything needed to build a document and to check up
+ * front whether the platform supports it. Anything not exported here is
+ * internal and may change between minor versions.
+ *
+ * Two further entry points sit beside this one:
+ *
+ * - `fast-pdf/dom` — `tableToPDF()` and friends, browser-only.
+ * - `fast-pdf/internal` — the engine below `PDFDocument`. Not SemVer-stable.
  */
 
 export { PDFDocument } from "./document/document";
@@ -57,19 +63,6 @@ export type {
   VerticalAlign,
 } from "./layout/table";
 
-// HTML table → PDF (browser).
-export {
-  tableToPDF,
-  tableToRows,
-  downloadTablePDF,
-  attachTablePdfButton,
-  type TableSource,
-  type TablePDFOptions,
-  type TablePdfButtonOptions,
-  type TablePdfButtonHandle,
-  type StyleReader,
-} from "./dom/table";
-
 export { parseCssColor, type ParsedCssColor } from "./types/css-color";
 
 export {
@@ -86,19 +79,16 @@ export {
 } from "./types/index";
 
 export type { Font } from "./fonts/font";
-export { EmbeddedFont } from "./fonts/embedded";
-export { TTFFont } from "./fonts/ttf";
 
-// Low-level engine — exported for advanced use and future extensions.
-export { PDFWriter } from "./pdf/writer";
-export { ContentStream } from "./pdf/content";
-export { Ref, Name, PDFString, serialize, type PDFValue } from "./pdf/objects";
-export { deflate, inflate, supportsCompression } from "./pdf/compress";
+// Reading an existing PDF before appending it.
 export { pdfInfo, type PDFInfo } from "./pdf/reader";
+
+// Feature detection — both of these answer "will this run here?".
+export { supportsCompression } from "./pdf/compress";
 export {
-  createSecurityHandler,
   supportsEncryption,
   type EncryptionOptions,
   type DocumentPermissions,
 } from "./pdf/encrypt";
+
 export type { SigningOptions } from "./pdf/sign";

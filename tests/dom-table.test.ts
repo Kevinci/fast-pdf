@@ -1,12 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  attachTablePdfButton,
-  tableToPDF,
-  tableToRows,
-  type PageFormatName,
-  type StyleReader,
-  type TableCell,
-} from "../src/index";
+import { attachTablePdfButton, tableToPDF, tableToRows, type StyleReader } from "../src/dom/index";
+import type { PageFormatName, TableCell } from "../src/index";
 import { FastPDFError } from "../src/errors";
 
 /* ---------------------------------------------------------- a small fake DOM

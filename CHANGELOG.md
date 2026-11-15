@@ -4,6 +4,107 @@ All notable changes to this project are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and the project adheres to [Semantic Versioning](https://semver.org/).
 
+## [0.9.0] — 2026-10-31
+
+The release that makes the documentation true and cuts the public API down to
+what 1.0.0 should freeze. **One breaking change**, mechanical: sixteen names
+moved out of the main entry into two subpaths.
+
+### Breaking changes
+
+`tableToPDF()` and friends need a DOM, and the low-level engine was never
+meant to be a stable contract — keeping both in the main entry would have
+frozen them in 1.0.0. They move now, **without a deprecated re-export**: a
+compatibility alias would have to be carried through all of 1.x, which is the
+opposite of the point. Change the import; nothing else changes.
+
+| Was                                                     | Now                                                         |
+| ------------------------------------------------------- | ----------------------------------------------------------- |
+| `import { tableToPDF } from "fast-pdf"`                 | `import { tableToPDF } from "fast-pdf/dom"`                 |
+| `import { tableToRows } from "fast-pdf"`                | `import { tableToRows } from "fast-pdf/dom"`                |
+| `import { downloadTablePDF } from "fast-pdf"`           | `import { downloadTablePDF } from "fast-pdf/dom"`           |
+| `import { attachTablePdfButton } from "fast-pdf"`       | `import { attachTablePdfButton } from "fast-pdf/dom"`       |
+| `import type { TableSource } from "fast-pdf"`           | `import type { TableSource } from "fast-pdf/dom"`           |
+| `import type { TablePDFOptions } from "fast-pdf"`       | `import type { TablePDFOptions } from "fast-pdf/dom"`       |
+| `import type { TablePdfButtonOptions } from "fast-pdf"` | `import type { TablePdfButtonOptions } from "fast-pdf/dom"` |
+| `import type { TablePdfButtonHandle } from "fast-pdf"`  | `import type { TablePdfButtonHandle } from "fast-pdf/dom"`  |
+| `import type { StyleReader } from "fast-pdf"`           | `import type { StyleReader } from "fast-pdf/dom"`           |
+| `import { PDFWriter } from "fast-pdf"`                  | `import { PDFWriter } from "fast-pdf/internal"`             |
+| `import { ContentStream } from "fast-pdf"`              | `import { ContentStream } from "fast-pdf/internal"`         |
+| `import { Ref } from "fast-pdf"`                        | `import { Ref } from "fast-pdf/internal"`                   |
+| `import { Name } from "fast-pdf"`                       | `import { Name } from "fast-pdf/internal"`                  |
+| `import { PDFString } from "fast-pdf"`                  | `import { PDFString } from "fast-pdf/internal"`             |
+| `import { serialize } from "fast-pdf"`                  | `import { serialize } from "fast-pdf/internal"`             |
+| `import type { PDFValue } from "fast-pdf"`              | `import type { PDFValue } from "fast-pdf/internal"`         |
+| `import { deflate } from "fast-pdf"`                    | `import { deflate } from "fast-pdf/internal"`               |
+| `import { inflate } from "fast-pdf"`                    | `import { inflate } from "fast-pdf/internal"`               |
+| `import { createSecurityHandler } from "fast-pdf"`      | `import { createSecurityHandler } from "fast-pdf/internal"` |
+| `import { EmbeddedFont } from "fast-pdf"`               | `import { EmbeddedFont } from "fast-pdf/internal"`          |
+| `import { TTFFont } from "fast-pdf"`                    | `import { TTFFont } from "fast-pdf/internal"`               |
+
+**Unchanged** — and this is most codebases: `PDFDocument` and all its option
+and result types, `FastPDFError`/`FastPDFErrorCode`, the table types, `Font`,
+`PAGE_FORMATS`, `parseColor`, `parseCssColor`, `pdfInfo`/`PDFInfo`,
+`supportsCompression`, `supportsEncryption`, `EncryptionOptions`,
+`DocumentPermissions`, `SigningOptions`. `fast-pdf/browser` is unchanged too.
+
+`supportsCompression` and `supportsEncryption` stay in the main entry on
+purpose: feature detection is the caller's business, while `deflate`/`inflate`
+are engine parts.
+
+**`fast-pdf/internal` is not covered by SemVer.** It exists so that a PDF
+construct fast-pdf does not offer can be written without forking the package.
+Its names, signatures and behaviour may change in any release, including a
+patch, and it writes PDF syntax verbatim — the escaping that protects `text()`
+and `table()` lives above it.
+
+### Added
+
+- **`fast-pdf/dom`** and **`fast-pdf/internal`** as subpath exports, each with
+  its own `.d.ts` and its own `browser` condition. `fast-pdf/dom` needs the
+  browser build in particular: it builds a `PDFDocument`, which pulls in the
+  file adapter, and a client bundle must never see `node:fs/promises`.
+- `dist/` is now built with ESM code splitting, so the core that `fast-pdf`
+  and `fast-pdf/dom` share lives in one chunk instead of being duplicated.
+  **The layout changed** — `dist/` holds `chunk-*.js` files beside the
+  entry points. Nothing outside the `exports` map should be imported directly.
+
+### Changed
+
+- Dropping the DOM reader from the main entry makes it smaller: `fast-pdf` is
+  **48,907 B min+gzip** (was 52,152 B). `fast-pdf/dom` is 52,231 B — the core
+  plus the reader — and `fast-pdf/internal` on its own is 6,972 B.
+
+### Documentation
+
+- **PAdES-B signing is documented for the first time.** `signature({ sign })`
+  has produced a detached PAdES-B (CAdES) signature since 0.8.0, but the README
+  claimed the opposite ("fast-pdf does not cryptographically sign the document
+  itself"). The README now has a _Digital signatures (PAdES-B)_ section with an
+  example and the real limits: one signed field per document, no RFC 3161
+  timestamp, RSASSA-PKCS1-v1_5 + SHA-256 only. SECURITY.md no longer calls
+  signatures "outside the scope of this library"; ZUGFeRD/XRechnung still are.
+- **"No forms" is gone.** Signature fields are form fields: fast-pdf writes an
+  `/AcroForm` with `/Widget` entries when `signature()` is called, and
+  README §Security and SECURITY.md said otherwise.
+- **The "no embedded files" promise is now a property of the generated
+  document**, not of the library: fast-pdf embeds a file only when the caller
+  explicitly asks, and an imported third-party PDF never contributes one.
+- **Corrected bundle figures.** The headline said ~13 KB min+gzip and ~94 KB
+  ESM; measured values are 52,152 B min+gzip and 300,575 B ESM. "Tree-shakeable"
+  is now qualified honestly — a minimal document saves ~7 %.
+- Corrected the coverage thresholds in §Development (four thresholds, not one)
+  and documented the Node requirement for contributors (≥ 20) versus consumers
+  (≥ 18).
+
+### Tests
+
+- `tests/security.test.ts` now pins the passive-document invariant: a broad
+  document (text, table, image, link, outline, signature field) is rendered and
+  scanned for `/EmbeddedFiles`, `/FileAttachment`, `/JavaScript`, `/JS`,
+  `/Launch`, `/AA`, `/OpenAction` and friends, with a second test proving the
+  scan catches each of them.
+
 ## [0.8.1] - 2026-10-22
 
 ### Security

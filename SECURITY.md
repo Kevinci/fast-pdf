@@ -14,10 +14,25 @@ security reports. You will get a response within a few days.
 
 ## Threat model
 
-fast-pdf generates PDFs. It never _executes_ anything, and the generated output
-is **passive by design**: no JavaScript actions, no embedded files, no forms, no
-launch actions and no external content — only text, vector graphics, images,
-links, bookmarks and metadata.
+fast-pdf generates PDFs. It never _executes_ anything, and what it produces is
+**passive by design**. Stated precisely, because this is the promise the
+library is built around:
+
+> fast-pdf never embeds a file unless the caller explicitly asks it to. A
+> document created with `new PDFDocument()` contains no embedded files, no
+> JavaScript actions, no launch actions, no auto-actions (`/AA`) and no
+> external content — only text, vector graphics, images, links, bookmarks,
+> metadata and, where you call `signature()`, signature form fields. An
+> imported third-party PDF never contributes an attachment either: `append()`
+> drops `/FileAttachment` unchanged (see **Importing PDFs** below).
+
+That is a property of the document, not a claim that the code could not do
+otherwise: a future opt-in subpath export may embed exactly one payload the
+caller hands it. Nothing reachable from the main entry point does.
+
+The one interactive structure the library writes is an `/AcroForm` containing
+signature fields, and only when you call `signature()`. Those fields may also
+be cryptographically signed — see **Signatures and authenticity** below.
 
 Since 0.7.0 there is one place where the library reads a file it did not write:
 `append()` and `pdfInfo()` parse an existing PDF, which in a typical application
@@ -78,16 +93,45 @@ Trust boundaries you are responsible for:
   `INVALID_FONT_FILE`, but the parser is not hardened against adversarial
   fonts — do not feed it end-user uploads.
 - **Escape hatches bypass escaping.** `ContentStream.raw()` and the
-  low-level `PDFWriter`/`serialize` APIs write PDF syntax verbatim. Never
-  pass untrusted data into them.
+  low-level `PDFWriter`/`serialize` APIs — exported from `fast-pdf/internal`
+  since 0.9.0, and not covered by SemVer — write PDF syntax verbatim. The
+  escaping layer sits above them, not inside them, so never pass untrusted
+  data into them.
 - **User-uploaded images** (e.g. invoice logos) are handled defensively, but
   applying your own upload size limit before calling `image()` is still good
   practice.
-- **What a PDF says is not authenticated.** If you generate invoices,
-  encryption or careful escaping cannot prevent someone from crafting a
-  _different_ PDF that imitates yours. Authenticity requires digital
-  signatures (PAdES) and/or structured e-invoicing formats (ZUGFeRD/Factur-X,
-  XRechnung) — currently outside the scope of this library.
+- **What a PDF says is not authenticated unless you sign it.** Encryption and
+  careful escaping cannot prevent someone from crafting a _different_ PDF that
+  imitates yours. Authenticity comes from a digital signature — see below.
+
+### Signatures and authenticity
+
+fast-pdf **can** sign the document itself: `signature({ sign })` produces a
+detached **PAdES-B (CAdES)** signature over the whole file, built as CMS
+SignedData and signed with RSASSA-PKCS1-v1_5 + SHA-256 through the Web Crypto
+API. The signer certificate is embedded and bound to the signature via the ESS
+`signing-certificate-v2` attribute.
+
+Its limits are part of the threat model, so take them into account before you
+rely on it:
+
+- **One signed field per document**; a second one is rejected.
+- **No trusted timestamp.** There is no RFC 3161 token — the time is the
+  `signingTime` attribute, taken from the signer's own clock, and a signer can
+  set it to anything.
+- **No PAdES-LT/LTA**: no embedded revocation data, so long-term validation
+  depends on the verifier fetching CRL/OCSP itself.
+- **RSASSA-PKCS1-v1_5 + SHA-256 only**, no ECDSA, no HSM/PKCS#11 integration.
+  The private key is handed over as a PEM string — keeping it out of logs,
+  source control and crash dumps is your job.
+- A signature is only as good as the certificate behind it. A self-signed
+  certificate verifies cryptographically and still means nothing to a viewer's
+  trust store.
+
+What remains outside the scope of this library are **structured e-invoicing
+formats** (ZUGFeRD/Factur-X, XRechnung): they are a different kind of
+authenticity — machine-readable invoice semantics, not a cryptographic
+signature — and fast-pdf neither produces nor validates them today.
 
 ## Supply chain
 

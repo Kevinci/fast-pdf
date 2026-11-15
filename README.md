@@ -2,7 +2,7 @@
 
 **Fast, dependency-free, direct-to-PDF generation** — for Node.js, Bun, Deno, browsers and
 edge/serverless runtimes. Think _esbuild for PDFs_: no Chromium, no native binaries,
-no runtime dependencies, ~13 KB min+gzip.
+no runtime dependencies, ~49 KB min+gzip.
 
 **📄 Demo & Feature-Guide (deutsch): <https://kevinci.github.io/fast-pdf/>**
 
@@ -30,13 +30,33 @@ await pdf.save("document.pdf");
 | 3-page document          | **~1.6 ms**                                              | element tree → flexbox layout → PDF lib      | ~1000 ms+ (browser startup + render) |
 | Tables                   | built-in: repeating headers, col/row spans, JSON → table | hand-built from flexbox views                | HTML/CSS                             |
 | Existing HTML table      | **`tableToPDF()`** — reads the DOM incl. computed CSS    | —                                            | re-renders the whole page            |
-| Signature form fields    | ✅ AcroForm                                              | —                                            | ❌ printed output has no form fields |
+| Signature form fields    | ✅ AcroForm, plus PAdES-B signing                        | —                                            | ❌ printed output has no form fields |
 | TOC, outlines, watermark | ✅ built-in                                              | partly                                       | ❌                                   |
-| Bundle                   | ~94 KB ESM, tree-shakeable                               | several 100 KB + the framework               | n/a                                  |
+| Bundle                   | **~49 KB** min+gzip (~282 KB ESM)                        | several 100 KB + the framework               | n/a                                  |
 
 Measured on this repo's benchmark (`npm run bench`, Apple Silicon, Node 22):
 a 3-page text document renders in **~1.3 ms**, a 170-page / 5000-row table document
 in **~209 ms**, including Flate compression.
+
+Bundle figures are measured on this repo (`npm run build`, then esbuild
+`--bundle --minify`, `gzip -9`), per entry point:
+
+| Import              | ESM raw   | minified  | **min+gzip** |
+| ------------------- | --------- | --------- | ------------ |
+| `fast-pdf`          | 282,221 B | 136,491 B | **48,907 B** |
+| `fast-pdf/dom`      | 298,916 B | 145,219 B | **52,231 B** |
+| `fast-pdf/internal` | 33,630 B  | 18,374 B  | **6,972 B**  |
+
+`fast-pdf/dom` is the core plus the HTML-table reader, so it is the larger of
+the two — importing it means you wanted that reader.
+
+The package sets `sideEffects: false`, but **do not expect tree-shaking to buy
+you anything inside `fast-pdf`**: a document using only `text()` and `table()`
+comes to 48,795 B gzipped, 0.2 % below the full entry, because SVG, Markdown,
+WebP and the PDF reader all hang off `PDFDocument` and no bundler can separate
+them. What does remove code is the entry point you choose — that is why the
+DOM reader moved out in 0.9.0. Splitting `PDFDocument` itself is planned, not
+done.
 
 ## Install
 
@@ -47,6 +67,20 @@ npm install github:Kevinci/fast-pdf     # or straight from GitHub (auto-builds o
 
 Requirements: any runtime with Web APIs (`Uint8Array`, `CompressionStream`) —
 Node ≥ 18, Bun, Deno, modern browsers, Cloudflare Workers, Vercel/Netlify Edge.
+
+### Entry points
+
+| Import                  | What it is                                                                               | Stability                        |
+| ----------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| **`fast-pdf`**          | `PDFDocument` and everything needed to build a document. This is the package.            | SemVer                           |
+| **`fast-pdf/dom`**      | `tableToPDF()` and friends — reads a `<table>` off the page. **Browser only.**           | SemVer                           |
+| **`fast-pdf/internal`** | The engine below `PDFDocument`: `PDFWriter`, `ContentStream`, `Name`, `serialize`, …     | **none — may break any release** |
+| `fast-pdf/browser`      | The main entry, pre-resolved to the browser build, for bundlers that ignore `"browser"`. | SemVer                           |
+
+Reach for `fast-pdf/internal` only to write a PDF construct the document API
+does not offer, and expect to adjust on upgrades. If you find yourself needing
+it, that is worth an issue. What SemVer covers here — and what it deliberately
+does not — is spelled out under [Stability](#stability).
 
 ### Download-on-click in the browser
 
@@ -402,8 +436,11 @@ A table is already on the page and somebody wants it as a PDF. Instead of a
 screenshot library or a headless browser on the server, hand fast-pdf the
 `<table>` itself:
 
+This lives in its own entry point — it needs a DOM, so a server bundle should
+never carry it:
+
 ```ts
-import { attachTablePdfButton } from "fast-pdf";
+import { attachTablePdfButton } from "fast-pdf/dom";
 
 attachTablePdfButton("#revenue", {
   label: "Download PDF",
@@ -443,9 +480,11 @@ other element — a toolbar, a card header — by element or selector:
 attachTablePdfButton("#revenue", { mount: "#toolbar", position: "prepend" });
 ```
 
-Three more entry points, depending on how much you want to hand over:
+Three more ways in, depending on how much you want to hand over:
 
 ```ts
+import { downloadTablePDF, tableToPDF, tableToRows } from "fast-pdf/dom";
+
 await downloadTablePDF("#revenue", { title: "Revenue 2026" }); // your own button
 const pdf = tableToPDF("#revenue"); // the PDFDocument, to keep working on
 const { rows, options } = tableToRows("#revenue", { width: pdf.width });
@@ -644,9 +683,48 @@ pdf.signature({ name: "client", x: 50, y: 700, width: 220, height: 60 });
 
 Draws a signature line (disable with `line: false`) with an optional small
 `label` underneath; the clickable field sits above the line. Field names
-default to `Signature1`, `Signature2`, … and must be unique. Note that the
-field is _for the recipient to sign_ — fast-pdf does not cryptographically
-sign the document itself.
+default to `Signature1`, `Signature2`, … and must be unique. A field like this
+is empty — it is _for the recipient to sign_. To sign a field yourself, pass
+`sign` (see below).
+
+### Digital signatures (PAdES-B)
+
+```ts
+// Sign the document through a signature field — a detached PAdES-B (CAdES)
+// signature over the whole file.
+pdf.signature({
+  label: "Geschäftsführung",
+  sign: {
+    privateKeyPem: KEY, // unencrypted PKCS#8 PEM ("-----BEGIN PRIVATE KEY-----")
+    certificatePem: CERT, // X.509 PEM ("-----BEGIN CERTIFICATE-----")
+    reason: "I approve this document", // optional
+    location: "Berlin", // optional
+    contactInfo: "billing@example.com", // optional
+    signingTime: new Date(), // optional; defaults to now
+  },
+});
+```
+
+The document is rendered with fixed-width `/ByteRange` and `/Contents`
+placeholders and signed in a second pass, so the signature covers every byte
+of the file except its own `/Contents` gap. The signer certificate is embedded
+and bound to the signature via the ESS `signing-certificate-v2` attribute —
+that is what makes it a PAdES-B baseline signature rather than a plain CMS
+blob. Viewers show the document as signed (`/SubFilter /ETSI.CAdES.detached`,
+`/SigFlags 3`).
+
+What this does **not** do, so you can decide before you build on it:
+
+| Limit                                    | Notes                                                                                                                |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **One signed field per document**        | A second `sign` throws `INVALID_ARGUMENT`. Further unsigned fields are fine.                                         |
+| **No trusted timestamp**                 | There is no RFC 3161 timestamp token; the time comes from the `signingTime` attribute, i.e. from the signer's clock. |
+| **RSASSA-PKCS1-v1_5 + SHA-256 only**     | Via the Web Crypto API — no ECDSA, no RSA-PSS, no PKCS#11/HSM, no PAdES-LT/LTA revocation data.                      |
+| **Signing and encryption are exclusive** | Signing an encrypted document throws `INVALID_ARGUMENT`.                                                             |
+| **Key handling is yours**                | The private key is passed in as a PEM string; fast-pdf never reads it from disk or a store.                          |
+
+Whether a given viewer calls the signature _valid_ depends on its trust store —
+a self-signed certificate verifies cryptographically but is not trusted.
 
 ### Encryption & permissions
 
@@ -677,17 +755,56 @@ All user-facing failures throw `FastPDFError` with a stable machine-readable
 fast-pdf generates documents; it deliberately does not do everything. What it
 cannot do today, so you can decide before you start:
 
-| Not supported                                | Notes                                                                                                                                       |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| Editing existing PDFs                        | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.        |
-| Tagged PDF (`StructTreeRoot`), PDF/A, PDF/UA | `/Lang` and `DisplayDocTitle` are written; full structure tagging is not.                                                                   |
-| Form fields other than signatures            | Text fields, checkboxes and dropdowns are not implemented.                                                                                  |
-| WOFF/WOFF2 fonts                             | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                                  |
-| Kerning, ligatures, complex-script shaping   | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                                 |
-| Gradients (`/Shading`), patterns             | Flat fills and constant alpha only.                                                                                                         |
-| CFF-flavoured OpenType, `.ttc`               | Rejected with an actionable error.                                                                                                          |
-| Lossy WebP, interlaced PNG                   | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                          |
-| HTML pages → PDF                             | `tableToPDF()` reads a `<table>`, not a whole page. There is no general HTML/CSS layout engine, and web font files cannot be read from CSS. |
+| Not supported                              | Notes                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editing existing PDFs                      | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.                                                                                                                                                                                                                                            |
+| PDF/A                                      | Not supported today. **Planned for 1.1**, as part of ZUGFeRD/Factur-X support behind an opt-in subpath. A document produced today is not PDF/A and not nearly PDF/A: no XMP, no OutputIntent, and by default no embedded fonts.                                                                                                                                                 |
+| Tagged PDF (`StructTreeRoot`)              | Not supported, and no date is set. `/Lang` and `ViewerPreferences /DisplayDocTitle` are written — that is the whole of it. There is no `/MarkInfo`, no structure tree and no reading order.                                                                                                                                                                                     |
+| PDF/UA                                     | Not supported, and no date is set. **No deadline in force names PDF/UA**: the German BFSG has applied since 2025-06-28 but names neither EN 301 549 nor PDF/UA, and EN 301 549 V4.1.1 mentions PDF/UA only in an informative note and is not cited in the EU Official Journal under the Accessibility Directive (EU) 2019/882. To be re-assessed once EN 301 549 is harmonised. |
+| XMP metadata                               | Only the classic `/Info` dictionary is written. An XMP writer is part of the PDF/A work planned for 1.1.                                                                                                                                                                                                                                                                        |
+| Archivable output with the default font    | The standard-14 fonts are referenced as `/Type1` **without a `FontFile`**, so they are not embedded. Anything that has to survive long-term — and PDF/A later — needs `registerFont()` with a TTF. That is a different way of using the library, not a flag.                                                                                                                    |
+| Form fields other than signatures          | Text fields, checkboxes and dropdowns are not implemented.                                                                                                                                                                                                                                                                                                                      |
+| WOFF/WOFF2 fonts                           | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                                                                                                                                                                                                                                                                      |
+| Kerning, ligatures, complex-script shaping | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                                                                                                                                                                                                                                                                     |
+| Gradients (`/Shading`), patterns           | Flat fills and constant alpha only.                                                                                                                                                                                                                                                                                                                                             |
+| CFF-flavoured OpenType, `.ttc`             | Rejected with an actionable error.                                                                                                                                                                                                                                                                                                                                              |
+| Lossy WebP, interlaced PNG                 | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                                                                                                                                                                                                                                                              |
+| HTML pages → PDF                           | `tableToPDF()` reads a `<table>`, not a whole page. There is no general HTML/CSS layout engine, and web font files cannot be read from CSS.                                                                                                                                                                                                                                     |
+| Tree-shaking within one entry point        | Measured at 0.2 % — effectively nothing. Code is removed by picking the right entry point, not by the bundler (see [Why](#why)).                                                                                                                                                                                                                                                |
+
+## Stability
+
+**`fast-pdf` and `fast-pdf/dom` are stable from 1.0.0 on**, in the SemVer sense:
+no export is removed, renamed or changed incompatibly without a major release.
+`tests/entry-points.test.ts` pins both surfaces as an explicit list, so adding
+or dropping an export is a visible decision in the diff rather than an
+accident. `fast-pdf/browser` is the same surface as `fast-pdf`, pre-resolved to
+the browser build, and shares its promise.
+
+What that covers: the exported names, their signatures and their types. Code
+that compiles and runs against 1.0.0 keeps compiling and running against every
+later 1.x. New exports may arrive in a minor release; existing ones do not
+move.
+
+What it does not cover: **the bytes of the generated PDF.** Layout and
+rendering details — where a line breaks, how a column is measured, how a
+coordinate is rounded — may change in a minor release when the result gets
+better. Freezing the output byte for byte would make every layout fix a
+breaking change, so compare rendered documents, not file hashes.
+
+`FastPDFError` codes are part of the promise. Callers branch on `code`, so a
+code is not renamed or given a new meaning within a major version; a new
+failure mode gets a new code.
+
+**`fast-pdf/internal` is explicitly excluded and may change in any release**,
+patch releases included. It exists for one case: writing a PDF construct the
+document API does not offer — your own dictionary, your own annotation,
+your own content-stream operators — without forking the package. It is not a
+second public API, it is not a place to reach into for things `PDFDocument`
+already does, and it is below the guard rails that protect the main surface:
+`ContentStream.raw()` appends operators verbatim, and `serialize()` escapes
+only what you have already wrapped in `PDFString` or `Name`. Anything you
+assemble yourself reaches the file unchecked, so escape it yourself.
 
 ## Design
 
@@ -702,7 +819,13 @@ cannot do today, so you can decide before you start:
 
 ## Security
 
-Generated PDFs are passive: no JavaScript, no embedded files, no forms. All
+A document produced by `new PDFDocument()` is passive: no JavaScript actions,
+no launch actions, no auto-actions and no external content. fast-pdf never
+embeds a file unless the caller explicitly asks for one, and an imported
+third-party PDF never contributes an attachment — `append()` drops
+`/FileAttachment` along with every other payload-carrying annotation. The only
+interactive structure it writes is an `/AcroForm` with signature fields, and
+only when you call `signature()`. All
 strings are escaped before touching PDF syntax, so untrusted data in text,
 tables or metadata cannot inject PDF operators. Dangerous link schemes
 (`javascript:`, `file:`, `data:`, `vbscript:`) are rejected, and the image
@@ -714,12 +837,17 @@ vulnerabilities.
 
 ```sh
 npm test                # vitest unit + end-to-end structure tests
-npm run test:coverage   # coverage (thresholds: >90% lines)
+npm run test:coverage   # coverage (thresholds: 90% statements/lines/functions, 80% branches)
 npm run typecheck       # strict TypeScript
 npm run build           # tsup → dist/ (ESM + d.ts)
 npm run example         # renders examples/output/invoice.pdf
 npm run bench           # performance benchmark
 ```
+
+**Node version:** contributing needs **Node ≥ 20** — the dev toolchain (ESLint,
+Vitest) uses `util.styleText`, which Node 18 does not have. _Using_ the
+published package works from **Node 18** as advertised; CI covers that with a
+separate job that runs the built bundle on Node 18.
 
 ## Templates — start from a working example
 
