@@ -19,16 +19,16 @@ Branchen.
 
 **Ziel:** Solides, schnelles Fundament.
 
-> Stand 2026-09-23: Core und PDF-Features sind vollständig ausgeliefert (0.7.1).
-> Offen bleiben Snapshot-/Performance-Tests, das 95-%-Coverage-Ziel und
-> Migration Guides.
+> Stand 2026-11-27: **1.0.0 ist fertig.** Was genau in 1.0.0 steckt, was
+> bewusst nicht, und warum, steht in [`roadmap-1.0.md`](roadmap-1.0.md) — jenes
+> Dokument hat für alles, was 1.0.0 und 1.1.0 betrifft, Vorrang vor dieser Liste.
 
 ### Core
 
 - [x] Zero Dependencies
-- [x] Tree-Shakable Architektur
+- [ ] Tree-Shakable Architektur (gemessen 0,2 % — Code entfernt der gewählte Einstiegspunkt, nicht der Bundler; Aufspaltung von `document.ts` ist 1.2-Arbeit)
 - [x] ESM First
-- [x] CJS Compatibility
+- [ ] CJS Compatibility (das Paket ist ESM-only; `require()` funktioniert nur dort, wo die Laufzeit `require(esm)` beherrscht — Node ≥ 22.12 / 20.19)
 - [x] Browser Support
 - [x] Node Support
 - [x] Bun Support
@@ -54,12 +54,15 @@ Branchen.
 
 ### Qualität
 
-- [x] Unit Tests (`tests/`, 23 Dateien / 395 Tests)
+- [x] Unit Tests (`tests/`, 554 Tests)
 - [x] Integration Tests (End-to-End-Strukturtests über das fertige PDF)
-- [ ] Snapshot Tests (bisher keine — Struktur wird assertiv geprüft)
+- [x] Externe Strukturvalidierung statt Snapshot-Tests: `qpdf --check` über alle Beispiel-PDFs in CI (Warnungen zählen als Fehler)
 - [ ] Performance Tests (`npm run bench` misst, bricht aber bei Regression nicht ab)
 - [x] API Tests
-- [ ] 95 %+ Test Coverage (Stand: 92,08 % Lines / 83,8 % Branches; Schwellen 90/80)
+- [x] Coverage-Gate in CI (Stand: 94,2 % Lines / 84,5 % Branches; Schwellen 92/93/95/83 — das 95-%-Ziel ist gestrichen, siehe `roadmap-1.0.md` §5)
+- [x] Eingefrorene API-Oberfläche als Test (`tests/api-surface.test.ts`, Werte und Typen)
+- [x] Bundle-Size-Budget als CI-Gate (`npm run size`)
+- [x] Release mit npm-Provenance (`.github/workflows/release.yml`)
 
 ### Developer Experience
 
@@ -68,7 +71,7 @@ Branchen.
 - [x] Beispiele (`examples/`: invoice, cv, report, showcase, append, signature)
 - [x] Playground (`docs/demo.html`, `docs/append-playground.html`)
 - [x] Benchmarks (`bench/bench.ts`)
-- [ ] Migration Guides
+- [x] Migration Guide 0.8 → 0.9/1.0 (`CHANGELOG.md`, Abschnitt 0.9.0)
 - [x] Changelog
 
 ---

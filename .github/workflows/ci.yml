@@ -4,7 +4,7 @@
 # shows every problem at once instead of hiding the later ones behind the first
 # failure:
 #
-#   quality        the toolchain (format, lint, types, tests, build)
+#   quality        the toolchain (format, lint, types, tests, build, size budget)
 #   pdf-structure  the external gate: qpdf inspects the PDFs we actually produce
 #   engines        does the shipped bundle still run on the oldest supported Node?
 #   runtimes       Bun and Deno, non-blocking
@@ -91,7 +91,7 @@ jobs:
         run: npm run typecheck
 
       # Coverage rather than a plain `npm test`: the thresholds in
-      # vitest.config.ts (90 % statements/lines/functions, 80 % branches) are
+      # vitest.config.ts (statements, lines, functions and branches) are
       # only enforced on this script, and a threshold nobody runs is not a
       # threshold.
       - name: Test with coverage
@@ -102,6 +102,13 @@ jobs:
       # browser bundle.
       - name: Build
         run: npm run build
+
+      # The size table in the README is a claim against competing libraries, and
+      # it was once wrong by a factor of four because nothing re-measured it.
+      # This step does: min+gzip per entry point against the budgets in
+      # scripts/check-size.mjs. Needs the dist/ the previous step just built.
+      - name: Check the bundle-size budget
+        run: npm run size
 
   pdf-structure:
     name: PDF structure (qpdf --check)

@@ -38,14 +38,18 @@ Measured on this repo's benchmark (`npm run bench`, Apple Silicon, Node 22):
 a 3-page text document renders in **~1.3 ms**, a 170-page / 5000-row table document
 in **~209 ms**, including Flate compression.
 
-Bundle figures are measured on this repo (`npm run build`, then esbuild
-`--bundle --minify`, `gzip -9`), per entry point:
+Bundle figures are measured on this repo by `npm run size` (esbuild
+`--bundle --minify` over the built entry, then `gzip -9`), per entry point:
 
 | Import              | ESM raw   | minified  | **min+gzip** |
 | ------------------- | --------- | --------- | ------------ |
-| `fast-pdf`          | 282,221 B | 136,491 B | **48,907 B** |
-| `fast-pdf/dom`      | 298,916 B | 145,219 B | **52,231 B** |
-| `fast-pdf/internal` | 33,630 B  | 18,374 B  | **6,972 B**  |
+| `fast-pdf`          | 282,549 B | 136,639 B | **48,933 B** |
+| `fast-pdf/dom`      | 299,236 B | 145,367 B | **52,263 B** |
+| `fast-pdf/internal` | 33,630 B  | 18,374 B  | **6,949 B**  |
+
+These numbers are a **CI gate, not a snapshot**: every run re-measures them
+against a budget about 3 % above the table (`scripts/check-size.mjs`), so the
+package cannot quietly outgrow what this page claims.
 
 `fast-pdf/dom` is the core plus the HTML-table reader, so it is the larger of
 the two — importing it means you wanted that reader.
@@ -837,9 +841,10 @@ vulnerabilities.
 
 ```sh
 npm test                # vitest unit + end-to-end structure tests
-npm run test:coverage   # coverage (thresholds: 90% statements/lines/functions, 80% branches)
+npm run test:coverage   # coverage (thresholds: 92% statements, 93% lines, 95% functions, 83% branches)
 npm run typecheck       # strict TypeScript
 npm run build           # tsup → dist/ (ESM + d.ts)
+npm run size            # min+gzip per entry point, checked against the budget
 npm run example         # renders examples/output/invoice.pdf
 npm run bench           # performance benchmark
 ```

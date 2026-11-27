@@ -1,6 +1,6 @@
 {
   "name": "fast-pdf",
-  "version": "0.9.0",
+  "version": "1.0.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
   "author": "Kevin Imig <kevinci.coding@gmail.com>",
@@ -52,6 +52,7 @@
     "scripts/install-skill.mjs",
     ".claude/skills",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "engines": {
@@ -73,7 +74,7 @@
   "scripts": {
     "build": "rm -rf dist && tsup",
     "prepare": "rm -rf dist && tsup",
-    "prepublishOnly": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build",
+    "prepublishOnly": "npm run format:check && npm run lint && npm run typecheck && npm run test:coverage && npm run build && npm run size",
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -82,6 +83,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "size": "node scripts/check-size.mjs",
     "bench": "tsx bench/bench.ts",
     "example": "tsx examples/invoice.ts",
     "showcase": "tsx examples/showcase.ts",
@@ -97,6 +99,7 @@
     "@tailwindcss/cli": "^4.3.3",
     "@types/node": "^24.19.2",
     "@vitest/coverage-v8": "^5.0.5",
+    "esbuild": "^0.27.2",
     "eslint": "^10.8.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-unicorn": "^73.0.0",

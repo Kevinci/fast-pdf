@@ -658,6 +658,30 @@ nicht als Zustandsbeschreibung.
 
 ---
 
+### Stand 27.11.2026 — 1.0.0 ist fertig zum Taggen
+
+Alle offenen Punkte der Tabelle oben sind erledigt:
+
+| Punkt                  | Stand        | Belegt durch                                                                                                                                                                                                                                                                                                   |
+| ---------------------- | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **B7** Limitations     | erledigt     | `README.md` §Limitations: PDF/A (Ziel 1.1), Tagged PDF und PDF/UA getrennt, PDF/UA ohne erfundene Deadline; Zeilen zu XMP, nicht archivierbarer Standardschrift und Tree-Shaking ergänzt.                                                                                                                      |
+| **Punkt 9** `/F 4`     | erledigt     | Commit `d559c15`, im CHANGELOG unter 1.0.0 → Fixed.                                                                                                                                                                                                                                                            |
+| **B3** Size-Budget     | erledigt     | `scripts/check-size.mjs`, `npm run size`, eigener Schritt im CI-Job `quality` und in `prepublishOnly`. Budgets ~3 % über dem Messwert (Kern 48.933 B → Budget 50.500 B). Gegenprobe: mit künstlich gesenktem Budget endet das Skript mit Exit 1.                                                               |
+| **Freeze-Erklärung**   | erledigt     | `README.md` §Stability. Zusätzlich `tests/api-surface.test.ts`: die vollständige Exportliste von `fast-pdf` (66 Namen) und `fast-pdf/dom` (9) **einschließlich der Typen**, ermittelt über die TypeScript-Compiler-API, plus die 43 öffentlichen Methoden von `PDFDocument`. Der bisherige Test sah nur Werte. |
+| **Release-Workflow**   | erledigt     | `.github/workflows/release.yml` (aus B4, bisher offen): Tag `v*.*.*` → Tag/Version/Changelog-Abgleich → volle Gate + `qpdf --check` → `npm publish --provenance`.                                                                                                                                              |
+| **`.claude/agents/`**  | erledigt     | Dateien sind formatiert und committet; `format:check` ist grün. Invariante 4 in `pdf-dev.md` nennt die gemessenen ~49 KB.                                                                                                                                                                                      |
+| **Dev-Abhängigkeiten** | aktualisiert | `npm audit`: 0 Befunde (vorher 9 moderate, alle in der Lint-Toolchain, keiner im ausgelieferten Paket).                                                                                                                                                                                                        |
+
+**Was der Nutzer selbst tun muss** — nichts davon kann oder soll ein Agent
+ohne ausdrückliche Freigabe tun:
+
+1. Auf npmjs.com entweder _Trusted Publishing_ für `release.yml` einrichten
+   oder ein Automation-Token als Repository-Secret `NPM_TOKEN` hinterlegen.
+2. `git tag v1.0.0 && git push origin v1.0.0` — das löst die Veröffentlichung
+   aus. Ein npm-Release lässt sich nicht zurücknehmen.
+
+---
+
 ## 7. Belegstatus und Beobachtungsposten
 
 Dieses Dokument stützt sich auf `docs/research/`. Drei Einschränkungen, die
@@ -689,6 +713,7 @@ beide Richtungen.
 
 | Datum      | Änderung                                                                                                                                                                                                                                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-27 | Stand 1.0.0 ergänzt (§6a): alle Restpunkte erledigt, Size-Gate, Typ-Oberflächentest und Release-Workflow hinzugekommen.                                                                                                                                                                                                                                                                    |
 | 2026-10-30 | Erstfassung. Scope 1.0.0 festgelegt, Konflikte A und B aufgelöst, ZUGFeRD auf 1.1 hinter `fast-pdf/zugferd`.                                                                                                                                                                                                                                                                               |
 | 2026-10-30 | **Fünf Entscheidungen des Nutzers festgeschrieben** (§6, E1–E5): API-Schnitt als 0.9.0, Zwischenrelease bestätigt, Bundle-Zahl korrigieren statt `document.ts` aufspalten, ZUGFeRD nur als Container, keine mitgelieferte Schrift. Neuer §6a mit den fünf Arbeitspaketen für 0.9.0. Korrektur zur Coverage-Aussage ergänzt: es sind vier Schwellen, und _lines_ ist die einzige, die hält. |
 | 2026-10-30 | Nach Vorliegen von `docs/research/`: Konflikt B neu gefasst (ICC 456 Bytes statt Bundle-Problem — der echte Konflikt ist die Schrift). Aufwände belegt: 1.0.0 ≈ 8,5 PT, 1.1.0 = 15–28 PT. PDF/UA-Aussage in B7 korrigiert (es gibt **keinen** Stichtag). Validator für B6 festgelegt (`qpdf --check`). Profil-Einstieg EN 16931 / Stufe 3b entschieden. §7 Belegstatus ergänzt.            |

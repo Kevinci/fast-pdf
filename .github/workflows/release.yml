@@ -1,0 +1,120 @@
+# fast-pdf — Release
+#
+# Publishes to npm when a version tag is pushed, and only then. Nothing in this
+# file runs on an ordinary push or pull request.
+#
+#   git tag v1.0.0 && git push origin v1.0.0
+#
+# What it guarantees about a published version:
+#
+#   - it was built from the tagged commit on a clean runner, not from whatever
+#     happened to be in a maintainer's working tree;
+#   - the tag and package.json agree on the version;
+#   - the full gate ran first — `prepublishOnly` chains format, lint, typecheck,
+#     tests with coverage thresholds, build and the size budget — plus the same
+#     external qpdf check CI applies to the example documents;
+#   - it carries an npm provenance attestation linking the tarball to this
+#     workflow run and commit, which consumers can verify with
+#     `npm audit signatures`.
+#
+# One-time setup on the npm side — either of:
+#
+#   a) Trusted publishing (preferred, no long-lived secret): on npmjs.com, add
+#      this repository and the workflow file `release.yml` as a trusted
+#      publisher for the package. The OIDC token below is then the credential.
+#   b) A granular automation token stored as the repository secret NPM_TOKEN.
+#
+# The step below works with both: with (a) the NPM_TOKEN secret is simply empty.
+
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+
+# Read-only by default; the publish job opts into the one extra scope it needs.
+permissions:
+  contents: read
+
+# Never run two publishes of the same tag at once, and never cancel one midway.
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish to npm with provenance
+    runs-on: ubuntu-24.04
+
+    permissions:
+      contents: read
+      # Required for the provenance attestation (and for trusted publishing):
+      # lets the job request an OIDC token that identifies this workflow run.
+      id-token: write
+
+    steps:
+      - name: Check out the tagged commit
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          registry-url: "https://registry.npmjs.org"
+          # Deliberately no `cache: npm`: a release build should not start from
+          # a cache that an earlier, unrelated run populated.
+
+      # A tag that disagrees with package.json would publish one version under
+      # the name of another. Fail before anything else happens.
+      - name: Verify the tag matches package.json
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if [ "v$version" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match package.json version $version"
+            exit 1
+          fi
+
+      # The changelog is the release note. Publishing a version it does not
+      # mention means shipping changes nobody wrote down.
+      - name: Verify the changelog has an entry for this version
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          if ! grep -q "^## \[$version\]" CHANGELOG.md; then
+            echo "::error::CHANGELOG.md has no '## [$version]' section"
+            exit 1
+          fi
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Same external gate as CI: an independent reader has to accept the PDFs
+      # this exact commit produces before the commit becomes a release.
+      - name: Render the examples and check them with qpdf
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends qpdf
+          mkdir -p examples/output
+          for example in basic invoice report cv showcase signature; do
+            npx --no-install tsx "examples/$example.ts"
+          done
+          shopt -s nullglob
+          files=(examples/output/*.pdf)
+          if [ "${#files[@]}" -ne 6 ]; then
+            echo "::error::Expected 6 rendered PDFs, found ${#files[@]}"
+            exit 1
+          fi
+          for file in "${files[@]}"; do
+            # Warnings (exit 3) count as failures — see ci.yml for the reasoning.
+            qpdf --check "$file"
+          done
+
+      # `npm publish` runs `prepublishOnly` first, which is the whole quality
+      # gate. `--provenance` attaches the signed build attestation;
+      # `--access public` is explicit so the result never depends on a default.
+      - name: Publish
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

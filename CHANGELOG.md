@@ -6,6 +6,50 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.0.0] — 2026-11-27
+
+The stability release. **No breaking changes against 0.9.0** — code that runs
+on 0.9.0 runs on 1.0.0 unchanged. What changes is the promise: from this
+version on the public API is frozen under SemVer, and the claims this project
+makes about itself are re-measured by CI instead of being trusted.
+
+Coming from 0.8.x? The one breaking change was made in 0.9.0, deliberately
+_before_ the promise: see the migration table under 0.9.0 below. It is an
+import-path change and nothing else.
+
+### The 1.0 promise
+
+- **`fast-pdf`, `fast-pdf/dom` and `fast-pdf/browser` are stable.** No export
+  is removed, renamed or changed incompatibly without a major release. This
+  covers exported names, signatures, types, and the `code` values of
+  `FastPDFError`.
+- **Not covered: the bytes of the generated PDF.** Layout and rendering may
+  improve in a minor release; compare rendered documents, not file hashes.
+- **Not covered: `fast-pdf/internal`.** It may change in any release.
+
+The README section [Stability](README.md#stability) spells this out.
+
+### Added
+
+- **The frozen surface is pinned by a test, types included.**
+  `tests/api-surface.test.ts` asks the TypeScript compiler for the complete
+  export list of `fast-pdf` and `fast-pdf/dom` — 66 and 9 names, values _and_
+  types — and for the public methods of `PDFDocument`, and compares them with
+  an explicit list. Removing or renaming any of them now fails CI.
+  (`tests/entry-points.test.ts` already pinned the runtime values; types
+  vanish at runtime and were unguarded.)
+- **Bundle-size budget as a CI gate.** `npm run size`
+  (`scripts/check-size.mjs`) measures min+gzip per entry point the way the
+  README documents it and fails when an entry outgrows its budget (about 3 %
+  above today's value). The README once claimed 13 KB when the truth was
+  52 KB, because nothing re-measured the number; now something does. It also
+  runs in `prepublishOnly`.
+- **Release workflow with npm provenance.** Pushing a `v*.*.*` tag builds the
+  tagged commit on a clean runner, checks that tag, `package.json` and
+  changelog agree, runs the full gate plus `qpdf --check` over the example
+  documents, and publishes with `--provenance`. Verify a published version
+  with `npm audit signatures`.
+
 ### Fixed
 
 - Link annotations now carry `/F 4` (annotation flag bit 3, "Print"), like the
@@ -16,6 +60,15 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
   used to fail validation. The flag is a constant, so `deterministic` output
   stays byte-identical across runs. Annotations copied from an appended PDF are
   left exactly as they were found.
+
+### Changed
+
+- Bundle figures re-measured after the fix above: `fast-pdf` **48,933 B**
+  min+gzip, `fast-pdf/dom` 52,263 B, `fast-pdf/internal` 6,949 B.
+- The README's coverage thresholds now state what `vitest.config.ts` enforces
+  (92 % statements, 93 % lines, 95 % functions, 83 % branches).
+- Dev dependencies updated; `npm audit` reports no known vulnerabilities.
+  fast-pdf itself still has **zero** runtime dependencies.
 
 ## [0.9.0] — 2026-10-31
 
