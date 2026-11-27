@@ -23,16 +23,17 @@ await pdf.save("document.pdf");
 
 ## Why
 
-|                          | fast-pdf                                                 | Component-framework renderers                | HTML → headless browser              |
-| ------------------------ | -------------------------------------------------------- | -------------------------------------------- | ------------------------------------ |
-| Runtime deps             | **0**                                                    | 10+, incl. a UI framework as peer dependency | a ~300 MB browser binary             |
-| Runs on                  | Node, Bun, Deno, browser, edge                           | Node + browser; edge runtimes are tricky     | servers that can run a browser       |
-| 3-page document          | **~1.6 ms**                                              | element tree → flexbox layout → PDF lib      | ~1000 ms+ (browser startup + render) |
-| Tables                   | built-in: repeating headers, col/row spans, JSON → table | hand-built from flexbox views                | HTML/CSS                             |
-| Existing HTML table      | **`tableToPDF()`** — reads the DOM incl. computed CSS    | —                                            | re-renders the whole page            |
-| Signature form fields    | ✅ AcroForm, plus PAdES-B signing                        | —                                            | ❌ printed output has no form fields |
-| TOC, outlines, watermark | ✅ built-in                                              | partly                                       | ❌                                   |
-| Bundle                   | **~49 KB** min+gzip (~282 KB ESM)                        | several 100 KB + the framework               | n/a                                  |
+|                          | fast-pdf                                                       | Component-framework renderers                  | HTML → headless browser              |
+| ------------------------ | -------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------ |
+| Runtime deps             | **0**                                                          | 10+, incl. a UI framework as peer dependency   | a ~300 MB browser binary             |
+| Runs on                  | Node, Bun, Deno, browser, edge                                 | Node + browser; edge runtimes are tricky       | servers that can run a browser       |
+| 3-page document          | **~1.6 ms**                                                    | element tree → flexbox layout → PDF lib        | ~1000 ms+ (browser startup + render) |
+| Tables                   | built-in: repeating headers, col/row spans, JSON → table       | hand-built from flexbox views                  | HTML/CSS                             |
+| Existing HTML table      | **`tableToPDF()`** — reads the DOM incl. computed CSS          | —                                              | re-renders the whole page            |
+| PDF/A-3, ZUGFeRD         | ✅ **`fast-pdf/pdfa`**, **`fast-pdf/zugferd`** — veraPDF in CI | rarely; attach-only add-ons need a PDF/A input | ❌                                   |
+| Signature form fields    | ✅ AcroForm, plus PAdES-B signing                              | —                                              | ❌ printed output has no form fields |
+| TOC, outlines, watermark | ✅ built-in                                                    | partly                                         | ❌                                   |
+| Bundle                   | **~49 KB** min+gzip (~282 KB ESM)                              | several 100 KB + the framework                 | n/a                                  |
 
 Measured on this repo's benchmark (`npm run bench`, Apple Silicon, Node 22):
 a 3-page text document renders in **~1.3 ms**, a 170-page / 5000-row table document
@@ -43,9 +44,14 @@ Bundle figures are measured on this repo by `npm run size` (esbuild
 
 | Import              | ESM raw   | minified  | **min+gzip** |
 | ------------------- | --------- | --------- | ------------ |
-| `fast-pdf`          | 282,549 B | 136,639 B | **48,933 B** |
-| `fast-pdf/dom`      | 299,236 B | 145,367 B | **52,263 B** |
-| `fast-pdf/internal` | 33,630 B  | 18,374 B  | **6,949 B**  |
+| `fast-pdf`          | 283,619 B | 137,133 B | **49,078 B** |
+| `fast-pdf/dom`      | 300,306 B | 145,861 B | **52,407 B** |
+| `fast-pdf/internal` | 33,945 B  | 18,431 B  | **6,969 B**  |
+
+`fast-pdf/pdfa` and `fast-pdf/zugferd` share the core with `fast-pdf`, so what
+they cost is what they **add** to a bundle that already imports it: **+3.3 KB**
+min+gzip for PDF/A, **+4.2 KB** for ZUGFeRD/Factur-X (which includes PDF/A) —
+sRGB profile included. A document that never imports them pays nothing.
 
 These numbers are a **CI gate, not a snapshot**: every run re-measures them
 against a budget about 3 % above the table (`scripts/check-size.mjs`), so the
@@ -78,6 +84,8 @@ Node ≥ 18, Bun, Deno, modern browsers, Cloudflare Workers, Vercel/Netlify Edge
 | ----------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
 | **`fast-pdf`**          | `PDFDocument` and everything needed to build a document. This is the package.            | SemVer                           |
 | **`fast-pdf/dom`**      | `tableToPDF()` and friends — reads a `<table>` off the page. **Browser only.**           | SemVer                           |
+| **`fast-pdf/pdfa`**     | `pdfA()` — PDF/A-3b/-3u output and embedded files. Opt-in.                               | SemVer                           |
+| **`fast-pdf/zugferd`**  | `facturX()` — ZUGFeRD / Factur-X invoices (PDF/A-3 + embedded XML). Opt-in.              | SemVer                           |
 | **`fast-pdf/internal`** | The engine below `PDFDocument`: `PDFWriter`, `ContentStream`, `Name`, `serialize`, …     | **none — may break any release** |
 | `fast-pdf/browser`      | The main entry, pre-resolved to the browser build, for bundlers that ignore `"browser"`. | SemVer                           |
 
@@ -730,6 +738,124 @@ What this does **not** do, so you can decide before you build on it:
 Whether a given viewer calls the signature _valid_ depends on its trust store —
 a self-signed certificate verifies cryptographically but is not trusted.
 
+### PDF/A-3 — archivable PDFs
+
+`fast-pdf/pdfa` turns a document into **PDF/A-3b** (ISO 19005-3), the format
+for long-term archiving: every font embedded, colours defined by an ICC
+profile, metadata as XMP, nothing that depends on the outside world.
+
+```ts
+import { PDFDocument } from "fast-pdf";
+import { pdfA } from "fast-pdf/pdfa";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Annual report 2026" } });
+pdf.registerFont(interRegular, { family: "inter" });
+pdf.registerFont(interBold, { family: "inter", bold: true });
+
+const archive = pdfA(pdf); // PDF/A-3b from here on
+
+pdf.text("Annual report 2026", { size: 22, bold: true });
+archive.attach({
+  filename: "figures.csv",
+  data: csv,
+  mimeType: "text/csv",
+  relationship: "Source", // Alternative | Data | Source | Supplement | Unspecified
+  description: "The figures behind the charts",
+});
+
+await pdf.save("report.pdf");
+```
+
+`pdfA()` adds what the standard requires — the XMP metadata stream with the
+PDF/A identification and an sRGB output intent (the 456-byte profile is
+bundled, CC0) — and from then on `render()` **refuses** what cannot be
+conforming, with a `FastPDFError` of code `"PDFA_VIOLATION"` that says what to
+change:
+
+| Refused in PDF/A mode                     | Why, and what to do                                                                                                                    |
+| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Text in `helvetica` / `times` / `courier` | The built-in fonts are not embedded. Register a TTF and make it the document `font`. Markdown code spans use Courier and are affected. |
+| A character the font has no glyph for     | It would be drawn as `.notdef`. The error names the character and the font.                                                            |
+| `encrypt`                                 | PDF/A forbids encryption — an archive must stay readable without a key.                                                                |
+| `append()`                                | Imported pages bring fonts and colour spaces fast-pdf did not write and cannot vouch for.                                              |
+| CMYK JPEGs                                | The output intent is RGB, and a document has only one. Convert to RGB.                                                                 |
+| `signature({ sign })`                     | PAdES signing together with PDF/A is not validated yet. Unsigned signature fields work.                                                |
+
+| Option          | Meaning                                                                                                                      |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `conformance`   | `"B"` (default) or `"U"` — B plus the promise that all text maps to Unicode, which fast-pdf's embedded fonts fulfil.         |
+| `outputProfile` | `{ data, identifier }` to replace the bundled sRGB profile with another **RGB** ICC profile (device class `mntr` or `prtr`). |
+
+The checks run at render time, so it does not matter whether `pdfA()` is
+called before or after the content is drawn. Transparency, links, outlines,
+images (PNG, GIF, WebP, RGB/gray JPEG), SVG and tables all work unchanged.
+
+**How this is verified.** CI renders [`examples/zugferd.ts`](examples/zugferd.ts)
+and hands the result to [veraPDF](https://verapdf.org/), the reference
+validator, which must report it PDF/A-3b compliant — and must report an
+ordinary fast-pdf document as _not_ compliant, so that a misconfigured
+validator cannot pass for a green one. veraPDF validates that one document,
+not every document you can build; if a file of yours fails validation, that is
+a bug worth reporting.
+
+### ZUGFeRD / Factur-X — e-invoices
+
+A ZUGFeRD (in France: Factur-X) invoice is a PDF/A-3 a person can read, with
+the same invoice embedded as XML a machine can book. `fast-pdf/zugferd` builds
+that hybrid from a document and an XML:
+
+```ts
+import { PDFDocument } from "fast-pdf";
+import { facturX } from "fast-pdf/zugferd";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Invoice 2026-041" } });
+pdf.registerFont(interRegular, { family: "inter" });
+
+facturX(pdf, invoiceXml, { profile: "EN 16931" }); // string or Uint8Array
+
+pdf.text("Invoice 2026-041", { size: 20 });
+pdf.table(items);
+await pdf.save("invoice.pdf");
+```
+
+`facturX()` switches the document to PDF/A-3 (everything in the section above
+applies), embeds the XML under the file name the specification prescribes
+(`factur-x.xml`, or `xrechnung.xml` for the XRECHNUNG profile) with MIME type
+`text/xml`, registers it as an associated file of the document, and writes the
+four Factur-X XMP properties together with their PDF/A extension schema.
+
+| Option          | Meaning                                                                                                                                       |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `profile`       | **Required.** `"MINIMUM"`, `"BASIC WL"`, `"BASIC"`, `"EN 16931"`, `"EXTENDED"` or `"XRECHNUNG"` — the profile the XML was generated for.      |
+| `relationship`  | `/AFRelationship` of the XML. Default: `"Data"` for MINIMUM and BASIC WL, `"Alternative"` otherwise (the specification's matrix for Germany). |
+| `description`   | Text shown in the viewer's attachment list.                                                                                                   |
+| `modDate`       | Modification date recorded with the XML. Default: the document's creation date.                                                               |
+| `conformance`   | PDF/A-3 level, `"B"` (default) or `"U"`.                                                                                                      |
+| `outputProfile` | Replace the bundled sRGB profile.                                                                                                             |
+| `checkXml`      | `false` skips the plausibility check below.                                                                                                   |
+
+It returns the PDF/A handle, so further files (timesheets, delivery notes) can
+be added with `.attach()`.
+
+**What fast-pdf does not do: create or validate the invoice.** The XML is tax
+logic — EN 16931 has several hundred business rules covering rounding, VAT
+categories and code lists — and it is the legally binding part: under German
+law the structured data prevails over the visible page. Generate it with a
+library built for that and validate it against the official EN 16931 rules.
+fast-pdf only checks that what you pass is plausibly the right file: a
+`CrossIndustryInvoice` (CII; UBL cannot be embedded) whose guideline ID
+matches `profile`. A mismatch throws rather than producing a PDF that says
+one thing in its metadata and another in its payload.
+
+**For Germany:** from 2027-01-01, businesses with more than €800,000 prior-year
+turnover must issue B2B invoices as e-invoices. ZUGFeRD ≥ 2.0.1 qualifies —
+**except the profiles MINIMUM and BASIC WL**, which carry no invoice lines
+(UStAE 14.1 (14)). Use `"EN 16931"` unless you know you need another one. This
+is a summary, not tax advice.
+
+A complete, runnable invoice is in [`examples/zugferd.ts`](examples/zugferd.ts)
+(`npm run zugferd`).
+
 ### Encryption & permissions
 
 ```ts
@@ -762,11 +888,12 @@ cannot do today, so you can decide before you start:
 | Not supported                              | Notes                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Editing existing PDFs                      | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.                                                                                                                                                                                                                                            |
-| PDF/A                                      | Not supported today. **Planned for 1.1**, as part of ZUGFeRD/Factur-X support behind an opt-in subpath. A document produced today is not PDF/A and not nearly PDF/A: no XMP, no OutputIntent, and by default no embedded fonts.                                                                                                                                                 |
+| PDF/A-1, PDF/A-2, PDF/A-3a                 | **PDF/A-3b and -3u are supported** through [`fast-pdf/pdfa`](#pdfa-3--archivable-pdfs). Parts 1 and 2 are not (part 3 is what e-invoicing needs), and level A needs tagged PDF. PDF/A cannot be combined with encryption, `append()`, CMYK JPEGs or PAdES signing.                                                                                                              |
 | Tagged PDF (`StructTreeRoot`)              | Not supported, and no date is set. `/Lang` and `ViewerPreferences /DisplayDocTitle` are written — that is the whole of it. There is no `/MarkInfo`, no structure tree and no reading order.                                                                                                                                                                                     |
 | PDF/UA                                     | Not supported, and no date is set. **No deadline in force names PDF/UA**: the German BFSG has applied since 2025-06-28 but names neither EN 301 549 nor PDF/UA, and EN 301 549 V4.1.1 mentions PDF/UA only in an informative note and is not cited in the EU Official Journal under the Accessibility Directive (EU) 2019/882. To be re-assessed once EN 301 549 is harmonised. |
-| XMP metadata                               | Only the classic `/Info` dictionary is written. An XMP writer is part of the PDF/A work planned for 1.1.                                                                                                                                                                                                                                                                        |
-| Archivable output with the default font    | The standard-14 fonts are referenced as `/Type1` **without a `FontFile`**, so they are not embedded. Anything that has to survive long-term — and PDF/A later — needs `registerFont()` with a TTF. That is a different way of using the library, not a flag.                                                                                                                    |
+| XMP metadata outside PDF/A                 | An ordinary document carries only the classic `/Info` dictionary. XMP is written in PDF/A mode, where it is mandatory.                                                                                                                                                                                                                                                          |
+| Archivable output with the default font    | The standard-14 fonts are referenced as `/Type1` **without a `FontFile`**, so they are not embedded, and fast-pdf ships no font of its own. PDF/A therefore needs `registerFont()` with a TTF for **all** text — `pdfA()` refuses to render otherwise.                                                                                                                          |
+| Creating or validating invoice XML         | `fast-pdf/zugferd` builds the hybrid **container**. The CII XML — EN 16931 business rules, VAT categories, code lists — comes from you; use an e-invoicing library to create and validate it.                                                                                                                                                                                   |
 | Form fields other than signatures          | Text fields, checkboxes and dropdowns are not implemented.                                                                                                                                                                                                                                                                                                                      |
 | WOFF/WOFF2 fonts                           | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                                                                                                                                                                                                                                                                      |
 | Kerning, ligatures, complex-script shaping | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                                                                                                                                                                                                                                                                     |
@@ -778,7 +905,8 @@ cannot do today, so you can decide before you start:
 
 ## Stability
 
-**`fast-pdf` and `fast-pdf/dom` are stable from 1.0.0 on**, in the SemVer sense:
+**`fast-pdf` and `fast-pdf/dom` are stable from 1.0.0 on, `fast-pdf/pdfa` and
+`fast-pdf/zugferd` from 1.1.0 on**, in the SemVer sense:
 no export is removed, renamed or changed incompatibly without a major release.
 `tests/entry-points.test.ts` pins both surfaces as an explicit list, so adding
 or dropping an export is a visible decision in the diff rather than an
@@ -825,7 +953,9 @@ assemble yourself reaches the file unchecked, so escape it yourself.
 
 A document produced by `new PDFDocument()` is passive: no JavaScript actions,
 no launch actions, no auto-actions and no external content. fast-pdf never
-embeds a file unless the caller explicitly asks for one, and an imported
+embeds a file unless the caller explicitly asks for one — which takes an
+import of `fast-pdf/pdfa` or `fast-pdf/zugferd`; nothing in the main entry can
+do it — and an imported
 third-party PDF never contributes an attachment — `append()` drops
 `/FileAttachment` along with every other payload-carrying annotation. The only
 interactive structure it writes is an `/AcroForm` with signature fields, and
@@ -867,6 +997,7 @@ it. Each one is a complete, designed document:
 | [`cv.ts`](examples/cv.ts)               | CV/résumé: sidebar via `region()`, circular portrait, measured panel, balanced two-column skill matrix, proficiency bars in table cells | `npx tsx examples/cv.ts`        |
 | [`signature.ts`](examples/signature.ts) | Contract with clause sections and clickable AcroForm signature fields                                                                   | `npx tsx examples/signature.ts` |
 | [`showcase.ts`](examples/showcase.ts)   | Feature tour: TOC, outlines, watermark, cell spans, columns, links                                                                      | `npx tsx examples/showcase.ts`  |
+| [`zugferd.ts`](examples/zugferd.ts)     | ZUGFeRD / Factur-X e-invoice: PDF/A-3b with embedded EN 16931 XML (needs a TTF, taken from the system)                                  | `npx tsx examples/zugferd.ts`   |
 | [`basic.ts`](examples/basic.ts)         | Minimal text + table starting point                                                                                                     | `npx tsx examples/basic.ts`     |
 
 The templates ship with the npm package (`node_modules/fast-pdf/examples/`).

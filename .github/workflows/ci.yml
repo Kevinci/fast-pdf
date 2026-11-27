@@ -1,11 +1,12 @@
 # fast-pdf — Continuous Integration
 #
-# Four independent jobs, deliberately not chained with `needs:` so that one run
+# Five independent jobs, deliberately not chained with `needs:` so that one run
 # shows every problem at once instead of hiding the later ones behind the first
 # failure:
 #
 #   quality        the toolchain (format, lint, types, tests, build, size budget)
 #   pdf-structure  the external gate: qpdf inspects the PDFs we actually produce
+#   pdfa           the second external gate: veraPDF validates the PDF/A-3b output
 #   engines        does the shipped bundle still run on the oldest supported Node?
 #   runtimes       Bun and Deno, non-blocking
 #
@@ -207,6 +208,92 @@ jobs:
         with:
           name: example-pdfs
           path: examples/output/*.pdf
+          if-no-files-found: warn
+          retention-days: 14
+
+  pdfa:
+    name: PDF/A-3b (veraPDF)
+    runs-on: ubuntu-24.04
+
+    # The external gate for `fast-pdf/pdfa` and `fast-pdf/zugferd`, and the
+    # same idea as `pdf-structure`: the unit tests assert that the bytes we
+    # meant to write are there, which says nothing about whether those bytes
+    # add up to a conforming PDF/A. veraPDF is the reference validator — its
+    # verdict is the acceptance criterion, not ours.
+    #
+    # It runs from the project's published container image, so there is no JVM
+    # to install and no installer to script.
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # PDF/A needs every font embedded and fast-pdf ships none, so the
+      # example takes a TrueType font from the system. DejaVu is what it looks
+      # for on Linux.
+      - name: Install a TrueType font
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+
+      - name: Render the ZUGFeRD example and a non-PDF/A control
+        run: |
+          mkdir -p examples/output
+          npx --no-install tsx examples/zugferd.ts
+          npx --no-install tsx examples/invoice.ts
+
+      # Two assertions, and the second matters as much as the first:
+      #
+      #   zugferd.pdf  must be reported compliant with PDF/A-3b;
+      #   invoice.pdf  — an ordinary document with a built-in font and no XMP —
+      #                must be reported NOT compliant.
+      #
+      # Without the control, a validator that is misconfigured, checks the
+      # wrong flavour or prints nothing at all would look exactly like success.
+      # The verdict is read from the report itself (`isCompliant="…"`), not
+      # from the exit code alone.
+      - name: veraPDF — PDF/A-3b
+        shell: bash
+        run: |
+          verapdf() {
+            docker run --rm -v "$PWD/examples/output:/data:ro" verapdf/cli:latest \
+              --flavour 3b "/data/$1" || true
+          }
+
+          report="$(verapdf zugferd.pdf)"
+          echo "::group::veraPDF report for zugferd.pdf"
+          echo "$report"
+          echo "::endgroup::"
+          if ! grep -q 'isCompliant="true"' <<<"$report"; then
+            echo "::error file=examples/zugferd.ts::veraPDF does not report zugferd.pdf as PDF/A-3b compliant"
+            exit 1
+          fi
+
+          control="$(verapdf invoice.pdf)"
+          if ! grep -q 'isCompliant="false"' <<<"$control"; then
+            echo "::group::veraPDF report for the control (invoice.pdf)"
+            echo "$control"
+            echo "::endgroup::"
+            echo "::error::The control document was not reported as non-compliant — the gate proves nothing"
+            exit 1
+          fi
+          echo "zugferd.pdf: PDF/A-3b compliant · control: correctly rejected"
+
+      - name: Upload the rendered PDF
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: zugferd-pdf
+          path: examples/output/zugferd.pdf
           if-no-files-found: warn
           retention-days: 14
 

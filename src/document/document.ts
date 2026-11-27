@@ -37,6 +37,7 @@ import { parseXml } from "../svg/parse";
 import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
 import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
+import { hookOf } from "./hooks";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
 import { assertFinite, assertNonNegative, blockedUriScheme } from "../validate";
@@ -3030,6 +3031,22 @@ export class PDFDocument {
     this.applyDecorators();
     const writer = new PDFWriter();
 
+    // An opt-in mode (fast-pdf/pdfa) gets to refuse the document before a
+    // single object is written, so a violation never yields a half-built file.
+    const hook = hookOf(this);
+    if (hook !== undefined) {
+      const fonts = new Map<string, Font>();
+      for (const page of this.pages) {
+        for (const { font } of page.fontsUsed.values()) fonts.set(font.key, font);
+      }
+      hook.begin({
+        fonts: [...fonts.values()],
+        encrypted: this.encryption !== undefined,
+        imported: this.imported.size > 0,
+        signed: this.pages.some((page) => page.sigFields.some((f) => f.sign !== undefined)),
+      });
+    }
+
     // Fonts: one object set per unique font across all pages. Each font
     // writes its own objects (Type1 dict, or Type0 + subsetted FontFile2).
     const fontRefs = new Map<string, Ref>();
@@ -3052,6 +3069,7 @@ export class PDFDocument {
             : entry.format === "gif"
               ? await parseGif(entry.bytes)
               : await parseWebp(entry.bytes);
+      hook?.image(parsed);
       let smaskRef: Ref | undefined;
       if (parsed.smask) {
         smaskRef = writer.addStream(
@@ -3202,6 +3220,10 @@ export class PDFDocument {
     writer.fill(pagesRef, { Type: new Name("Pages"), Kids: pageRefs, Count: pageRefs.length });
 
     const outlinesRef = this.buildOutlines(writer, refOf);
+    // An explicit creationDate is always honoured. Otherwise a wall-clock date
+    // is embedded — unless the document is deterministic, in which case the
+    // timestamp is omitted so identical content renders to identical bytes.
+    const date = this.metadata.creationDate ?? (this.deterministic ? undefined : new Date());
     const catalogRef = writer.add({
       Type: new Name("Catalog"),
       Pages: pagesRef,
@@ -3217,8 +3239,9 @@ export class PDFDocument {
         acroFields.length > 0
           ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 }
           : undefined,
+      ...hook?.catalog(writer, { metadata: this.metadata, language: this.language, date }),
     });
-    const infoRef = writer.add(this.buildInfo());
+    const infoRef = writer.add(this.buildInfo(date));
 
     if (
       this.encryption !== undefined &&
@@ -3529,12 +3552,8 @@ export class PDFDocument {
     return rootRef;
   }
 
-  private buildInfo(): Record<string, PDFValue | undefined> {
+  private buildInfo(date: Date | undefined): Record<string, PDFValue | undefined> {
     const m = this.metadata;
-    // An explicit creationDate is always honoured. Otherwise a wall-clock date
-    // is embedded — unless the document is deterministic, in which case the
-    // timestamp is omitted so identical content renders to identical bytes.
-    const date = m.creationDate ?? (this.deterministic ? undefined : new Date());
     const stamp = date !== undefined ? textString(formatDate(date)) : undefined;
     return {
       Title: m.title !== undefined ? textString(m.title) : undefined,

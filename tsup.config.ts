@@ -2,13 +2,15 @@ import { defineConfig } from "tsup";
 import { resolve } from "node:path";
 
 /**
- * Three entry points, built twice:
+ * Five entry points, built twice:
  *
  * - `dist/index.js`    — the document API (`fast-pdf`).
  * - `dist/dom.js`      — the HTML-table reader (`fast-pdf/dom`).
  * - `dist/internal.js` — the engine below it (`fast-pdf/internal`).
+ * - `dist/pdfa.js`     — PDF/A-3 mode and embedded files (`fast-pdf/pdfa`).
+ * - `dist/zugferd.js`  — the Factur-X container (`fast-pdf/zugferd`).
  *
- * …and the same three again as `*.browser.js`, selected by the "browser"
+ * …and the same five again as `*.browser.js`, selected by the "browser"
  * export condition: there the file adapter is swapped for the download-only
  * one, so no bundler ever has to resolve `node:fs/promises` for a client
  * build. `fast-pdf/dom` needs that variant most of all — it runs *only* in a
@@ -38,6 +40,8 @@ const entries = {
   index: "src/index.ts",
   dom: "src/dom/index.ts",
   internal: "src/internal.ts",
+  pdfa: "src/pdfa/index.ts",
+  zugferd: "src/zugferd/index.ts",
 };
 
 /** The same entries under the names the browser build publishes them as. */

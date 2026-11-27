@@ -173,8 +173,8 @@ Ideal für:
 - [ ] PDF 1.7
 - [ ] PDF/A-1
 - [ ] PDF/A-2
-- [ ] PDF/A-3
-- [ ] XMP Metadata
+- [x] PDF/A-3 (3b/3u über `fast-pdf/pdfa`; veraPDF-Abnahme in CI — siehe `roadmap-1.0.md` §6b)
+- [x] XMP Metadata (im PDF/A-Modus)
 - [ ] Unicode
 - [ ] Embedded Fonts
 
