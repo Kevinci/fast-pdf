@@ -22,7 +22,7 @@ library is built around:
 > document created with `new PDFDocument()` contains no embedded files, no
 > JavaScript actions, no launch actions, no auto-actions (`/AA`) and no
 > external content — only text, vector graphics, images, links, bookmarks,
-> metadata and, where you call `signature()`, signature form fields. An
+> metadata and, where you ask for them, form fields and signature fields. An
 > imported third-party PDF never contributes an attachment either: `append()`
 > drops `/FileAttachment` unchanged (see **Importing PDFs** below).
 
@@ -54,8 +54,24 @@ What holds for them:
   PDF/A mode at all.
 
 The one interactive structure the library writes is an `/AcroForm` containing
-signature fields, and only when you call `signature()`. Those fields may also
-be cryptographically signed — see **Signatures and authenticity** below.
+form fields and signature fields, and only when you call `textField()`,
+`checkbox()`, `radioGroup()`, `dropdown()` or `signature()`. Signature fields
+may also be cryptographically signed — see **Signatures and authenticity**
+below. About form fields specifically:
+
+- **They are data entry, not behaviour.** A field has a name, a value and an
+  appearance. fast-pdf attaches no action, no script, no calculation, no
+  submit or reset target — it cannot, the code does not exist.
+- **Names, values and options are escaped** like every other string, in the
+  field dictionaries and in the appearance streams alike. Untrusted text used
+  as a default value cannot inject PDF syntax.
+- **A password field's value is never written into the file**, neither as
+  `/V` nor in its appearance. Note what this does _not_ mean: a password
+  field only masks typing on screen. Whatever a user types into it is stored
+  in the PDF in the clear when they save.
+- **A pre-filled value is content.** It is as visible to anyone who opens the
+  file as text drawn on the page; `readOnly` asks viewers not to edit it and
+  is not access control.
 
 Since 0.7.0 there is one place where the library reads a file it did not write:
 `append()` and `pdfInfo()` parse an existing PDF, which in a typical application

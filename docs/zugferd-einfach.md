@@ -181,7 +181,7 @@ doc.registerFont("Inter", schriftDatei);
 **Warum liefert fast-pdf keine Schrift mit?**
 
 Eine Schrift-Datei ist groß: 100 bis 300 KB.
-fast-pdf selbst ist nur etwa 49 KB groß.
+fast-pdf selbst ist nur etwa 54 KB groß.
 Die Schrift wäre also **viel größer** als das ganze Programm.
 fast-pdf soll aber klein bleiben.
 

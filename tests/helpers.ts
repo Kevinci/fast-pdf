@@ -312,9 +312,9 @@ export async function makePng(
  * Build a synthetic minimal TrueType font: 4 glyphs (.notdef, "A", "B",
  * and "C" as a composite referencing "A"), cmap format 4, PostScript name
  * "TestFont", 1000 units/em, advance 600. Checksums are zeroed — the
- * parser ignores them.
+ * parser ignores them. `extraTables` adds layout tables (GPOS, GSUB, kern).
  */
-export function makeTTF(): Uint8Array {
+export function makeTTF(extraTables: [string, Uint8Array][] = []): Uint8Array {
   const concat = (parts: Uint8Array[]): Uint8Array => {
     const out = new Uint8Array(parts.reduce((a, p) => a + p.length, 0));
     let off = 0;
@@ -455,6 +455,7 @@ export function makeTTF(): Uint8Array {
     ["maxp", maxp],
     ["name", name],
     ["post", post],
+    ...extraTables,
   ];
   const headerLength = 12 + tables.length * 16;
   let total = headerLength;

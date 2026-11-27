@@ -2,7 +2,7 @@
 
 **Fast, dependency-free, direct-to-PDF generation** — for Node.js, Bun, Deno, browsers and
 edge/serverless runtimes. Think _esbuild for PDFs_: no Chromium, no native binaries,
-no runtime dependencies, ~49 KB min+gzip.
+no runtime dependencies, ~54 KB min+gzip.
 
 **📄 Demo & Feature-Guide (deutsch): <https://kevinci.github.io/fast-pdf/>**
 
@@ -31,9 +31,9 @@ await pdf.save("document.pdf");
 | Tables                   | built-in: repeating headers, col/row spans, JSON → table       | hand-built from flexbox views                  | HTML/CSS                             |
 | Existing HTML table      | **`tableToPDF()`** — reads the DOM incl. computed CSS          | —                                              | re-renders the whole page            |
 | PDF/A-3, ZUGFeRD         | ✅ **`fast-pdf/pdfa`**, **`fast-pdf/zugferd`** — veraPDF in CI | rarely; attach-only add-ons need a PDF/A input | ❌                                   |
-| Signature form fields    | ✅ AcroForm, plus PAdES-B signing                              | —                                              | ❌ printed output has no form fields |
+| Form fields, signatures  | ✅ fillable AcroForm fields, signature fields, PAdES-B signing | —                                              | ❌ printed output has no form fields |
 | TOC, outlines, watermark | ✅ built-in                                                    | partly                                         | ❌                                   |
-| Bundle                   | **~49 KB** min+gzip (~282 KB ESM)                              | several 100 KB + the framework                 | n/a                                  |
+| Bundle                   | **~54 KB** min+gzip (~315 KB ESM)                              | several 100 KB + the framework                 | n/a                                  |
 
 Measured on this repo's benchmark (`npm run bench`, Apple Silicon, Node 22):
 a 3-page text document renders in **~1.3 ms**, a 170-page / 5000-row table document
@@ -44,13 +44,13 @@ Bundle figures are measured on this repo by `npm run size` (esbuild
 
 | Import              | ESM raw   | minified  | **min+gzip** |
 | ------------------- | --------- | --------- | ------------ |
-| `fast-pdf`          | 283,619 B | 137,133 B | **49,078 B** |
-| `fast-pdf/dom`      | 300,306 B | 145,861 B | **52,407 B** |
-| `fast-pdf/internal` | 33,945 B  | 18,431 B  | **6,969 B**  |
+| `fast-pdf`          | 314,953 B | 150,527 B | **54,040 B** |
+| `fast-pdf/dom`      | 331,640 B | 159,256 B | **57,374 B** |
+| `fast-pdf/internal` | 47,171 B  | 24,048 B  | **8,934 B**  |
 
 `fast-pdf/pdfa` and `fast-pdf/zugferd` share the core with `fast-pdf`, so what
-they cost is what they **add** to a bundle that already imports it: **+3.3 KB**
-min+gzip for PDF/A, **+4.2 KB** for ZUGFeRD/Factur-X (which includes PDF/A) —
+they cost is what they **add** to a bundle that already imports it: **+3.4 KB**
+min+gzip for PDF/A, **+4.3 KB** for ZUGFeRD/Factur-X (which includes PDF/A) —
 sRGB profile included. A document that never imports them pays nothing.
 
 These numbers are a **CI gate, not a snapshot**: every run re-measures them
@@ -281,8 +281,44 @@ npx ttf2woff2 --help                       # (the reverse direction)
 fonttools ttLib.woff2 decompress Inter.woff2   # → Inter.ttf   (pip install fonttools brotli)
 ```
 
-CFF-flavoured OpenType, `.ttc` collections, kerning, ligatures and complex-script
-shaping (Arabic, Devanagari) are out of scope — see [Limitations](#limitations).
+**Kerning and ligatures.** Embedded fonts are set the way the font was
+designed to be set: pair kerning (from `GPOS`, or the legacy `kern` table) and
+the font's standard ligatures — fi, fl, ffi (from `GSUB`) — are applied by
+default, for every text fast-pdf draws: `text()`, tables, Markdown, headers,
+the table of contents. Measuring uses the same glyph run as drawing, so
+`widthOfText()` and `measureText()` always agree with the page, and a ligature
+still copies and searches as the letters it replaced.
+
+```ts
+pdf.registerFont(inter, { family: "inter" }); // kerning + ligatures on
+pdf.registerFont(mono, { family: "mono", kerning: false, ligatures: false }); // off per font
+```
+
+Letter-spaced text (`letterSpacing`) keeps its kerning but forms no ligatures —
+a ligature cannot be spaced apart. The built-in fonts (`helvetica`, `times`,
+`courier`) are not kerned: fast-pdf carries their widths, not their kerning
+tables. A font without `GPOS`/`kern`/`GSUB` data is simply set as before.
+
+**Hyphenation.** Lines break at spaces, hyphens and soft hyphens (U+00AD). For
+automatic hyphenation, pass a `hyphenate` function that splits a word into
+syllables — fast-pdf ships no patterns (they are language-specific and several
+kilobytes each), so plug in the library that fits your language:
+
+```ts
+import { hyphenateSync } from "hyphen/de"; // any hyphenation library works
+
+const pdf = new PDFDocument({
+  hyphenate: (word) => hyphenateSync(word).split("\u00AD"), // "Silbentrennung" → ["Sil", "ben", "tren", "nung"]
+});
+pdf.text(longGermanText, { align: "justify" }); // breaks as "Silben-" / "trennung" where a line is full
+```
+
+It applies to `text()`, `measureText()` and table cells, and is asked only
+about words of five letters or more. A result that does not add up to the
+original word is ignored, so a faulty hyphenator can never change your text.
+
+CFF-flavoured OpenType, `.ttc` collections and complex-script shaping (Arabic,
+Devanagari) are out of scope — see [Limitations](#limitations).
 
 ### Layout engine
 
@@ -699,6 +735,42 @@ default to `Signature1`, `Signature2`, … and must be unique. A field like this
 is empty — it is _for the recipient to sign_. To sign a field yourself, pass
 `sign` (see below).
 
+### Form fields (fillable PDFs)
+
+```ts
+pdf.textField({ name: "email", label: "E-mail", width: 240, required: true });
+pdf.textField({ name: "notes", label: "Notes", multiline: true, height: 60 });
+pdf.checkbox({ name: "terms", label: "I accept the terms", required: true });
+pdf.radioGroup({
+  name: "plan",
+  options: ["Basic", { value: "pro", label: "Pro · 49 €" }],
+  value: "pro",
+  direction: "horizontal",
+});
+pdf.dropdown({
+  name: "country",
+  label: "Country",
+  options: [{ value: "DE", label: "Germany" }, "AT", "CH"],
+  value: "DE",
+});
+```
+
+Interactive AcroForm fields — text fields (single-line, `multiline`,
+`password`, `maxLength`, `align`), checkboxes, radio groups and dropdowns
+(`editable` for free input). They place themselves like `signature()`: in the
+flow with an optional `label` (breaking the page when they no longer fit), or
+absolutely with `x`/`y`. `readOnly` and `required` work on every field. Names
+must be unique per document, signature fields included, and must not contain
+periods.
+
+Every field carries its own appearance (Helvetica text, vector tick and dot),
+so pre-filled values show in every viewer, in print and in converters —
+`/NeedAppearances` is never set. Values are stored as Unicode; the printed
+appearance covers the WinAnsi character set. A `password` field's value is
+never written into the file. Form fields are not available in PDF/A mode yet.
+
+A complete form is in [`examples/form.ts`](examples/form.ts) (`npm run form`).
+
 ### Digital signatures (PAdES-B)
 
 ```ts
@@ -894,23 +966,24 @@ All user-facing failures throw `FastPDFError` with a stable machine-readable
 fast-pdf generates documents; it deliberately does not do everything. What it
 cannot do today, so you can decide before you start:
 
-| Not supported                              | Notes                                                                                                                                                                                                                                                                                                                                                                           |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Editing existing PDFs                      | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.                                                                                                                                                                                                                                            |
-| PDF/A-1, PDF/A-2, PDF/A-3a                 | **PDF/A-3b and -3u are supported** through [`fast-pdf/pdfa`](#pdfa-3--archivable-pdfs). Parts 1 and 2 are not (part 3 is what e-invoicing needs), and level A needs tagged PDF. PDF/A cannot be combined with encryption, `append()` or CMYK JPEGs.                                                                                                                             |
-| Tagged PDF (`StructTreeRoot`)              | Not supported, and no date is set. `/Lang` and `ViewerPreferences /DisplayDocTitle` are written — that is the whole of it. There is no `/MarkInfo`, no structure tree and no reading order.                                                                                                                                                                                     |
-| PDF/UA                                     | Not supported, and no date is set. **No deadline in force names PDF/UA**: the German BFSG has applied since 2025-06-28 but names neither EN 301 549 nor PDF/UA, and EN 301 549 V4.1.1 mentions PDF/UA only in an informative note and is not cited in the EU Official Journal under the Accessibility Directive (EU) 2019/882. To be re-assessed once EN 301 549 is harmonised. |
-| XMP metadata outside PDF/A                 | An ordinary document carries only the classic `/Info` dictionary. XMP is written in PDF/A mode, where it is mandatory.                                                                                                                                                                                                                                                          |
-| Archivable output with the default font    | The standard-14 fonts are referenced as `/Type1` **without a `FontFile`**, so they are not embedded, and fast-pdf ships no font of its own. PDF/A therefore needs `registerFont()` with a TTF for **all** text — `pdfA()` refuses to render otherwise.                                                                                                                          |
-| Creating or validating invoice XML         | `fast-pdf/zugferd` builds the hybrid **container**. The CII XML — EN 16931 business rules, VAT categories, code lists — comes from you; use an e-invoicing library to create and validate it.                                                                                                                                                                                   |
-| Form fields other than signatures          | Text fields, checkboxes and dropdowns are not implemented.                                                                                                                                                                                                                                                                                                                      |
-| WOFF/WOFF2 fonts                           | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                                                                                                                                                                                                                                                                      |
-| Kerning, ligatures, complex-script shaping | Latin sets well; Arabic/Devanagari are _not usable_, not merely suboptimal.                                                                                                                                                                                                                                                                                                     |
-| Gradients (`/Shading`), patterns           | Flat fills and constant alpha only.                                                                                                                                                                                                                                                                                                                                             |
-| CFF-flavoured OpenType, `.ttc`             | Rejected with an actionable error.                                                                                                                                                                                                                                                                                                                                              |
-| Lossy WebP, interlaced PNG                 | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                                                                                                                                                                                                                                                              |
-| HTML pages → PDF                           | `tableToPDF()` reads a `<table>`, not a whole page. There is no general HTML/CSS layout engine, and web font files cannot be read from CSS.                                                                                                                                                                                                                                     |
-| Tree-shaking within one entry point        | Measured at 0.2 % — effectively nothing. Code is removed by picking the right entry point, not by the bundler (see [Why](#why)).                                                                                                                                                                                                                                                |
+| Not supported                               | Notes                                                                                                                                                                                                                                                                                                                                                                           |
+| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Editing existing PDFs                       | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.                                                                                                                                                                                                                                            |
+| PDF/A-1, PDF/A-2, PDF/A-3a                  | **PDF/A-3b and -3u are supported** through [`fast-pdf/pdfa`](#pdfa-3--archivable-pdfs). Parts 1 and 2 are not (part 3 is what e-invoicing needs), and level A needs tagged PDF. PDF/A cannot be combined with encryption, `append()` or CMYK JPEGs.                                                                                                                             |
+| Tagged PDF (`StructTreeRoot`)               | Not supported, and no date is set. `/Lang` and `ViewerPreferences /DisplayDocTitle` are written — that is the whole of it. There is no `/MarkInfo`, no structure tree and no reading order.                                                                                                                                                                                     |
+| PDF/UA                                      | Not supported, and no date is set. **No deadline in force names PDF/UA**: the German BFSG has applied since 2025-06-28 but names neither EN 301 549 nor PDF/UA, and EN 301 549 V4.1.1 mentions PDF/UA only in an informative note and is not cited in the EU Official Journal under the Accessibility Directive (EU) 2019/882. To be re-assessed once EN 301 549 is harmonised. |
+| XMP metadata outside PDF/A                  | An ordinary document carries only the classic `/Info` dictionary. XMP is written in PDF/A mode, where it is mandatory.                                                                                                                                                                                                                                                          |
+| Archivable output with the default font     | The standard-14 fonts are referenced as `/Type1` **without a `FontFile`**, so they are not embedded, and fast-pdf ships no font of its own. PDF/A therefore needs `registerFont()` with a TTF for **all** text — `pdfA()` refuses to render otherwise.                                                                                                                          |
+| Creating or validating invoice XML          | `fast-pdf/zugferd` builds the hybrid **container**. The CII XML — EN 16931 business rules, VAT categories, code lists — comes from you; use an e-invoicing library to create and validate it.                                                                                                                                                                                   |
+| List boxes, comb fields, form logic         | Text fields, checkboxes, radio groups and dropdowns are supported. Multi-select list boxes, comb fields, calculations/validation scripts and submit/reset buttons are not — fast-pdf never writes JavaScript. Form fields cannot be used in PDF/A mode yet.                                                                                                                     |
+| Hyphenation patterns, font fallback         | `hyphenate` takes a function; no patterns are bundled. A character missing from the font is not looked up in another font — it is drawn as the font's "missing glyph" box.                                                                                                                                                                                                      |
+| WOFF/WOFF2 fonts                            | Needs Brotli. Convert to `.ttf` at build time (see above).                                                                                                                                                                                                                                                                                                                      |
+| Complex-script shaping, contextual features | Pair kerning and standard ligatures are applied. There is no shaping engine: Arabic/Devanagari are _not usable_, not merely suboptimal, and contextual alternates, discretionary ligatures and mark positioning are not applied. The built-in fonts are not kerned.                                                                                                             |
+| Gradients (`/Shading`), patterns            | Flat fills and constant alpha only.                                                                                                                                                                                                                                                                                                                                             |
+| CFF-flavoured OpenType, `.ttc`              | Rejected with an actionable error.                                                                                                                                                                                                                                                                                                                                              |
+| Lossy WebP, interlaced PNG                  | Rejected with `UNSUPPORTED_IMAGE`.                                                                                                                                                                                                                                                                                                                                              |
+| HTML pages → PDF                            | `tableToPDF()` reads a `<table>`, not a whole page. There is no general HTML/CSS layout engine, and web font files cannot be read from CSS.                                                                                                                                                                                                                                     |
+| Tree-shaking within one entry point         | Measured at 0.2 % — effectively nothing. Code is removed by picking the right entry point, not by the bundler (see [Why](#why)).                                                                                                                                                                                                                                                |
 
 ## Stability
 
@@ -967,8 +1040,9 @@ import of `fast-pdf/pdfa` or `fast-pdf/zugferd`; nothing in the main entry can
 do it — and an imported
 third-party PDF never contributes an attachment — `append()` drops
 `/FileAttachment` along with every other payload-carrying annotation. The only
-interactive structure it writes is an `/AcroForm` with signature fields, and
-only when you call `signature()`. All
+interactive structure it writes is an `/AcroForm` with form and signature
+fields, and only when you call `textField()`, `checkbox()`, `radioGroup()`,
+`dropdown()` or `signature()` — never with a script or an action attached. All
 strings are escaped before touching PDF syntax, so untrusted data in text,
 tables or metadata cannot inject PDF operators. Dangerous link schemes
 (`javascript:`, `file:`, `data:`, `vbscript:`) are rejected, and the image
@@ -1007,6 +1081,7 @@ it. Each one is a complete, designed document:
 | [`signature.ts`](examples/signature.ts) | Contract with clause sections and clickable AcroForm signature fields                                                                   | `npx tsx examples/signature.ts` |
 | [`showcase.ts`](examples/showcase.ts)   | Feature tour: TOC, outlines, watermark, cell spans, columns, links                                                                      | `npx tsx examples/showcase.ts`  |
 | [`zugferd.ts`](examples/zugferd.ts)     | ZUGFeRD / Factur-X e-invoice: PDF/A-3b with embedded EN 16931 XML (needs a TTF, taken from the system)                                  | `npx tsx examples/zugferd.ts`   |
+| [`form.ts`](examples/form.ts)           | Fillable registration form: text fields, dropdown, radio groups, checkboxes, signature line                                             | `npx tsx examples/form.ts`      |
 | [`basic.ts`](examples/basic.ts)         | Minimal text + table starting point                                                                                                     | `npx tsx examples/basic.ts`     |
 
 The templates ship with the npm package (`node_modules/fast-pdf/examples/`).

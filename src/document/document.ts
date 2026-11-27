@@ -38,6 +38,16 @@ import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
 import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { hookOf } from "./hooks";
+import {
+  FF_COMBO,
+  FF_EDIT,
+  FF_MULTILINE,
+  FF_PASSWORD,
+  baseFlags,
+  claimFieldName,
+  fieldOptions,
+  writeFormField,
+} from "./forms";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
 import { assertFinite, assertNonNegative, blockedUriScheme } from "../validate";
@@ -150,6 +160,18 @@ export interface PDFDocumentOptions extends PageOptions {
   lineHeight?: number;
   /** Compress content streams (FlateDecode). Default: true. */
   compress?: boolean;
+  /**
+   * Hyphenate words that do not fit a line. Called with one word (five or
+   * more letters) and returns its syllables, e.g. `"Silbentrennung"` →
+   * `["Sil", "ben", "tren", "nung"]`; a line may then break between two of
+   * them, with a hyphen. Return the word unsplit to leave it alone.
+   *
+   * fast-pdf ships no hyphenation patterns — they are language-specific and
+   * several kilobytes each. Plug in a hyphenation library of your choice;
+   * soft hyphens (U+00AD) already in the text keep working without this.
+   * Applies to `text()`, `measureText()`/`measureBlock()` and table cells.
+   */
+  hyphenate?: (word: string) => string[];
   /**
    * Produce byte-identical output for identical input. When `true`, the
    * document embeds no wall-clock timestamp (unless `metadata.creationDate`
@@ -543,6 +565,86 @@ export interface SignatureOptions {
   sign?: SigningOptions;
 }
 
+/** Placement and behaviour shared by every interactive form field. */
+interface FormFieldOptions {
+  /**
+   * AcroForm field name — required, unique within the document (signature
+   * fields included), no periods. This is the key the filled-in value is
+   * exported under.
+   */
+  name: string;
+  /** Absolute x position, or a left offset within the flow area. */
+  x?: number;
+  /** Providing `y` switches to absolute positioning (no cursor movement). */
+  y?: number;
+  /** The recipient cannot change the value. Default: false. */
+  readOnly?: boolean;
+  /** The field must be filled in before the form is submitted. Default: false. */
+  required?: boolean;
+  spacingAfter?: number;
+}
+
+export interface TextFieldOptions extends FormFieldOptions {
+  /**
+   * Pre-filled value. Ignored for `password` fields — fast-pdf never writes
+   * a password field's value into the file.
+   */
+  value?: string;
+  /** Small caption above the field (page content, not part of the field). */
+  label?: string;
+  /** Field width in points. Default: 200. */
+  width?: number;
+  /** Field height in points. Default: 22, or 60 when `multiline`. */
+  height?: number;
+  /** Accept line breaks and wrap the text. Default: false. */
+  multiline?: boolean;
+  /** Mask the input. The value is never written into the file. Default: false. */
+  password?: boolean;
+  /** Maximum number of characters (/MaxLen). */
+  maxLength?: number;
+  /** Text size in points. Default: 10. */
+  fontSize?: number;
+  /** Text alignment inside the field. Default: "left". */
+  align?: "left" | "center" | "right";
+}
+
+export interface CheckboxOptions extends FormFieldOptions {
+  /** Initially ticked. Default: false. */
+  checked?: boolean;
+  /** Text right of the box (page content, not part of the field). */
+  label?: string;
+  /** Box edge length in points. Default: 12. */
+  size?: number;
+}
+
+export interface RadioGroupOptions extends FormFieldOptions {
+  /** One radio button per option; a string is both export value and label. */
+  options: (string | { value: string; label?: string })[];
+  /** Export value of the initially selected option. Default: none selected. */
+  value?: string;
+  /** Circle diameter in points. Default: 12. */
+  size?: number;
+  /** Stack the options ("vertical") or set them in a row ("horizontal"). Default: "vertical". */
+  direction?: "vertical" | "horizontal";
+}
+
+export interface DropdownOptions extends FormFieldOptions {
+  /** The list entries; a string is both export value and label. */
+  options: (string | { value: string; label?: string })[];
+  /** Export value of the initially selected entry (any text when `editable`). */
+  value?: string;
+  /** Small caption above the field (page content, not part of the field). */
+  label?: string;
+  /** Field width in points. Default: 200. */
+  width?: number;
+  /** Field height in points. Default: 22. */
+  height?: number;
+  /** Allow typing a value that is not in the list. Default: false. */
+  editable?: boolean;
+  /** Text size in points. Default: 10. */
+  fontSize?: number;
+}
+
 export interface ButtonOptions {
   /** Where the button leads: a URL or an anchor reference ("#name"). */
   link: string;
@@ -639,6 +741,7 @@ export class PDFDocument {
   private readonly pageDefaults: Required<PageOptions>;
   private readonly compress: boolean;
   private readonly deterministic: boolean;
+  private readonly hyphenate?: (word: string) => string[];
   private readonly encryption?: EncryptionOptions;
   private readonly language?: string;
   private readonly metadata: DocumentMetadata;
@@ -699,6 +802,7 @@ export class PDFDocument {
     };
     this.compress = options.compress ?? true;
     this.deterministic = options.deterministic ?? false;
+    this.hyphenate = options.hyphenate;
     this.encryption = options.encrypt;
     this.language = options.language;
     this.metadata = options.metadata ?? {};
@@ -951,7 +1055,9 @@ export class PDFDocument {
       options.italic ?? this.defaults.italic,
     );
     const width = this.textWidthFor(options);
-    const lines = wrapLines(content, font, size, width, letterSpacing).map((l) => l.text);
+    const lines = wrapLines(this.hyphenated(content), font, size, width, letterSpacing).map(
+      (l) => l.text,
+    );
     const step = size * lineHeight;
     let widest = 0;
     for (const line of lines) {
@@ -1544,7 +1650,15 @@ export class PDFDocument {
    */
   registerFont(
     data: Uint8Array | ArrayBuffer,
-    options: { family: string; bold?: boolean; italic?: boolean },
+    options: {
+      family: string;
+      bold?: boolean;
+      italic?: boolean;
+      /** Apply the font's pair kerning. Default: true. */
+      kerning?: boolean;
+      /** Form the font's standard ligatures (fi, fl, …). Default: true. */
+      ligatures?: boolean;
+    },
   ): this {
     const family = options.family.toLowerCase();
     if (isStandardFamily(family)) {
@@ -1560,7 +1674,10 @@ export class PDFDocument {
       this.customFonts.set(family, variants);
     }
     try {
-      variants[slot] = new EmbeddedFont(`emb:${family}:${slot}`, toBytes(data));
+      variants[slot] = new EmbeddedFont(`emb:${family}:${slot}`, toBytes(data), {
+        kerning: options.kerning,
+        ligatures: options.ligatures,
+      });
     } catch (e) {
       if (e instanceof FastPDFError) throw e;
       // Out-of-bounds reads on corrupt files surface as RangeError etc. —
@@ -1569,6 +1686,23 @@ export class PDFDocument {
       throw new FastPDFError(`Invalid font file: ${msg}`, "INVALID_FONT_FILE");
     }
     return this;
+  }
+
+  /**
+   * Mark the break points the `hyphenate` option finds, as soft hyphens. The
+   * line breaker already knows what to do with those, so hyphenation needs no
+   * second code path — and a callback that returns something other than the
+   * word it was given is ignored rather than allowed to change the text.
+   */
+  private hyphenated(text: string): string {
+    const hyphenate = this.hyphenate;
+    if (hyphenate === undefined) return text;
+    return text.replace(/\p{L}{5,}/gu, (word) => {
+      const parts = hyphenate(word);
+      return Array.isArray(parts) && parts.length > 1 && parts.join("") === word
+        ? parts.join("\u00AD")
+        : word;
+    });
   }
 
   private resolveFontStyle(family: string, bold: boolean, italic: boolean): Font {
@@ -1627,7 +1761,13 @@ export class PDFDocument {
       // Absolute positioning: draw where told, leave the flow cursor alone.
       const x = options.x ?? this.page.margins.left;
       const width = options.width ?? this.page.size.width - this.page.margins.right - x;
-      const lines = wrapLines(content, font, style.size, width, style.letterSpacing);
+      const lines = wrapLines(
+        this.hyphenated(content),
+        font,
+        style.size,
+        width,
+        style.letterSpacing,
+      );
       this.paintRotated(rotate, x, options.y, () => {
         let y = options.y!;
         for (const line of lines) {
@@ -1652,7 +1792,7 @@ export class PDFDocument {
     this.applySpacingBefore(options.spacingBefore);
     const x = this.flowX + (options.x ?? 0);
     const width = options.width ?? this.flowX + this.flowWidth - x;
-    const lines = wrapLines(content, font, style.size, width, style.letterSpacing);
+    const lines = wrapLines(this.hyphenated(content), font, style.size, width, style.letterSpacing);
     const blockHeight = lines.length * lineStep;
 
     if (rotate !== 0) {
@@ -1786,19 +1926,13 @@ export class PDFDocument {
       if (justify) {
         // Distribute the leftover width over the gaps via TJ adjustments
         // (works for WinAnsi and Identity-H alike, unlike the Tw operator).
-        const words = line.text.split(" ");
-        const gaps = words.length - 1;
+        const gaps = line.text.split(" ").length - 1;
         const extra = (boxWidth - naturalWidth) / gaps;
         const adj = -(extra * 1000) / size;
-        const parts: (string | number)[] = [];
-        words.forEach((word, i) => {
-          parts.push(font.encode(i < gaps ? word + " " : word));
-          if (i < gaps) parts.push(adj);
-        });
-        content.textTJ(parts, x, baseline, fontRes, size, spacing, skew);
+        content.show(font, line.text, x, baseline, fontRes, size, spacing, skew, adj);
         drawnWidth = boxWidth;
       } else {
-        content.text(font.encode(line.text), x + offset, baseline, fontRes, size, spacing, skew);
+        content.show(font, line.text, x + offset, baseline, fontRes, size, spacing, skew);
       }
 
       if (style.underline || style.strikethrough) {
@@ -1856,6 +1990,7 @@ export class PDFDocument {
       resolveFont: resolve,
       aligns: options.aligns,
       valign: options.valign,
+      prepareText: (text) => this.hyphenated(text),
       // Custom cells are measured with the same double pass as measureBlock().
       // The probe box starts at the dry run's own cursor, so a callback that
       // reports its height by advancing `doc.y` measures correctly.
@@ -1951,8 +2086,9 @@ export class PDFDocument {
             const baseline = this.page.ty(lineY + (font.ascent * mc.fontSize) / 1000);
             this.page.content
               .fillColor(color)
-              .text(
-                font.encode(line),
+              .show(
+                font,
+                line,
                 x + mc.padX + offset,
                 baseline,
                 this.page.fontRes(font),
@@ -2218,7 +2354,7 @@ export class PDFDocument {
           const shift = anchor === "middle" ? -w / 2 : anchor === "end" ? -w : 0;
           this.page.content
             .fillColor(fill)
-            .text(font.encode(str), px + shift, py, this.page.fontRes(font), size);
+            .show(font, str, px + shift, py, this.page.fontRes(font), size);
         },
       };
       renderSvg(svg, base, ctx);
@@ -2338,7 +2474,7 @@ export class PDFDocument {
       const baseline = this.page.ty(y + (font.ascent * size) / 1000);
       this.page.content
         .fillColor(MD_CODE_COLOR)
-        .text(font.encode(line), this.flowX + pad, baseline, this.page.fontRes(font), size);
+        .show(font, line, this.flowX + pad, baseline, this.page.fontRes(font), size);
       y += step;
     }
     this.cursorY = top + height + base * 0.5;
@@ -2384,7 +2520,7 @@ export class PDFDocument {
       const baseline = this.page.ty(this.cursorY + (font.ascent * base) / 1000);
       this.page.content
         .fillColor(this.defaults.color)
-        .text(font.encode(marker), outerX, baseline, this.page.fontRes(font), base);
+        .show(font, marker, outerX, baseline, this.page.fontRes(font), base);
       this.frame = {
         x: outerX + indent,
         width: prevFrame
@@ -2486,7 +2622,7 @@ export class PDFDocument {
         const baseline = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000);
         this.page.content
           .fillColor(seg.color)
-          .text(seg.font.encode(seg.text), x, baseline, this.page.fontRes(seg.font), size);
+          .show(seg.font, seg.text, x, baseline, this.page.fontRes(seg.font), size);
         if (seg.underline) {
           const uy = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000 + size * 0.1);
           this.page.content
@@ -2740,7 +2876,7 @@ export class PDFDocument {
           options.color !== undefined ? parseColor(options.color) : { r: 0.5, g: 0.5, b: 0.55 },
         )
         .transform(cos, sin, -sin, cos, cx - cos * cx + sin * cyPdf, cyPdf - sin * cx - cos * cyPdf)
-        .text(font.encode(text), cx - width / 2, cyPdf - size * 0.35, page.fontRes(font), size)
+        .show(font, text, cx - width / 2, cyPdf - size * 0.35, page.fontRes(font), size)
         .restore();
     });
   }
@@ -2929,7 +3065,7 @@ export class PDFDocument {
         const baseline = page.ty(yTop + height + labelGap + (font.ascent * labelSize) / 1000);
         page.content
           .fillColor({ r: 0.45, g: 0.45, b: 0.5 })
-          .text(font.encode(options.label), x, baseline, page.fontRes(font), labelSize);
+          .show(font, options.label, x, baseline, page.fontRes(font), labelSize);
       }
       page.sigFields.push({ name: name!, x, y: yTop, width, height, sign: options.sign });
     };
@@ -2945,6 +3081,259 @@ export class PDFDocument {
     draw(this.flowX + (options.x ?? 0) + shift, this.cursorY);
     this.cursorY += height + extra + (options.spacingAfter ?? 0);
     return this;
+  }
+
+  // ── Form fields ──────────────────────────────────────────────────────
+
+  /**
+   * A fillable text field (AcroForm /Tx), optionally with a caption above.
+   *
+   * ```ts
+   * pdf.textField({ name: "email", label: "E-mail", width: 240, required: true });
+   * ```
+   *
+   * Like `signature()`, it flows with the cursor (breaking the page when it
+   * no longer fits) unless `y` is given. The field carries its own
+   * appearance, so the pre-filled value shows in every viewer and in print.
+   * A `password` field's value is never written into the file.
+   */
+  textField(options: TextFieldOptions): this {
+    const multiline = options.multiline === true;
+    const password = options.password === true;
+    const width = options.width ?? 200;
+    const height = options.height ?? (multiline ? 60 : 22);
+    const fontSize = options.fontSize ?? 10;
+    const { value, maxLength } = options;
+    this.checkFieldBox(options, width, height, fontSize);
+    if (maxLength !== undefined && !Number.isInteger(assertNonNegative(maxLength, "maxLength"))) {
+      throw new FastPDFError(`maxLength must be an integer (got ${maxLength})`, "INVALID_NUMBER");
+    }
+    if (value !== undefined && typeof value !== "string") {
+      throw new FastPDFError("textField value must be a string", "INVALID_ARGUMENT");
+    }
+    if (value !== undefined && maxLength !== undefined && value.length > maxLength) {
+      throw new FastPDFError(
+        `textField value is longer than maxLength (${maxLength})`,
+        "INVALID_ARGUMENT",
+      );
+    }
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags =
+      baseFlags(options) | (multiline ? FF_MULTILINE : 0) | (password ? FF_PASSWORD : 0);
+    const quadding = options.align === "center" ? 1 : options.align === "right" ? 2 : 0;
+    return this.boxedField(options, width, height, (x, y) =>
+      this.page.formFields.push({
+        kind: "text",
+        name: options.name,
+        x,
+        y,
+        width,
+        height,
+        flags,
+        value: password ? undefined : value,
+        fontSize,
+        quadding,
+        maxLength,
+      }),
+    );
+  }
+
+  /**
+   * A checkbox (AcroForm /Btn) with an optional label to its right. Ticked,
+   * it exports the value "Yes"; unticked, "Off".
+   */
+  checkbox(options: CheckboxOptions): this {
+    const size = options.size ?? 12;
+    this.checkFieldBox(options, size, size);
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags = baseFlags(options);
+    return this.optionField(options, size, [options.label], false, (boxes) =>
+      this.page.formFields.push({
+        kind: "check",
+        name: options.name,
+        ...boxes[0]!,
+        width: size,
+        height: size,
+        flags,
+        checked: options.checked === true,
+      }),
+    );
+  }
+
+  /**
+   * A group of radio buttons (AcroForm /Btn, radio) of which exactly one can
+   * be selected; the field exports the selected option's value.
+   *
+   * ```ts
+   * pdf.radioGroup({ name: "plan", options: ["Basic", "Pro"], value: "Pro" });
+   * ```
+   *
+   * The whole group moves to the next page if it does not fit below the
+   * cursor — keep it shorter than a page.
+   */
+  radioGroup(options: RadioGroupOptions): this {
+    const size = options.size ?? 12;
+    this.checkFieldBox(options, size, size);
+    const choices = fieldOptions(options.options, options.value, false);
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags = baseFlags(options);
+    const selected = choices.findIndex((c) => c.value === options.value);
+    return this.optionField(
+      options,
+      size,
+      choices.map((c) => c.label),
+      options.direction === "horizontal",
+      (boxes) =>
+        this.page.formFields.push({
+          kind: "radio",
+          name: options.name,
+          ...boxes[0]!,
+          width: size,
+          height: size,
+          flags,
+          options: choices,
+          selected,
+          boxes,
+        }),
+    );
+  }
+
+  /**
+   * A dropdown list (AcroForm /Ch, combo box), optionally `editable` so the
+   * recipient may also type a value of their own.
+   */
+  dropdown(options: DropdownOptions): this {
+    const width = options.width ?? 200;
+    const height = options.height ?? 22;
+    const fontSize = options.fontSize ?? 10;
+    this.checkFieldBox(options, width, height, fontSize);
+    const editable = options.editable === true;
+    const choices = fieldOptions(options.options, options.value, editable);
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags = baseFlags(options) | FF_COMBO | (editable ? FF_EDIT : 0);
+    return this.boxedField(options, width, height, (x, y) =>
+      this.page.formFields.push({
+        kind: "choice",
+        name: options.name,
+        x,
+        y,
+        width,
+        height,
+        flags,
+        options: choices,
+        value: options.value,
+        fontSize,
+      }),
+    );
+  }
+
+  /** Validate the numbers every form field takes. */
+  private checkFieldBox(
+    options: { x?: number; y?: number; spacingAfter?: number },
+    width: number,
+    height: number,
+    fontSize = 1,
+  ): void {
+    if (options.x !== undefined) assertFinite(options.x, "field x");
+    if (options.y !== undefined) assertFinite(options.y, "field y");
+    if (options.spacingAfter !== undefined) assertFinite(options.spacingAfter, "spacingAfter");
+    assertNonNegative(width, "field width");
+    assertNonNegative(height, "field height");
+    if (!(assertFinite(fontSize, "fontSize") > 0)) {
+      throw new FastPDFError(`fontSize must be positive (got ${fontSize})`, "INVALID_NUMBER");
+    }
+  }
+
+  /**
+   * Place a block of `height` the way signature() does: absolutely at x/y,
+   * or at the cursor after a page break if it no longer fits.
+   */
+  private placeField(
+    options: { x?: number; y?: number; spacingAfter?: number },
+    height: number,
+    draw: (x: number, yTop: number) => void,
+  ): this {
+    if (options.y !== undefined) {
+      draw(options.x ?? this.page.margins.left, options.y);
+    } else {
+      this.breakPageIfNeeded(height);
+      draw(this.flowX + (options.x ?? 0), this.cursorY);
+      this.cursorY += height + (options.spacingAfter ?? 0);
+    }
+    this.lastBlock = height;
+    return this;
+  }
+
+  /** A text or dropdown field with an optional small caption above it. */
+  private boxedField(
+    options: TextFieldOptions | DropdownOptions,
+    width: number,
+    height: number,
+    push: (x: number, y: number) => void,
+  ): this {
+    const { label } = options;
+    const size = this.defaults.size * 0.8;
+    const caption = label !== undefined && label !== "";
+    const labelHeight = caption ? this.measureText(label, { size, width }).height + 3 : 0;
+    return this.placeField(options, labelHeight + height, (x, yTop) => {
+      if (caption) this.text(label, { x, y: yTop, width, size, color: "#73737f" });
+      push(x, yTop + labelHeight);
+    });
+  }
+
+  /**
+   * Checkbox or radio buttons: one box per entry with its label to the
+   * right, stacked or in rows that wrap at the flow width. `push` receives
+   * the top-left corner of every box.
+   */
+  private optionField(
+    options: FormFieldOptions,
+    size: number,
+    labels: (string | undefined)[],
+    horizontal: boolean,
+    push: (boxes: { x: number; y: number }[]) => void,
+  ): this {
+    const available =
+      options.y !== undefined
+        ? this.page.size.width - this.page.margins.right - (options.x ?? this.page.margins.left)
+        : this.flowWidth - (options.x ?? 0);
+    const gap = size / 2;
+    // Centre the box on the cap height of the label's first line.
+    const m = this.fontMetrics();
+    const shift = size / 2 - (m.baseline - m.capHeight / 2);
+    const boxDy = Math.max(0, -shift);
+    const textDy = Math.max(0, shift);
+    const items: { dx: number; dy: number; label?: string }[] = [];
+    let dx = 0;
+    let dy = 0;
+    let rowHeight = 0;
+    for (const label of labels) {
+      const text =
+        label !== undefined && label !== ""
+          ? this.measureText(label, { width: Math.max(0, available - size - gap) })
+          : undefined;
+      const w = size + (text !== undefined ? gap + text.width : 0);
+      if (dx > 0 && (!horizontal || dx + w > available)) {
+        dx = 0;
+        dy += rowHeight + gap;
+        rowHeight = 0;
+      }
+      items.push({ dx, dy, label: text !== undefined ? label : undefined });
+      rowHeight = Math.max(rowHeight, boxDy + size, text !== undefined ? textDy + text.height : 0);
+      dx += w + 2 * size;
+    }
+    return this.placeField(options, dy + rowHeight, (x, yTop) => {
+      for (const item of items) {
+        if (item.label !== undefined) {
+          this.text(item.label, {
+            x: x + item.dx + size + gap,
+            y: yTop + item.dy + textDy,
+            width: Math.max(0, available - item.dx - size - gap),
+          });
+        }
+      }
+      push(items.map((item) => ({ x: x + item.dx, y: yTop + item.dy + boxDy })));
+    });
   }
 
   /**
@@ -3014,8 +3403,8 @@ export class PDFDocument {
       const baseline = this.page.ty(yTop + (font.ascent * entrySize) / 1000);
       this.page.content
         .fillColor(this.defaults.color)
-        .text(font.encode(label), x, baseline, this.page.fontRes(font), entrySize)
-        .text(font.encode(num), rightX, baseline, this.page.fontRes(font), entrySize);
+        .show(font, label, x, baseline, this.page.fontRes(font), entrySize)
+        .show(font, num, rightX, baseline, this.page.fontRes(font), entrySize);
       this.page.links.push({
         x: this.flowX,
         y: yTop,
@@ -3052,6 +3441,7 @@ export class PDFDocument {
         fonts: [...fonts.values()],
         encrypted: this.encryption !== undefined,
         imported: this.imported.size > 0,
+        forms: this.pages.some((page) => page.formFields.length > 0),
       });
     }
 
@@ -3131,8 +3521,21 @@ export class PDFDocument {
     // page we are about to write rather than at a second copy of it.
     const imports = await this.buildImports(writer, refOf, fontRefs, imageRefs, gsRefs);
 
-    // Signature field widgets, collected for the document-level /AcroForm.
+    // Form fields (signature widgets, radio parents, all other fields),
+    // collected for the document-level /AcroForm.
     const acroFields: Ref[] = [];
+    let signatureFields = false;
+    // Helvetica for field text, shared with page content that already uses it,
+    // so the font object is written exactly once.
+    let helvetica: Ref | undefined;
+    const fieldFont = (): Ref => {
+      if (helvetica === undefined) {
+        const font = resolveFont("helvetica", false, false);
+        helvetica = fontRefs.get(font.key) ?? font.embed(writer);
+        fontRefs.set(font.key, helvetica);
+      }
+      return helvetica;
+    };
     // Signing options of the (at most one) cryptographically signed field.
     let signState: SigningOptions | undefined;
 
@@ -3193,6 +3596,18 @@ export class PDFDocument {
         });
         acroFields.push(widgetRef);
         annots.push(widgetRef);
+        signatureFields = true;
+      }
+      for (const formField of page.formFields) {
+        const { field, widgets } = writeFormField(writer, formField, {
+          page: pageRefs[i]!,
+          pageHeight: page.size.height,
+          transform: annotTransform,
+          annotFlags: ANNOT_PRINT,
+          helvetica: fieldFont,
+        });
+        acroFields.push(field);
+        annots.push(...widgets);
       }
       if (parts !== undefined) annots.push(...parts.annots);
 
@@ -3243,9 +3658,16 @@ export class PDFDocument {
       ViewerPreferences: this.metadata.title !== undefined ? { DisplayDocTitle: true } : undefined,
       // SigFlags: bit 1 = SignaturesExist. A real signature also sets bit 2
       // (AppendOnly, value 3) so viewers preserve the signed bytes.
+      // /DR and /DA: the default resources and appearance text and dropdown
+      // fields refer to (§12.7.2) — only when there are such fields.
       AcroForm:
         acroFields.length > 0
-          ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 }
+          ? {
+              Fields: acroFields,
+              SigFlags: signState !== undefined ? 3 : signatureFields ? 1 : undefined,
+              DR: helvetica !== undefined ? { Font: { Helv: helvetica } } : undefined,
+              DA: helvetica !== undefined ? new PDFString("/Helv 0 Tf 0 g") : undefined,
+            }
           : undefined,
       ...hook?.catalog(writer, { metadata: this.metadata, language: this.language, date }),
     });

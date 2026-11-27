@@ -1,4 +1,5 @@
 import { escapeString, fmtNumber, latin1Bytes } from "./objects";
+import type { Font } from "../fonts/font";
 import type { RGB } from "../types/index";
 
 /**
@@ -138,6 +139,42 @@ export class ContentStream {
       `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} (${escapeString(encoded)}) Tj${reset} ET`,
     );
     return this;
+  }
+
+  /**
+   * Show one line of text in `font`, kerned and with ligatures where the
+   * font provides them. This is the call for drawing text; `text()` and
+   * `textTJ()` are the operators underneath it.
+   * @param afterSpace extra TJ adjustment after every space (justification)
+   */
+  show(
+    font: Font,
+    text: string,
+    x: number,
+    y: number,
+    fontRes: string,
+    size: number,
+    charSpace = 0,
+    skew = 0,
+    afterSpace = 0,
+  ): this {
+    if (font.layout === undefined) {
+      if (afterSpace === 0) {
+        return this.text(font.encode(text), x, y, fontRes, size, charSpace, skew);
+      }
+      const words = text.split(" ");
+      const parts: (string | number)[] = [];
+      words.forEach((word, i) => {
+        const last = i === words.length - 1;
+        parts.push(font.encode(last ? word : word + " "));
+        if (!last) parts.push(afterSpace);
+      });
+      return this.textTJ(parts, x, y, fontRes, size, charSpace, skew);
+    }
+    const parts = font.layout(text, charSpace !== 0, afterSpace);
+    return parts.length === 1 && typeof parts[0] === "string"
+      ? this.text(parts[0], x, y, fontRes, size, charSpace, skew)
+      : this.textTJ(parts, x, y, fontRes, size, charSpace, skew);
   }
 
   /**
