@@ -109,6 +109,7 @@
     "cv": "tsx examples/cv.ts",
     "append": "tsx examples/append.ts",
     "zugferd": "tsx examples/zugferd.ts",
+    "form": "tsx examples/form.ts",
     "hostile": "node scripts/make-hostile-pdf.mjs",
     "audit": "node scripts/audit-pdf.mjs",
     "docs:demo": "npm run build && tailwindcss -i docs/demo.input.css -o docs/demo.tw.css --minify && node docs/build-demo.mjs"

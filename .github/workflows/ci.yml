@@ -142,14 +142,14 @@ jobs:
           qpdf --version
 
       # The examples import ../src/index directly through tsx, so no build is
-      # needed here. `basic` and `signature` have no npm script, so all six are
+      # needed here. `basic` and `signature` have no npm script, so all seven are
       # invoked uniformly instead of mixing `npm run` with direct calls.
       # `--no-install` keeps npx from silently fetching tsx from the network if
       # the devDependency ever disappears.
-      - name: Render the six example documents
+      - name: Render the seven example documents
         run: |
           mkdir -p examples/output
-          for example in basic invoice report cv showcase signature; do
+          for example in basic invoice report cv showcase signature form; do
             echo "::group::render $example"
             npx --no-install tsx "examples/$example.ts"
             echo "::endgroup::"
@@ -165,7 +165,7 @@ jobs:
       # itself. A qpdf warning about our own output is not a quirk of a foreign
       # file we have to tolerate — it means we wrote something a reader has to
       # repair before it can be used. That is exactly the defect class this gate
-      # exists to catch, and all six examples are at exit 0 today, so this costs
+      # exists to catch, and all seven examples are at exit 0 today, so this costs
       # nothing and only ever fires on a real regression.
       #
       # The loop checks every file before failing, so one run lists every bad
@@ -178,8 +178,8 @@ jobs:
 
           # Guard against a vacuously green gate: if a render silently produced
           # nothing, an empty loop would "pass" without checking anything.
-          if [ "${#files[@]}" -ne 6 ]; then
-            echo "::error::Expected 6 rendered PDFs, found ${#files[@]}: ${files[*]}"
+          if [ "${#files[@]}" -ne 7 ]; then
+            echo "::error::Expected 7 rendered PDFs, found ${#files[@]}: ${files[*]}"
             exit 1
           fi
 

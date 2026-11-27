@@ -50,6 +50,8 @@ export class Page {
   readonly extGStatesUsed = new Map<number, { alpha: number; res: string }>();
   readonly links: PendingLink[] = [];
   readonly sigFields: PendingSignatureField[] = [];
+  /** Text fields, checkboxes, radio groups and dropdowns (see forms.ts). */
+  readonly formFields: import("./forms").PendingFormField[] = [];
 
   constructor(
     readonly size: PageSize,
