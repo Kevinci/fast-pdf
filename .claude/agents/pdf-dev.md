@@ -48,7 +48,7 @@ untere Schicht kennt die obere nicht.
    von `src/adapters/`. Sonst bricht der Edge- und Browser-Build.
 3. **Der Browser-Build darf `node:fs/promises` nicht einmal erwähnen** —
    er wird über die `browser`-Export-Condition ausgeliefert.
-4. **Bundle-Budget.** Der Kern (`fast-pdf`) liegt bei ~49 KB min+gzip und
+4. **Bundle-Budget.** Der Kern (`fast-pdf`) liegt bei ~54 KB min+gzip und
    wächst nicht darüber hinaus — jedes Kilobyte wird begründet. Die
    verbindliche Zahl ist die des Size-Gates in CI, nicht die hier; steht hier
    je eine andere als dort, gilt das Gate. Code entfernt der **Einstiegspunkt**

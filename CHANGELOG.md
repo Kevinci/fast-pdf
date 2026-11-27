@@ -6,6 +6,12 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.2.0] — 2026-11-27
+
+Typography and forms: embedded fonts are kerned and form ligatures, lines can
+be hyphenated, and documents can carry fillable form fields. No API was
+removed or changed.
+
 ### Added
 
 - **Kerning.** Embedded fonts are now kerned: pair adjustments are read from
@@ -24,8 +30,30 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
   `text()`, `measureText()` and table cells. No patterns are bundled: plug in
   a hyphenation library for your language.
 
+- **Interactive form fields.** `textField()`, `checkbox()`, `radioGroup()` and
+  `dropdown()` on `PDFDocument` (types `TextFieldOptions`, `CheckboxOptions`,
+  `RadioGroupOptions`, `DropdownOptions`) write AcroForm fields with real
+  appearance streams — no `/NeedAppearances`, no ZapfDingbats. Flow or
+  absolute placement like `signature()`, optional labels, `readOnly`,
+  `required`, multiline, password, `maxLength`, alignment, editable combo
+  boxes. Radio export values may be any text (states are indices, values in
+  `/Opt`). Field names are unique per document across all field kinds,
+  signature fields included.
+- `examples/form.ts` (`npm run form`), checked by qpdf in CI.
+
+### Security
+
+- A password field's value is never written into the file — neither as `/V`
+  nor in its appearance. All field names, values and options go through the
+  existing string escaping. Form fields carry no actions and no scripts.
+
 ### Changed
 
+- **The bundle grows**: `fast-pdf` is 54,040 B min+gzip (was 49,078 B) —
+  about 2.9 KB for the form fields and 2.0 KB for reading the fonts' kerning
+  and ligature tables. The size budgets were raised accordingly.
+- PDF/A mode refuses documents with form fields (`PDFA_VIOLATION`); signature
+  fields remain allowed.
 - **Text set in an embedded font can be narrower than in 1.1**, because
   kerning tightens pairs like "AV" and "To". Line breaks and page breaks can
   therefore move. This is the kind of change the stability promise excludes
