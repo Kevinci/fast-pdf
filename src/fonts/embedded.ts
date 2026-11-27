@@ -29,6 +29,15 @@ export class EmbeddedFont implements Font {
     this.scale = 1000 / this.ttf.unitsPerEm;
   }
 
+  /**
+   * The first code point drawn with this font that it has no glyph for, if
+   * any. Such text is set with glyph 0 (`.notdef`, usually an empty box) —
+   * harmless in an ordinary PDF, a violation in PDF/A.
+   */
+  get missingCodePoint(): number | undefined {
+    return this.usedGlyphs.get(0);
+  }
+
   get baseFont(): string {
     return `${this.subsetTag()}+${this.ttf.postScriptName}`;
   }

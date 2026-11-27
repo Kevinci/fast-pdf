@@ -308,7 +308,7 @@
     <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">
       fast-<span class="text-(--accent)">pdf</span>
     </div>
-    <div class="mb-3 font-mono text-xs text-(--muted)">v1.0.0 · Demo &amp; Guide</div>
+    <div class="mb-3 font-mono text-xs text-(--muted)">v1.1.0 · Demo &amp; Guide</div>
 
     <label class="mb-4 block">
       <span class="sr-only">Language / Sprache / 语言</span>
@@ -382,6 +382,22 @@
           ></span
         ></a>
       </li>
+      <li>
+        <a class="nav-link" href="#pdfa"
+          >PDF/A-3<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="New in 1.1: pdfA()"
+          ></span
+        ></a>
+      </li>
+      <li>
+        <a class="nav-link" href="#zugferd"
+          >ZUGFeRD / Factur-X<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="New in 1.1: facturX()"
+          ></span
+        ></a>
+      </li>
       <li><a class="nav-link" href="#limitations">Limitations</a></li>
       <li><a class="nav-link" href="#performance">Performance</a></li>
       <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
@@ -445,6 +461,22 @@
           >Sicherheit<span
             class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
             title="Neu: Verschlüsselung &amp; Signaturen"
+          ></span
+        ></a>
+      </li>
+      <li>
+        <a class="nav-link" href="#pdfa"
+          >PDF/A-3<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="Neu in 1.1: pdfA()"
+          ></span
+        ></a>
+      </li>
+      <li>
+        <a class="nav-link" href="#zugferd"
+          >ZUGFeRD / Factur-X<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="Neu in 1.1: facturX()"
           ></span
         ></a>
       </li>
@@ -514,6 +546,22 @@
           ></span
         ></a>
       </li>
+      <li>
+        <a class="nav-link" href="#pdfa"
+          >PDF/A-3<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="1.1 新增：pdfA()"
+          ></span
+        ></a>
+      </li>
+      <li>
+        <a class="nav-link" href="#zugferd"
+          >ZUGFeRD / Factur-X<span
+            class="ml-1.5 inline-block size-1.5 rounded-full bg-(--accent) align-[2px]"
+            title="1.1 新增：facturX()"
+          ></span
+        ></a>
+      </li>
       <li><a class="nav-link" href="#limitations">局限</a></li>
       <li><a class="nav-link" href="#performance">性能</a></li>
       <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
@@ -575,19 +623,19 @@
       <ul data-lang="en" class="m-0 flex list-none flex-wrap gap-2.5 p-0">
         <li class="stat"><b>0</b>runtime dependencies</li>
         <li class="stat"><b>~1.6&nbsp;ms</b>3-page document</li>
-        <li class="stat"><b>554</b>tests · 94&nbsp;% line coverage</li>
+        <li class="stat"><b>609</b>tests · 94&nbsp;% line coverage</li>
         <li class="stat"><b>~49&nbsp;KB</b>min+gzip</li>
       </ul>
       <ul data-lang="de" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
         <li class="stat"><b>0</b>Runtime-Dependencies</li>
         <li class="stat"><b>~1,6&nbsp;ms</b>3-Seiten-Dokument</li>
-        <li class="stat"><b>554</b>Tests · 94&nbsp;% Lines-Coverage</li>
+        <li class="stat"><b>609</b>Tests · 94&nbsp;% Lines-Coverage</li>
         <li class="stat"><b>~49&nbsp;KB</b>min+gzip</li>
       </ul>
       <ul data-lang="zh" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
         <li class="stat"><b>0</b>运行时依赖</li>
         <li class="stat"><b>~1.6&nbsp;ms</b>3 页文档</li>
-        <li class="stat"><b>554</b>项测试 · 94&nbsp;% 行覆盖率</li>
+        <li class="stat"><b>609</b>项测试 · 94&nbsp;% 行覆盖率</li>
         <li class="stat"><b>~49&nbsp;KB</b>min+gzip</li>
       </ul>
 
@@ -638,6 +686,15 @@
             </td>
             <td>—</td>
             <td>re-renders the whole page</td>
+          </tr>
+          <tr>
+            <td>PDF/A-3, ZUGFeRD</td>
+            <td>
+              ✓ <b><code>fast-pdf/pdfa</code></b
+              >, <b><code>fast-pdf/zugferd</code></b> — veraPDF in CI
+            </td>
+            <td>rarely; attach-only add-ons need a PDF/A input</td>
+            <td>✗</td>
           </tr>
           <tr>
             <td>Signature form fields</td>
@@ -700,6 +757,15 @@
             <td>rendert die ganze Seite neu</td>
           </tr>
           <tr>
+            <td>PDF/A-3, ZUGFeRD</td>
+            <td>
+              ✓ <b><code>fast-pdf/pdfa</code></b
+              >, <b><code>fast-pdf/zugferd</code></b> — veraPDF in der CI
+            </td>
+            <td>selten; reine Anhang-Add-ons brauchen ein PDF/A als Eingabe</td>
+            <td>✗</td>
+          </tr>
+          <tr>
             <td>Signatur-Formularfelder</td>
             <td>✓ AcroForm, dazu PAdES-B-Signatur</td>
             <td>—</td>
@@ -759,6 +825,16 @@
             </td>
             <td>—</td>
             <td>重新渲染整个页面</td>
+          </tr>
+          <tr>
+            <td>PDF/A-3、ZUGFeRD</td>
+            <td>
+              ✓ <b><code>fast-pdf/pdfa</code></b
+              >、<b><code>fast-pdf/zugferd</code></b
+              >——CI 中由 veraPDF 验证
+            </td>
+            <td>少见；仅能附加文件的扩展需要以 PDF/A 作为输入</td>
+            <td>✗</td>
           </tr>
           <tr>
             <td>签名表单字段</td>
@@ -1147,16 +1223,16 @@ await pdf.save("brief.pdf");</code></pre>
       </h2>
 
       <p data-lang="en">
-        fast-pdf has four import paths. Which one you pick decides what ends up in your bundle — and
+        fast-pdf has six import paths. Which one you pick decides what ends up in your bundle — and
         what you can rely on across upgrades:
       </p>
       <p data-lang="de" hidden>
-        fast-pdf hat vier Importpfade. Welchen du wählst, entscheidet, was in deinem Bundle landet —
-        und worauf du dich über Updates hinweg verlassen kannst:
+        fast-pdf hat sechs Importpfade. Welchen du wählst, entscheidet, was in deinem Bundle landet
+        — und worauf du dich über Updates hinweg verlassen kannst:
       </p>
       <p data-lang="zh" hidden>
         fast-pdf
-        有四个导入路径。选择哪一个，决定了哪些代码进入你的打包结果，以及升级时你可以依赖什么：
+        有六个导入路径。选择哪一个，决定了哪些代码进入你的打包结果，以及升级时你可以依赖什么：
       </p>
 
       <div data-lang="en" class="overflow-x-auto">
@@ -1181,6 +1257,22 @@ await pdf.save("brief.pdf");</code></pre>
               page. <b>Browser only.</b>
             </td>
             <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/pdfa</b></td>
+            <td>
+              <code>pdfA()</code> — PDF/A-3b/-3u output and embedded files. Opt-in.
+              <a class="text-(--accent) no-underline hover:underline" href="#pdfa">More</a>
+            </td>
+            <td>SemVer from 1.1.0</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/zugferd</b></td>
+            <td>
+              <code>facturX()</code> — ZUGFeRD / Factur-X invoices (PDF/A-3 + embedded XML). Opt-in.
+              <a class="text-(--accent) no-underline hover:underline" href="#zugferd">More</a>
+            </td>
+            <td>SemVer from 1.1.0</td>
           </tr>
           <tr>
             <td><b>fast-pdf/internal</b></td>
@@ -1224,6 +1316,23 @@ await pdf.save("brief.pdf");</code></pre>
             <td>SemVer</td>
           </tr>
           <tr>
+            <td><b>fast-pdf/pdfa</b></td>
+            <td>
+              <code>pdfA()</code> — PDF/A-3b/-3u-Ausgabe und eingebettete Dateien. Opt-in.
+              <a class="text-(--accent) no-underline hover:underline" href="#pdfa">Mehr</a>
+            </td>
+            <td>SemVer ab 1.1.0</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/zugferd</b></td>
+            <td>
+              <code>facturX()</code> — ZUGFeRD-/Factur-X-Rechnungen (PDF/A-3 + eingebettetes XML).
+              Opt-in.
+              <a class="text-(--accent) no-underline hover:underline" href="#zugferd">Mehr</a>
+            </td>
+            <td>SemVer ab 1.1.0</td>
+          </tr>
+          <tr>
             <td><b>fast-pdf/internal</b></td>
             <td>
               Die Engine unter <code>PDFDocument</code>: <code>PDFWriter</code>,
@@ -1263,6 +1372,28 @@ await pdf.save("brief.pdf");</code></pre>
             <td>SemVer</td>
           </tr>
           <tr>
+            <td><b>fast-pdf/pdfa</b></td>
+            <td>
+              <code>pdfA()</code>——PDF/A-3b/-3u 输出与嵌入文件。按需引入。<a
+                class="text-(--accent) no-underline hover:underline"
+                href="#pdfa"
+                >详情</a
+              >
+            </td>
+            <td>自 1.1.0 起 SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/zugferd</b></td>
+            <td>
+              <code>facturX()</code>——ZUGFeRD / Factur-X 发票（PDF/A-3 + 嵌入的 XML）。按需引入。<a
+                class="text-(--accent) no-underline hover:underline"
+                href="#zugferd"
+                >详情</a
+              >
+            </td>
+            <td>自 1.1.0 起 SemVer</td>
+          </tr>
+          <tr>
             <td><b>fast-pdf/internal</b></td>
             <td>
               <code>PDFDocument</code>
@@ -1282,6 +1413,8 @@ await pdf.save("brief.pdf");</code></pre>
 
       <pre class="code-block"><code>import { PDFDocument, pdfInfo, FastPDFError } from "fast-pdf";
 import { tableToPDF, attachTablePdfButton } from "fast-pdf/dom";     // browser only
+import { pdfA } from "fast-pdf/pdfa";                                 // 1.1: PDF/A-3
+import { facturX } from "fast-pdf/zugferd";                           // 1.1: e-invoices
 import { PDFWriter, ContentStream } from "fast-pdf/internal";        // no SemVer promise</code></pre>
 
       <h3 data-lang="en" class="doc-h3">What SemVer covers from 1.0.0 on</h3>
@@ -1297,7 +1430,8 @@ import { PDFWriter, ContentStream } from "fast-pdf/internal";        // no SemVe
           <tr>
             <td>
               Exported names, their signatures and their types in <code>fast-pdf</code>,
-              <code>fast-pdf/dom</code> and <code>fast-pdf/browser</code>. Code that compiles and
+              <code>fast-pdf/dom</code> and <code>fast-pdf/browser</code> — and, from 1.1.0 on, in
+              <code>fast-pdf/pdfa</code> and <code>fast-pdf/zugferd</code>. Code that compiles and
               runs against 1.0.0 keeps doing so on every later 1.x; new exports may arrive in a
               minor release.
             </td>
@@ -1329,7 +1463,8 @@ import { PDFWriter, ContentStream } from "fast-pdf/internal";        // no SemVe
           <tr>
             <td>
               Exportierte Namen, ihre Signaturen und ihre Typen in <code>fast-pdf</code>,
-              <code>fast-pdf/dom</code> und <code>fast-pdf/browser</code>. Code, der gegen 1.0.0
+              <code>fast-pdf/dom</code> und <code>fast-pdf/browser</code> — ab 1.1.0 auch in
+              <code>fast-pdf/pdfa</code> und <code>fast-pdf/zugferd</code>. Code, der gegen 1.0.0
               kompiliert und läuft, tut das mit jeder späteren 1.x weiter; neue Exporte können in
               einem Minor-Release dazukommen.
             </td>
@@ -1360,8 +1495,9 @@ import { PDFWriter, ContentStream } from "fast-pdf/internal";        // no SemVe
           </tr>
           <tr>
             <td>
-              <code>fast-pdf</code>、<code>fast-pdf/dom</code> 与
-              <code>fast-pdf/browser</code> 导出的名称、函数签名及类型。基于 1.0.0
+              <code>fast-pdf</code>、<code>fast-pdf/dom</code> 与 <code>fast-pdf/browser</code>（自
+              1.1.0 起还包括 <code>fast-pdf/pdfa</code> 与
+              <code>fast-pdf/zugferd</code>）导出的名称、函数签名及类型。基于 1.0.0
               能编译并运行的代码，在之后所有 1.x 版本中依然可以；次版本可能新增导出。
             </td>
             <td>
@@ -2698,7 +2834,7 @@ await pdf.save("revenue.pdf");</code></pre>
       <p data-lang="en">Three entry points, depending on how much you want to hand over:</p>
       <p data-lang="de" hidden>Drei Einstiege, je nachdem wie viel du abgeben willst:</p>
       <p data-lang="zh" hidden>三个入口，取决于你想交出多少控制权：</p>
-      <div data-lang="en">
+      <div data-lang="en" class="overflow-x-auto">
         <table class="api">
           <tr>
             <td>attachTablePdfButton(table, options)</td>
@@ -2727,7 +2863,7 @@ await pdf.save("revenue.pdf");</code></pre>
           </tr>
         </table>
       </div>
-      <div data-lang="de" hidden>
+      <div data-lang="de" hidden class="overflow-x-auto">
         <table class="api">
           <tr>
             <td>attachTablePdfButton(table, options)</td>
@@ -2758,7 +2894,7 @@ await pdf.save("revenue.pdf");</code></pre>
           </tr>
         </table>
       </div>
-      <div data-lang="zh" hidden>
+      <div data-lang="zh" hidden class="overflow-x-auto">
         <table class="api">
           <tr>
             <td>attachTablePdfButton(table, options)</td>
@@ -2786,7 +2922,7 @@ await pdf.save("revenue.pdf");</code></pre>
       <p data-lang="en">Everything the two functions accept:</p>
       <p data-lang="de" hidden>Alles, was die beiden Funktionen entgegennehmen:</p>
       <p data-lang="zh" hidden>两个函数可接受的全部选项：</p>
-      <div data-lang="en">
+      <div data-lang="en" class="overflow-x-auto">
         <table class="api">
           <tr>
             <td>title</td>
@@ -2857,7 +2993,7 @@ await pdf.save("revenue.pdf");</code></pre>
           </tr>
         </table>
       </div>
-      <div data-lang="de" hidden>
+      <div data-lang="de" hidden class="overflow-x-auto">
         <table class="api">
           <tr>
             <td>title</td>
@@ -2928,7 +3064,7 @@ await pdf.save("revenue.pdf");</code></pre>
           </tr>
         </table>
       </div>
-      <div data-lang="zh" hidden>
+      <div data-lang="zh" hidden class="overflow-x-auto">
         <table class="api">
           <tr>
             <td>title</td>
@@ -4404,23 +4540,43 @@ try {
       <h3 data-lang="zh" hidden class="doc-h3">路线图上</h3>
 
       <div data-lang="en" class="hint">
-        <b class="text-(--accent)">Still toward banks &amp; insurers:</b> PDF/A is
-        <b>planned for 1.1</b>, as part of ZUGFeRD/Factur-X support behind an opt-in subpath. Tagged
-        PDF and PDF/UA are not supported and have no date. Signatures carry no RFC&nbsp;3161
-        timestamp. The full list is under
+        <b class="text-(--accent)">Still toward banks &amp; insurers:</b> PDF/A-3 is
+        <b>planned for 1.1</b>, together with ZUGFeRD/Factur-X, behind the opt-in entry points
+        <a class="text-(--accent) no-underline hover:underline" href="#pdfa"
+          ><code>fast-pdf/pdfa</code></a
+        >
+        and
+        <a class="text-(--accent) no-underline hover:underline" href="#zugferd"
+          ><code>fast-pdf/zugferd</code></a
+        >. Tagged PDF and PDF/UA are not supported and have no date. Signatures carry no
+        RFC&nbsp;3161 timestamp. The full list is under
         <a class="text-(--accent) no-underline hover:underline" href="#limitations">Limitations</a>.
       </div>
       <div data-lang="de" hidden class="hint">
-        <b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b> PDF/A ist
-        <b>für 1.1 geplant</b>, als Teil der ZUGFeRD-/Factur-X-Unterstützung hinter einem
-        Opt-in-Subpath. Getaggte PDFs und PDF/UA werden nicht unterstützt, ein Termin steht nicht
-        fest. Signaturen tragen keinen RFC-3161-Zeitstempel. Die vollständige Liste steht unter
+        <b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b> PDF/A-3 ist
+        <b>für 1.1 geplant</b>, zusammen mit ZUGFeRD/Factur-X, hinter den Opt-in-Einstiegspunkten
+        <a class="text-(--accent) no-underline hover:underline" href="#pdfa"
+          ><code>fast-pdf/pdfa</code></a
+        >
+        und
+        <a class="text-(--accent) no-underline hover:underline" href="#zugferd"
+          ><code>fast-pdf/zugferd</code></a
+        >. Getaggte PDFs und PDF/UA werden nicht unterstützt, ein Termin steht nicht fest.
+        Signaturen tragen keinen RFC-3161-Zeitstempel. Die vollständige Liste steht unter
         <a class="text-(--accent) no-underline hover:underline" href="#limitations">Grenzen</a>.
       </div>
       <div data-lang="zh" hidden class="hint">
-        <b class="text-(--accent)">仍在面向银行与保险公司：</b>PDF/A <b>计划于 1.1 推出</b>，作为
-        ZUGFeRD/Factur-X 支持的一部分，通过可选的子路径提供。带标签 PDF 与 PDF/UA
-        目前不支持，也没有排期。签名不带 RFC&nbsp;3161 时间戳。完整列表见<a
+        <b class="text-(--accent)">仍在面向银行与保险公司：</b>PDF/A-3 <b>计划于 1.1 推出</b>，与
+        ZUGFeRD/Factur-X 一起，通过按需引入的入口点
+        <a class="text-(--accent) no-underline hover:underline" href="#pdfa"
+          ><code>fast-pdf/pdfa</code></a
+        >
+        和
+        <a class="text-(--accent) no-underline hover:underline" href="#zugferd"
+          ><code>fast-pdf/zugferd</code></a
+        >
+        提供。带标签 PDF 与 PDF/UA 目前不支持，也没有排期。签名不带 RFC&nbsp;3161
+        时间戳。完整列表见<a
           class="text-(--accent) no-underline hover:underline"
           href="#limitations"
           >局限</a
@@ -4428,15 +4584,728 @@ try {
       </div>
     </section>
 
-    <section id="limitations" class="doc-section">
+    <section id="pdfa" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>Limitations
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>PDF/A-3<span class="chip"
+          >New in 1.1</span
+        >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>Grenzen
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>PDF/A-3<span class="chip"
+          >Neu in 1.1</span
+        >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>局限
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>PDF/A-3<span class="chip"
+          >1.1 新增</span
+        >
+      </h2>
+
+      <p data-lang="en">
+        <code>fast-pdf/pdfa</code> turns a document into <b>PDF/A-3b</b> (ISO&nbsp;19005-3), the
+        format for long-term archiving: every font embedded, colours defined by an ICC profile,
+        metadata as XMP, nothing that depends on the outside world. It is an opt-in entry point — a
+        document that never imports it pays nothing:
+      </p>
+      <p data-lang="de" hidden>
+        <code>fast-pdf/pdfa</code> macht aus einem Dokument ein <b>PDF/A-3b</b>
+        (ISO&nbsp;19005-3), das Format für die Langzeitarchivierung: alle Schriften eingebettet,
+        Farben über ein ICC-Profil definiert, Metadaten als XMP, nichts, das von der Außenwelt
+        abhängt. Es ist ein Opt-in-Einstiegspunkt — ein Dokument, das ihn nicht importiert, zahlt
+        nichts dafür:
+      </p>
+      <p data-lang="zh" hidden>
+        <code>fast-pdf/pdfa</code> 把文档转换为 <b>PDF/A-3b</b>（ISO&nbsp;19005-3）——
+        用于长期归档的格式：所有字体均嵌入，颜色由 ICC 配置文件定义，元数据以 XMP
+        写入，不依赖任何外部资源。它是一个按需引入的入口点——不导入它的文档不会为此付出任何代价：
+      </p>
+
+      <pre data-lang="en" class="code-block"><code>import { PDFDocument } from "fast-pdf";
+import { pdfA } from "fast-pdf/pdfa";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Annual report 2026" } });
+pdf.registerFont(interRegular, { family: "inter" });              // PDF/A needs an embedded
+pdf.registerFont(interBold, { family: "inter", bold: true });     // TTF for ALL text
+
+const archive = pdfA(pdf);   // PDF/A-3b from here on
+
+pdf.text("Annual report 2026", { size: 22, bold: true });
+archive.attach({
+  filename: "figures.csv",
+  data: csv,
+  mimeType: "text/csv",
+  relationship: "Source",    // Alternative | Data | Source | Supplement | Unspecified
+  description: "The figures behind the charts",
+});
+
+await pdf.save("report.pdf");</code></pre>
+      <pre data-lang="de" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+import { pdfA } from "fast-pdf/pdfa";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Geschäftsbericht 2026" } });
+pdf.registerFont(interRegular, { family: "inter" });              // PDF/A braucht eine eingebettete
+pdf.registerFont(interBold, { family: "inter", bold: true });     // TTF für ALLEN Text
+
+const archive = pdfA(pdf);   // ab hier PDF/A-3b
+
+pdf.text("Geschäftsbericht 2026", { size: 22, bold: true });
+archive.attach({
+  filename: "zahlen.csv",
+  data: csv,
+  mimeType: "text/csv",
+  relationship: "Source",    // Alternative | Data | Source | Supplement | Unspecified
+  description: "Die Zahlen hinter den Diagrammen",
+});
+
+await pdf.save("bericht.pdf");</code></pre>
+      <pre data-lang="zh" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+import { pdfA } from "fast-pdf/pdfa";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Annual report 2026" } });
+pdf.registerFont(interRegular, { family: "inter" });              // PDF/A 要求所有文本
+pdf.registerFont(interBold, { family: "inter", bold: true });     // 都使用嵌入的 TTF 字体
+
+const archive = pdfA(pdf);   // 从这里开始即为 PDF/A-3b
+
+// 字体必须包含所用的每个字符——Inter 没有中文字形，
+// 中文文本需注册含中文字形的 TTF 字体
+pdf.text("Annual report 2026", { size: 22, bold: true });
+archive.attach({
+  filename: "figures.csv",
+  data: csv,
+  mimeType: "text/csv",
+  relationship: "Source",    // Alternative | Data | Source | Supplement | Unspecified
+  description: "The figures behind the charts",
+});
+
+await pdf.save("report.pdf");</code></pre>
+
+      <p data-lang="en">
+        <code>pdfA()</code> adds what the standard requires — the XMP metadata stream with the PDF/A
+        identification and an sRGB output intent (the 456-byte profile is bundled, CC0) — and from
+        then on <code>render()</code> <b>refuses</b> what cannot be conforming, with a
+        <code>FastPDFError</code> of code <code>"PDFA_VIOLATION"</code> that says what to change:
+      </p>
+      <p data-lang="de" hidden>
+        <code>pdfA()</code> ergänzt, was die Norm verlangt — den XMP-Metadatenstrom mit der
+        PDF/A-Kennung und einen sRGB-Output-Intent (das 456-Byte-Profil ist mitgeliefert, CC0) — und
+        ab dann <b>verweigert</b> <code>render()</code>, was nicht konform sein kann, mit einem
+        <code>FastPDFError</code> mit Code <code>"PDFA_VIOLATION"</code>, der sagt, was zu ändern
+        ist:
+      </p>
+      <p data-lang="zh" hidden>
+        <code>pdfA()</code> 会补上标准要求的内容——带 PDF/A 标识的 XMP 元数据流，以及一个 sRGB
+        输出意图（内置 456 字节的配置文件，CC0 授权）——此后
+        <code>render()</code> 会<b>拒绝</b>一切无法合规的内容，抛出 code 为
+        <code>"PDFA_VIOLATION"</code> 的 <code>FastPDFError</code>，并说明需要如何修改：
+      </p>
+
+      <div data-lang="en" class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>Refused in PDF/A mode</th>
+            <th>Why, and what to do</th>
+          </tr>
+          <tr>
+            <td>Text in <code>helvetica</code> / <code>times</code> / <code>courier</code></td>
+            <td>
+              The built-in fonts are not embedded. Register a TTF and make it the document
+              <code>font</code>. For Markdown code, pass <code>markdown(src, { codeFont })</code>.
+            </td>
+          </tr>
+          <tr>
+            <td>A character the font has no glyph for</td>
+            <td>
+              It would be drawn as <code>.notdef</code>. The error names the character and the font.
+            </td>
+          </tr>
+          <tr>
+            <td><code>encrypt</code></td>
+            <td>PDF/A forbids encryption — an archive must stay readable without a key.</td>
+          </tr>
+          <tr>
+            <td><code>append()</code></td>
+            <td>
+              Imported pages bring fonts and colour spaces fast-pdf did not write and cannot vouch
+              for.
+            </td>
+          </tr>
+          <tr>
+            <td>CMYK JPEGs</td>
+            <td>The output intent is RGB, and a document has only one. Convert to RGB.</td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>Im PDF/A-Modus abgelehnt</th>
+            <th>Warum, und was zu tun ist</th>
+          </tr>
+          <tr>
+            <td>Text in <code>helvetica</code> / <code>times</code> / <code>courier</code></td>
+            <td>
+              Die eingebauten Schriften sind nicht eingebettet. Eine TTF registrieren und zur
+              Dokument-<code>font</code> machen. Für Markdown-Code
+              <code>markdown(src, { codeFont })</code> übergeben.
+            </td>
+          </tr>
+          <tr>
+            <td>Ein Zeichen, für das die Schrift keine Glyphe hat</td>
+            <td>
+              Es würde als <code>.notdef</code> gezeichnet. Die Fehlermeldung nennt Zeichen und
+              Schrift.
+            </td>
+          </tr>
+          <tr>
+            <td><code>encrypt</code></td>
+            <td>
+              PDF/A verbietet Verschlüsselung — ein Archiv muss ohne Schlüssel lesbar bleiben.
+            </td>
+          </tr>
+          <tr>
+            <td><code>append()</code></td>
+            <td>
+              Importierte Seiten bringen Schriften und Farbräume mit, die fast-pdf nicht geschrieben
+              hat und für die es nicht bürgen kann.
+            </td>
+          </tr>
+          <tr>
+            <td>CMYK-JPEGs</td>
+            <td>
+              Der Output-Intent ist RGB, und ein Dokument hat nur einen. Nach RGB konvertieren.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>PDF/A 模式下拒绝</th>
+            <th>原因及处理方式</th>
+          </tr>
+          <tr>
+            <td>使用 <code>helvetica</code> / <code>times</code> / <code>courier</code> 的文本</td>
+            <td>
+              内置字体不会被嵌入。请注册一个 TTF 字体并将其设为文档的
+              <code>font</code>。Markdown 中的代码请通过
+              <code>markdown(src, { codeFont })</code> 指定字体。
+            </td>
+          </tr>
+          <tr>
+            <td>字体中没有字形的字符</td>
+            <td>该字符会被绘制为 <code>.notdef</code>。错误信息会指出具体字符和字体。</td>
+          </tr>
+          <tr>
+            <td><code>encrypt</code></td>
+            <td>PDF/A 禁止加密——归档文件必须无需密钥即可读取。</td>
+          </tr>
+          <tr>
+            <td><code>append()</code></td>
+            <td>导入的页面带有并非 fast-pdf 写入的字体和色彩空间，fast-pdf 无法为其担保。</td>
+          </tr>
+          <tr>
+            <td>CMYK JPEG</td>
+            <td>输出意图是 RGB，而一个文档只能有一个输出意图。请转换为 RGB。</td>
+          </tr>
+        </table>
+      </div>
+
+      <div data-lang="en" class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>Option</th>
+            <th>Meaning</th>
+          </tr>
+          <tr>
+            <td>conformance</td>
+            <td>
+              <code>"B"</code> (default) or <code>"U"</code> — B plus the promise that all text maps
+              to Unicode, which fast-pdf’s embedded fonts fulfil.
+            </td>
+          </tr>
+          <tr>
+            <td>outputProfile</td>
+            <td>
+              <code>{ data, identifier }</code> to replace the bundled sRGB profile with another
+              <b>RGB</b> ICC profile (device class <code>mntr</code> or <code>prtr</code>).
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>Option</th>
+            <th>Bedeutung</th>
+          </tr>
+          <tr>
+            <td>conformance</td>
+            <td>
+              <code>"B"</code> (Standard) oder <code>"U"</code> — B plus die Zusage, dass jeder Text
+              auf Unicode abbildet; die eingebetteten Schriften von fast-pdf erfüllen das.
+            </td>
+          </tr>
+          <tr>
+            <td>outputProfile</td>
+            <td>
+              <code>{ data, identifier }</code> ersetzt das mitgelieferte sRGB-Profil durch ein
+              anderes <b>RGB</b>-ICC-Profil (Geräteklasse <code>mntr</code> oder <code>prtr</code>).
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>选项</th>
+            <th>含义</th>
+          </tr>
+          <tr>
+            <td>conformance</td>
+            <td>
+              <code>"B"</code>（默认）或 <code>"U"</code>——在 B 的基础上，额外保证所有文本都可映射到
+              Unicode；fast-pdf 嵌入的字体满足这一点。
+            </td>
+          </tr>
+          <tr>
+            <td>outputProfile</td>
+            <td>
+              <code>{ data, identifier }</code>，用另一个 <b>RGB</b> ICC 配置文件（设备类别为
+              <code>mntr</code> 或 <code>prtr</code>）替换内置的 sRGB 配置文件。
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <p data-lang="en">
+        The checks run at render time, so it does not matter whether <code>pdfA()</code> is called
+        before or after the content is drawn. Transparency, links, outlines, images (PNG, GIF, WebP,
+        RGB/gray JPEG), SVG, tables, signature fields and PAdES signing all work unchanged.
+      </p>
+      <p data-lang="de" hidden>
+        Die Prüfungen laufen zur Renderzeit — es ist also egal, ob <code>pdfA()</code> vor oder nach
+        dem Zeichnen des Inhalts aufgerufen wird. Transparenz, Links, Lesezeichen, Bilder (PNG, GIF,
+        WebP, RGB-/Graustufen-JPEG), SVG, Tabellen, Signaturfelder und PAdES-Signatur funktionieren
+        unverändert.
+      </p>
+      <p data-lang="zh" hidden>
+        这些检查在渲染时进行，因此 <code>pdfA()</code>
+        在绘制内容之前还是之后调用都没有区别。透明度、链接、书签、图片（PNG、GIF、WebP、RGB/灰度
+        JPEG）、SVG、表格、签名字段以及 PAdES 签名均可照常使用。
+      </p>
+
+      <div data-lang="en" class="hint">
+        <b class="text-(--accent)">How this is verified:</b> not by our own tests alone — two
+        independent validators run in CI on every change.
+        <a class="text-(--accent) no-underline hover:underline" href="https://verapdf.org/"
+          >veraPDF</a
+        >, the reference PDF/A validator, must report three documents compliant: the invoice from
+        <code>examples/zugferd.ts</code> (PDF/A-3b, 146 of 146 rules), a document that uses every
+        feature PDF/A mode allows — images with soft masks, transparency, SVG, links, outlines,
+        Markdown, a signature field — at level U (148 of 148), and a PAdES-signed PDF/A-3b. It must
+        also report an ordinary fast-pdf document as <em>not</em> compliant, so a misconfigured
+        validator cannot pass for a green one.
+        <a
+          class="text-(--accent) no-underline hover:underline"
+          href="https://www.mustangproject.org/"
+          >Mustang</a
+        >, the reference ZUGFeRD implementation, must report the invoice valid — container, XMP and
+        XML. That validates those documents, not every document you can build; if a file of yours
+        fails validation, that is a bug worth reporting.
+      </div>
+      <div data-lang="de" hidden class="hint">
+        <b class="text-(--accent)">Wie das geprüft wird:</b> nicht nur mit eigenen Tests — zwei
+        unabhängige Validatoren laufen in der CI bei jeder Änderung.
+        <a class="text-(--accent) no-underline hover:underline" href="https://verapdf.org/"
+          >veraPDF</a
+        >, der Referenz-Validator für PDF/A, muss drei Dokumente als konform melden: die Rechnung
+        aus <code>examples/zugferd.ts</code> (PDF/A-3b, 146 von 146 Regeln), ein Dokument, das jedes
+        im PDF/A-Modus erlaubte Feature nutzt — Bilder mit Soft-Masks, Transparenz, SVG, Links,
+        Lesezeichen, Markdown, ein Signaturfeld — auf Stufe U (148 von 148), und ein
+        PAdES-signiertes PDF/A-3b. Außerdem muss er ein gewöhnliches fast-pdf-Dokument als
+        <em>nicht</em> konform melden, damit ein falsch konfigurierter Validator nicht als grüner
+        durchgeht.
+        <a
+          class="text-(--accent) no-underline hover:underline"
+          href="https://www.mustangproject.org/"
+          >Mustang</a
+        >, die Referenzimplementierung für ZUGFeRD, muss die Rechnung als gültig melden — Container,
+        XMP und XML. Das validiert diese Dokumente, nicht jedes, das du bauen kannst; fällt eine
+        deiner Dateien durch, ist das ein Bug, der gemeldet werden sollte.
+      </div>
+      <div data-lang="zh" hidden class="hint">
+        <b class="text-(--accent)">如何验证：</b>不只依靠我们自己的测试——每次变更时，CI
+        都会运行两个独立的验证器。参考 PDF/A 验证器
+        <a class="text-(--accent) no-underline hover:underline" href="https://verapdf.org/"
+          >veraPDF</a
+        >
+        必须判定三个文档合规：<code>examples/zugferd.ts</code> 生成的发票（PDF/A-3b，146/146
+        条规则）；一个使用了 PDF/A
+        模式所允许的全部功能（带软蒙版的图片、透明度、SVG、链接、书签、Markdown、签名字段）的 U
+        级文档（148/148）；以及一个经 PAdES 签名的 PDF/A-3b。它还必须判定一个普通的 fast-pdf
+        文档<em>不</em>合规，以免配置错误的验证器冒充通过。参考 ZUGFeRD 实现
+        <a
+          class="text-(--accent) no-underline hover:underline"
+          href="https://www.mustangproject.org/"
+          >Mustang</a
+        >
+        必须判定该发票有效——包括容器、XMP 和
+        XML。这验证的只是这几个文档，而不是你能构建的每一个文档；如果你的某个文件未通过验证，那是值得报告的
+        bug。
+      </div>
+
+      <p data-lang="en" class="text-[14px] text-(--muted)">
+        <b class="text-(--ink)">Availability:</b> <code>fast-pdf/pdfa</code> is planned as
+        <b>version 1.1.0</b> and is not on npm yet. It joins the
+        <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet"
+          >SemVer promise</a
+        >
+        from 1.1.0 on.
+      </p>
+      <p data-lang="de" hidden class="text-[14px] text-(--muted)">
+        <b class="text-(--ink)">Verfügbarkeit:</b> <code>fast-pdf/pdfa</code> ist als
+        <b>Version 1.1.0</b> geplant und noch nicht auf npm. Ab 1.1.0 gilt dafür die
+        <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet">SemVer-Zusage</a
+        >.
+      </p>
+      <p data-lang="zh" hidden class="text-[14px] text-(--muted)">
+        <b class="text-(--ink)">可用性：</b><code>fast-pdf/pdfa</code> 计划随
+        <b>1.1.0 版本</b> 发布，目前尚未上架 npm。自 1.1.0 起纳入<a
+          class="text-(--accent) no-underline hover:underline"
+          href="#stabilitaet"
+          >SemVer 承诺</a
+        >。
+      </p>
+    </section>
+
+    <section id="zugferd" class="doc-section">
+      <h2 data-lang="en" class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>ZUGFeRD / Factur-X<span
+          class="chip"
+          >New in 1.1</span
+        >
+      </h2>
+      <h2 data-lang="de" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>ZUGFeRD / Factur-X<span
+          class="chip"
+          >Neu in 1.1</span
+        >
+      </h2>
+      <h2 data-lang="zh" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>ZUGFeRD / Factur-X<span
+          class="chip"
+          >1.1 新增</span
+        >
+      </h2>
+
+      <p data-lang="en">
+        A ZUGFeRD (in France: Factur-X) invoice is a PDF/A-3 a person can read, with the same
+        invoice embedded as XML a machine can book. <code>fast-pdf/zugferd</code> builds that hybrid
+        from a document and an XML:
+      </p>
+      <p data-lang="de" hidden>
+        Eine ZUGFeRD-Rechnung (in Frankreich: Factur-X) ist ein PDF/A-3, das ein Mensch lesen kann,
+        mit derselben Rechnung als eingebettetem XML, das eine Maschine buchen kann.
+        <code>fast-pdf/zugferd</code> baut dieses Hybrid aus einem Dokument und einem XML:
+      </p>
+      <p data-lang="zh" hidden>
+        ZUGFeRD（在法国称为 Factur-X）发票是一份供人阅读的 PDF/A-3，其中以 XML
+        形式嵌入了同一张发票，供机器入账。<code>fast-pdf/zugferd</code> 用一个文档和一份 XML
+        构建这种混合格式：
+      </p>
+
+      <pre data-lang="en" class="code-block"><code>import { PDFDocument } from "fast-pdf";
+import { facturX } from "fast-pdf/zugferd";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Invoice 2026-041" } });
+pdf.registerFont(interRegular, { family: "inter" });
+
+facturX(pdf, invoiceXml, { profile: "EN 16931" });   // string or Uint8Array
+
+pdf.text("Invoice 2026-041", { size: 20 });
+pdf.table(items);
+await pdf.save("invoice.pdf");</code></pre>
+      <pre data-lang="de" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+import { facturX } from "fast-pdf/zugferd";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Rechnung 2026-041" } });
+pdf.registerFont(interRegular, { family: "inter" });
+
+facturX(pdf, rechnungXml, { profile: "EN 16931" });  // string oder Uint8Array
+
+pdf.text("Rechnung 2026-041", { size: 20 });
+pdf.table(positionen);
+await pdf.save("rechnung.pdf");</code></pre>
+      <pre data-lang="zh" hidden class="code-block"><code>import { PDFDocument } from "fast-pdf";
+import { facturX } from "fast-pdf/zugferd";
+
+const pdf = new PDFDocument({ font: "inter", metadata: { title: "Invoice 2026-041" } });
+pdf.registerFont(interRegular, { family: "inter" });
+
+facturX(pdf, invoiceXml, { profile: "EN 16931" });   // string 或 Uint8Array
+
+pdf.text("Invoice 2026-041", { size: 20 });
+pdf.table(items);
+await pdf.save("invoice.pdf");</code></pre>
+
+      <p data-lang="en">
+        <code>facturX()</code> switches the document to PDF/A-3 (everything in the
+        <a class="text-(--accent) no-underline hover:underline" href="#pdfa">section above</a>
+        applies), embeds the XML under the file name the specification prescribes
+        (<code>factur-x.xml</code>, or <code>xrechnung.xml</code> for the XRECHNUNG profile) with
+        MIME type <code>text/xml</code>, registers it as an associated file of the document, and
+        writes the four Factur-X XMP properties together with their PDF/A extension schema.
+      </p>
+      <p data-lang="de" hidden>
+        <code>facturX()</code> schaltet das Dokument auf PDF/A-3 (alles aus dem
+        <a class="text-(--accent) no-underline hover:underline" href="#pdfa">Abschnitt davor</a>
+        gilt), bettet das XML unter dem von der Spezifikation vorgeschriebenen Dateinamen ein
+        (<code>factur-x.xml</code>, bzw. <code>xrechnung.xml</code> für das Profil XRECHNUNG) mit
+        MIME-Typ <code>text/xml</code>, registriert es als Associated File des Dokuments und
+        schreibt die vier Factur-X-XMP-Eigenschaften samt ihrem PDF/A-Extension-Schema.
+      </p>
+      <p data-lang="zh" hidden>
+        <code>facturX()</code> 会把文档切换为 PDF/A-3（<a
+          class="text-(--accent) no-underline hover:underline"
+          href="#pdfa"
+          >上一节</a
+        >的所有内容同样适用），以规范规定的文件名（<code>factur-x.xml</code>，XRECHNUNG 配置文件则为
+        <code>xrechnung.xml</code>）和 MIME 类型 <code>text/xml</code> 嵌入
+        XML，将其登记为文档的关联文件（associated file），并写入四个 Factur-X XMP 属性及其 PDF/A
+        扩展模式（extension schema）。
+      </p>
+
+      <div data-lang="en" class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>Option</th>
+            <th>Meaning</th>
+          </tr>
+          <tr>
+            <td>profile</td>
+            <td>
+              <b>Required.</b> <code>"MINIMUM"</code>, <code>"BASIC WL"</code>,
+              <code>"BASIC"</code>, <code>"EN 16931"</code>, <code>"EXTENDED"</code> or
+              <code>"XRECHNUNG"</code> — the profile the XML was generated for.
+            </td>
+          </tr>
+          <tr>
+            <td>relationship</td>
+            <td>
+              <code>/AFRelationship</code> of the XML. Default: <code>"Data"</code> for MINIMUM and
+              BASIC WL, <code>"Alternative"</code> otherwise (the specification’s matrix for
+              Germany).
+            </td>
+          </tr>
+          <tr>
+            <td>description</td>
+            <td>Text shown in the viewer’s attachment list.</td>
+          </tr>
+          <tr>
+            <td>modDate</td>
+            <td>Modification date recorded with the XML. Default: the document’s creation date.</td>
+          </tr>
+          <tr>
+            <td>conformance</td>
+            <td>PDF/A-3 level, <code>"B"</code> (default) or <code>"U"</code>.</td>
+          </tr>
+          <tr>
+            <td>outputProfile</td>
+            <td>Replace the bundled sRGB profile.</td>
+          </tr>
+          <tr>
+            <td>checkXml</td>
+            <td><code>false</code> skips the plausibility check below.</td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>Option</th>
+            <th>Bedeutung</th>
+          </tr>
+          <tr>
+            <td>profile</td>
+            <td>
+              <b>Pflicht.</b> <code>"MINIMUM"</code>, <code>"BASIC WL"</code>, <code>"BASIC"</code>,
+              <code>"EN 16931"</code>, <code>"EXTENDED"</code> oder <code>"XRECHNUNG"</code> — das
+              Profil, für das das XML erzeugt wurde.
+            </td>
+          </tr>
+          <tr>
+            <td>relationship</td>
+            <td>
+              <code>/AFRelationship</code> des XML. Standard: <code>"Data"</code> für MINIMUM und
+              BASIC WL, sonst <code>"Alternative"</code> (die Matrix der Spezifikation für
+              Deutschland).
+            </td>
+          </tr>
+          <tr>
+            <td>description</td>
+            <td>Text in der Anhangsliste des Viewers.</td>
+          </tr>
+          <tr>
+            <td>modDate</td>
+            <td>
+              Änderungsdatum, das mit dem XML gespeichert wird. Standard: das Erstellungsdatum des
+              Dokuments.
+            </td>
+          </tr>
+          <tr>
+            <td>conformance</td>
+            <td>PDF/A-3-Stufe, <code>"B"</code> (Standard) oder <code>"U"</code>.</td>
+          </tr>
+          <tr>
+            <td>outputProfile</td>
+            <td>Ersetzt das mitgelieferte sRGB-Profil.</td>
+          </tr>
+          <tr>
+            <td>checkXml</td>
+            <td><code>false</code> überspringt die Plausibilitätsprüfung unten.</td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>选项</th>
+            <th>含义</th>
+          </tr>
+          <tr>
+            <td>profile</td>
+            <td>
+              <b>必填。</b><code>"MINIMUM"</code>、<code>"BASIC WL"</code
+              >、<code>"BASIC"</code>、<code>"EN 16931"</code>、<code>"EXTENDED"</code> 或
+              <code>"XRECHNUNG"</code>——生成该 XML 时所依据的配置文件。
+            </td>
+          </tr>
+          <tr>
+            <td>relationship</td>
+            <td>
+              XML 的 <code>/AFRelationship</code>。默认：MINIMUM 和 BASIC WL 为
+              <code>"Data"</code>，其余为 <code>"Alternative"</code>（规范中针对德国的对照表）。
+            </td>
+          </tr>
+          <tr>
+            <td>description</td>
+            <td>在阅读器附件列表中显示的文字。</td>
+          </tr>
+          <tr>
+            <td>modDate</td>
+            <td>随 XML 记录的修改日期。默认：文档的创建日期。</td>
+          </tr>
+          <tr>
+            <td>conformance</td>
+            <td>PDF/A-3 级别，<code>"B"</code>（默认）或 <code>"U"</code>。</td>
+          </tr>
+          <tr>
+            <td>outputProfile</td>
+            <td>替换内置的 sRGB 配置文件。</td>
+          </tr>
+          <tr>
+            <td>checkXml</td>
+            <td>设为 <code>false</code> 可跳过下文所述的合理性检查。</td>
+          </tr>
+        </table>
+      </div>
+
+      <p data-lang="en">
+        It returns the PDF/A handle, so further files (timesheets, delivery notes) can be added with
+        <code>.attach()</code>.
+      </p>
+      <p data-lang="de" hidden>
+        Es gibt das PDF/A-Handle zurück, sodass sich weitere Dateien (Stundenzettel, Lieferscheine)
+        mit <code>.attach()</code> anhängen lassen.
+      </p>
+      <p data-lang="zh" hidden>
+        它返回 PDF/A 句柄，因此可以用 <code>.attach()</code> 继续添加其他文件（工时表、送货单）。
+      </p>
+
+      <div data-lang="en" class="hint">
+        <b class="text-(--accent)">fast-pdf does not create or validate the invoice XML.</b> The XML
+        is tax logic — EN&nbsp;16931 has several hundred business rules covering rounding, VAT
+        categories and code lists — and it is the legally binding part: under German law the
+        structured data prevails over the visible page. Generate it with a library built for that
+        and validate it against the official EN&nbsp;16931 rules. fast-pdf only checks that what you
+        pass is plausibly the right file: a <code>CrossIndustryInvoice</code> (CII; UBL cannot be
+        embedded) whose guideline ID matches <code>profile</code>. A mismatch throws rather than
+        producing a PDF that says one thing in its metadata and another in its payload.
+      </div>
+      <div data-lang="de" hidden class="hint">
+        <b class="text-(--accent)">fast-pdf erzeugt und validiert das Rechnungs-XML nicht.</b> Das
+        XML ist Steuerlogik — EN&nbsp;16931 hat mehrere hundert Geschäftsregeln zu Rundung,
+        Umsatzsteuerkategorien und Codelisten — und es ist der rechtlich maßgebliche Teil: nach
+        deutschem Recht gehen die strukturierten Daten der sichtbaren Seite vor. Erzeuge es mit
+        einer Library, die dafür gebaut ist, und validiere es gegen die offiziellen EN-16931-Regeln.
+        fast-pdf prüft nur, ob das Übergebene plausibel die richtige Datei ist: ein
+        <code>CrossIndustryInvoice</code> (CII; UBL lässt sich nicht einbetten), dessen Guideline-ID
+        zu <code>profile</code> passt. Bei Abweichung wird geworfen, statt ein PDF zu erzeugen, das
+        in den Metadaten etwas anderes sagt als in der Nutzlast.
+      </div>
+      <div data-lang="zh" hidden class="hint">
+        <b class="text-(--accent)">fast-pdf 不生成、也不校验发票 XML。</b>XML
+        承载的是税务逻辑——EN&nbsp;16931
+        包含数百条业务规则，涉及舍入、增值税类别和代码表——而且它是具有法律效力的部分：根据德国法律，结构化数据优先于可见页面。请使用专门的库生成
+        XML，并按官方 EN&nbsp;16931 规则进行校验。fast-pdf
+        只检查你传入的内容是否大致是正确的文件：一个 <code>CrossIndustryInvoice</code>（CII；UBL
+        无法嵌入），且其 guideline ID 与 <code>profile</code>
+        一致。不一致时会直接抛出错误，而不是生成一份元数据与内嵌数据互相矛盾的 PDF。
+      </div>
+
+      <div data-lang="en" class="hint">
+        <b class="text-(--accent)">For Germany:</b> from 2027-01-01, businesses with more than
+        €800,000 prior-year turnover must issue B2B invoices as e-invoices.
+        ZUGFeRD&nbsp;≥&nbsp;2.0.1 qualifies — <b>except the profiles MINIMUM and BASIC WL</b>, which
+        carry no invoice lines (UStAE 14.1 (14)). Use <code>"EN 16931"</code> unless you know you
+        need another one. This is a summary, <b>not tax advice</b>.
+      </div>
+      <div data-lang="de" hidden class="hint">
+        <b class="text-(--accent)">Für Deutschland:</b> Ab dem 01.01.2027 müssen Unternehmen mit
+        mehr als 800.000&nbsp;€ Vorjahresumsatz B2B-Rechnungen als E-Rechnung ausstellen.
+        ZUGFeRD&nbsp;≥&nbsp;2.0.1 erfüllt das — <b>außer mit den Profilen MINIMUM und BASIC WL</b>,
+        die keine Rechnungspositionen enthalten (UStAE 14.1 Abs. 14). Nimm <code>"EN 16931"</code>,
+        solange du nicht weißt, dass du ein anderes brauchst. Das ist eine Zusammenfassung,
+        <b>keine Steuerberatung</b>.
+      </div>
+      <div data-lang="zh" hidden class="hint">
+        <b class="text-(--accent)">关于德国：</b>自 2027-01-01 起，上一年度营业额超过 800,000
+        欧元的企业必须以电子发票形式开具 B2B 发票。ZUGFeRD&nbsp;≥&nbsp;2.0.1 符合要求——<b
+          >但 MINIMUM 和 BASIC WL 配置文件除外</b
+        >，因为它们不包含发票行项目（UStAE 14.1 (14)）。除非你明确需要其他配置文件，否则请使用
+        <code>"EN 16931"</code>。以上仅为概述，<b>不构成税务建议</b>。
+      </div>
+
+      <p data-lang="en" class="text-[14px] text-(--muted)">
+        <b class="text-(--ink)">Try it:</b> a complete, runnable invoice is in
+        <code>examples/zugferd.ts</code> (<code>npm run zugferd</code>).
+        <b class="text-(--ink)">Availability:</b> <code>fast-pdf/zugferd</code> is planned as
+        <b>version 1.1.0</b> and is not on npm yet.
+      </p>
+      <p data-lang="de" hidden class="text-[14px] text-(--muted)">
+        <b class="text-(--ink)">Ausprobieren:</b> eine vollständige, lauffähige Rechnung liegt in
+        <code>examples/zugferd.ts</code> (<code>npm run zugferd</code>).
+        <b class="text-(--ink)">Verfügbarkeit:</b> <code>fast-pdf/zugferd</code> ist als
+        <b>Version 1.1.0</b> geplant und noch nicht auf npm.
+      </p>
+      <p data-lang="zh" hidden class="text-[14px] text-(--muted)">
+        <b class="text-(--ink)">动手试试：</b>完整、可运行的发票示例见
+        <code>examples/zugferd.ts</code>（<code>npm run zugferd</code>）。
+        <b class="text-(--ink)">可用性：</b><code>fast-pdf/zugferd</code> 计划随
+        <b>1.1.0 版本</b>发布，目前尚未上架 npm。
+      </p>
+    </section>
+
+    <section id="limitations" class="doc-section">
+      <h2 data-lang="en" class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">20</span>Limitations
+      </h2>
+      <h2 data-lang="de" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">20</span>Grenzen
+      </h2>
+      <h2 data-lang="zh" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">20</span>局限
       </h2>
 
       <p data-lang="en">
@@ -4465,11 +5334,15 @@ try {
             </td>
           </tr>
           <tr>
-            <td>PDF/A</td>
+            <td>PDF/A-1, PDF/A-2, PDF/A-3a</td>
             <td>
-              Not supported today. <b>Planned for 1.1</b>, with ZUGFeRD/Factur-X behind an opt-in
-              subpath. Today’s output is not PDF/A: no XMP, no OutputIntent, by default no embedded
-              fonts.
+              <b>PDF/A-3b and -3u are supported</b> through
+              <a class="text-(--accent) no-underline hover:underline" href="#pdfa"
+                ><code>fast-pdf/pdfa</code></a
+              >
+              (planned for 1.1). Parts 1 and 2 are not (part 3 is what e-invoicing needs), and level
+              A needs tagged PDF. PDF/A cannot be combined with encryption, <code>append()</code>
+              or CMYK JPEGs.
             </td>
           </tr>
           <tr>
@@ -4488,17 +5361,27 @@ try {
             </td>
           </tr>
           <tr>
-            <td>XMP metadata</td>
+            <td>XMP metadata outside PDF/A</td>
             <td>
-              Only the classic <code>/Info</code> dictionary. An XMP writer is part of the PDF/A
-              work planned for 1.1.
+              An ordinary document carries only the classic <code>/Info</code> dictionary. XMP is
+              written in PDF/A mode, where it is mandatory.
             </td>
           </tr>
           <tr>
             <td>Archivable output with the default font</td>
             <td>
-              Standard-14 fonts are referenced without a <code>FontFile</code>, i.e. not embedded.
-              Long-term output needs <code>registerFont()</code> with a TTF.
+              Standard-14 fonts are referenced without a <code>FontFile</code>, i.e. not embedded,
+              and fast-pdf ships no font of its own. PDF/A therefore needs
+              <code>registerFont()</code> with a TTF for <b>all</b> text — <code>pdfA()</code>
+              refuses to render otherwise.
+            </td>
+          </tr>
+          <tr>
+            <td>Creating or validating invoice XML</td>
+            <td>
+              <code>fast-pdf/zugferd</code> builds the hybrid <b>container</b>. The CII XML —
+              EN&nbsp;16931 business rules, VAT categories, code lists — comes from you; use an
+              e-invoicing library to create and validate it.
             </td>
           </tr>
           <tr>
@@ -4559,11 +5442,15 @@ try {
             </td>
           </tr>
           <tr>
-            <td>PDF/A</td>
+            <td>PDF/A-1, PDF/A-2, PDF/A-3a</td>
             <td>
-              Heute nicht unterstützt. <b>Geplant für 1.1</b>, mit ZUGFeRD/Factur-X hinter einem
-              Opt-in-Subpath. Die heutige Ausgabe ist kein PDF/A: kein XMP, kein OutputIntent,
-              standardmäßig keine eingebetteten Schriften.
+              <b>PDF/A-3b und -3u werden unterstützt</b>, über
+              <a class="text-(--accent) no-underline hover:underline" href="#pdfa"
+                ><code>fast-pdf/pdfa</code></a
+              >
+              (geplant für 1.1). Teil 1 und 2 nicht (Teil 3 ist, was die E-Rechnung braucht), und
+              Stufe A braucht getaggtes PDF. PDF/A lässt sich nicht mit Verschlüsselung,
+              <code>append()</code> oder CMYK-JPEGs kombinieren.
             </td>
           </tr>
           <tr>
@@ -4583,17 +5470,27 @@ try {
             </td>
           </tr>
           <tr>
-            <td>XMP-Metadaten</td>
+            <td>XMP-Metadaten außerhalb von PDF/A</td>
             <td>
-              Nur das klassische <code>/Info</code>-Dictionary. Ein XMP-Writer ist Teil der für 1.1
-              geplanten PDF/A-Arbeit.
+              Ein gewöhnliches Dokument trägt nur das klassische <code>/Info</code>-Dictionary. XMP
+              wird im PDF/A-Modus geschrieben, wo es Pflicht ist.
             </td>
           </tr>
           <tr>
             <td>Archivfeste Ausgabe mit Standardschrift</td>
             <td>
               Standard-14-Schriften werden ohne <code>FontFile</code> referenziert, also nicht
-              eingebettet. Langlebige Ausgabe braucht <code>registerFont()</code> mit einer TTF.
+              eingebettet, und fast-pdf liefert keine eigene Schrift mit. PDF/A braucht deshalb
+              <code>registerFont()</code> mit einer TTF für <b>allen</b> Text —
+              <code>pdfA()</code> verweigert sonst das Rendern.
+            </td>
+          </tr>
+          <tr>
+            <td>Rechnungs-XML erzeugen oder validieren</td>
+            <td>
+              <code>fast-pdf/zugferd</code> baut den hybriden <b>Container</b>. Das CII-XML —
+              EN-16931-Geschäftsregeln, Umsatzsteuerkategorien, Codelisten — kommt von dir; erzeuge
+              und validiere es mit einer E-Rechnungs-Library.
             </td>
           </tr>
           <tr>
@@ -4653,11 +5550,16 @@ try {
             <td>只能<b>追加</b>页面，不能修改。导入页面中的文本无法更改；加密的源文件会被拒绝。</td>
           </tr>
           <tr>
-            <td>PDF/A</td>
+            <td>PDF/A-1、PDF/A-2、PDF/A-3a</td>
             <td>
-              目前不支持。<b>计划于 1.1 推出</b>，与 ZUGFeRD/Factur-X
-              一起通过可选子路径提供。当前输出不是 PDF/A：没有 XMP、没有
-              OutputIntent，默认也不嵌入字体。
+              通过
+              <a class="text-(--accent) no-underline hover:underline" href="#pdfa"
+                ><code>fast-pdf/pdfa</code></a
+              >（计划于 1.1 推出）<b>支持 PDF/A-3b 与 -3u</b>。不支持第 1、2
+              部分（电子发票需要的是第 3 部分），A 级则需要带标签 PDF。PDF/A 不能与加密、<code
+                >append()</code
+              >
+              或 CMYK JPEG 同时使用。
             </td>
           </tr>
           <tr>
@@ -4677,16 +5579,25 @@ try {
             </td>
           </tr>
           <tr>
-            <td>XMP 元数据</td>
+            <td>PDF/A 之外的 XMP 元数据</td>
             <td>
-              只写入传统的 <code>/Info</code> 字典。XMP 写入器属于计划在 1.1 进行的 PDF/A 工作。
+              普通文档只包含传统的 <code>/Info</code> 字典。XMP 在 PDF/A
+              模式下写入，因为那里是必需的。
             </td>
           </tr>
           <tr>
             <td>使用默认字体的可归档输出</td>
             <td>
-              标准 14 字体以不含 <code>FontFile</code> 的方式引用，即不嵌入。需要长期保存的输出须用
-              <code>registerFont()</code> 注册 TTF 字体。
+              标准 14 字体以不含 <code>FontFile</code> 的方式引用，即不嵌入，而 fast-pdf
+              本身不附带任何字体。因此 PDF/A 要求<b>所有</b>文本都使用通过
+              <code>registerFont()</code> 注册的 TTF 字体——否则 <code>pdfA()</code> 会拒绝渲染。
+            </td>
+          </tr>
+          <tr>
+            <td>生成或校验发票 XML</td>
+            <td>
+              <code>fast-pdf/zugferd</code> 只构建混合格式的<b>容器</b>。CII XML——EN&nbsp;16931
+              业务规则、增值税类别、代码表——需由你提供；请使用电子发票库来生成并校验它。
             </td>
           </tr>
           <tr>
@@ -4737,13 +5648,13 @@ try {
 
     <section id="performance" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">19</span>Performance
+        <span class="mr-2.5 font-normal text-(--muted)">21</span>Performance
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">19</span>Performance
+        <span class="mr-2.5 font-normal text-(--muted)">21</span>Performance
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">19</span>性能
+        <span class="mr-2.5 font-normal text-(--muted)">21</span>性能
       </h2>
 
       <p data-lang="en">
@@ -4886,13 +5797,13 @@ try {
 
     <section id="ergebnis" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">20</span>See it rendered
+        <span class="mr-2.5 font-normal text-(--muted)">22</span>See it rendered
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">20</span>So sieht’s aus
+        <span class="mr-2.5 font-normal text-(--muted)">22</span>So sieht’s aus
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">20</span>效果展示
+        <span class="mr-2.5 font-normal text-(--muted)">22</span>效果展示
       </h2>
 
       <p data-lang="en">
@@ -4961,13 +5872,13 @@ try {
 
     <section id="templates" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">21</span>Templates &amp; AI skill
+        <span class="mr-2.5 font-normal text-(--muted)">23</span>Templates &amp; AI skill
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">21</span>Templates &amp; AI-Skill
+        <span class="mr-2.5 font-normal text-(--muted)">23</span>Templates &amp; AI-Skill
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">21</span>模板与 AI 技能
+        <span class="mr-2.5 font-normal text-(--muted)">23</span>模板与 AI 技能
       </h2>
 
       <p data-lang="en">
@@ -5115,7 +6026,7 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
     <!-- Changelog: bewusst nur auf Englisch — Release-Notes werden nicht übersetzt,
      damit sie 1:1 der CHANGELOG.md des Repos entsprechen. -->
     <section id="changelog" class="doc-section">
-      <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">22</span>Changelog</h2>
+      <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">24</span>Changelog</h2>
 
       <p class="text-(--muted)">
         Release notes, newest first — kept in English so they match <code>CHANGELOG.md</code> in the
@@ -5128,6 +6039,90 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
       </p>
 
       <details class="fold" open>
+        <summary>
+          <span class="fold-head"
+            ><b class="text-[13px] text-(--ink)">1.1.0</b
+            ><span class="ml-auto tabular-nums">2026-11-27</span></span
+          ><span class="fold-peek"
+            ><span class="fold-peek-text"
+              >Purely additive: two new entry points for PDF/A-3 and ZUGFeRD/Factur-X, one new error
+              code, no change to anything 1.0.0 froze.</span
+            ></span
+          >
+        </summary>
+        <div class="cl-body">
+          <p class="cl-note">
+            Planned as <b>1.1.0</b>, not on npm yet. Purely additive: two new entry points, one new
+            error code, no change to anything 1.0.0 froze.
+          </p>
+          <p class="cl-h">Added</p>
+          <ul class="cl-list">
+            <li>
+              <b>PDF/A-3 output — <code>fast-pdf/pdfa</code>.</b> <code>pdfA(doc)</code> turns a
+              document into PDF/A-3b (or <code>-3u</code> with <code>{ conformance: "U" }</code>):
+              an XMP metadata stream mirrored from the document’s <code>metadata</code> and an sRGB
+              output intent. At render time it refuses, with a message that says what to change, the
+              non-embedded built-in fonts, a character the font has no glyph for,
+              <code>encrypt</code>, <code>append()</code> and CMYK JPEGs. Signature fields and PAdES
+              signing keep working.
+            </li>
+            <li>
+              <b>Embedded files.</b> <code>pdfA(doc).attach({ … })</code> embeds a file as an
+              associated file of the document. This is the only way fast-pdf writes an embedded
+              file, and it is not reachable from the main entry.
+            </li>
+            <li>
+              <b>ZUGFeRD / Factur-X — <code>fast-pdf/zugferd</code>.</b>
+              <code>facturX(doc, xml, { profile })</code> builds the hybrid e-invoice container:
+              PDF/A-3, the XML embedded as <code>factur-x.xml</code> (<code>xrechnung.xml</code> for
+              XRECHNUNG), <code>/AFRelationship</code> from the specification’s profile matrix, and
+              the four <code>fx:</code> XMP properties. All six profiles. The XML is yours: fast-pdf
+              checks that it is a CII invoice whose guideline ID matches the profile, and does not
+              create or validate invoice data.
+            </li>
+            <li>
+              <b>The sRGB profile is bundled</b> — 456 bytes, CC0 — as data in the code, so PDF/A
+              works in browsers, on edge runtimes and under every bundler.
+            </li>
+            <li>
+              <b>New error code <code>PDFA_VIOLATION</code></b
+              >, thrown by <code>render()</code>
+              when PDF/A mode is on and the document contains something PDF/A does not allow.
+            </li>
+            <li>
+              <b><code>markdown(source, { codeFont })</code></b> — the family for inline code and
+              code blocks (default <code>"courier"</code>). Needed in PDF/A documents, where the
+              built-in Courier cannot be used.
+            </li>
+            <li>
+              <b>Two independent validators in CI.</b> veraPDF must report three documents compliant
+              — the example invoice (PDF/A-3b, 146/146 rules), a document using every feature PDF/A
+              mode allows at level U (148/148), and a PAdES-signed PDF/A-3b — and must report an
+              ordinary document as non-compliant. Mustang, the reference ZUGFeRD implementation,
+              must report the example invoice valid, including its XML.
+            </li>
+          </ul>
+          <p class="cl-h">Changed</p>
+          <ul class="cl-list">
+            <li>
+              The core grows by 145 bytes min+gzip (<code>fast-pdf</code> 49,078&nbsp;B) for the
+              seam the new entry points attach to. Next to the core, <code>fast-pdf/pdfa</code> adds
+              3.3&nbsp;KB and <code>fast-pdf/zugferd</code> 4.2&nbsp;KB; a document that imports
+              neither pays nothing more.
+            </li>
+          </ul>
+          <p class="cl-h">Not included</p>
+          <ul class="cl-list">
+            <li>
+              <b>No bundled font</b> — register a TrueType font for all text.
+              <b>No invoice XML generation or validation.</b> No PDF/A-1, PDF/A-2 or level A (tagged
+              PDF).
+            </li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="fold">
         <summary>
           <span class="fold-head"
             ><b class="text-[13px] text-(--ink)">1.0.0</b
@@ -6171,7 +7166,7 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
      Beispieltabelle erzeugt damit ein echtes PDF im Browser des Lesers. -->
 <script type="module">
   const { attachTablePdfButton, downloadTablePDF, tableToPDF, tableToRows } = (() => {
-// dist/chunk-R7WNVCVF.js
+// dist/chunk-XQM2OZXJ.js
 var FastPDFError = class extends Error {
   constructor(message, code = "INVALID_ARGUMENT") {
     super(message);
@@ -6289,146 +7284,6 @@ function textString(s) {
   }
   return new PDFString(out);
 }
-function contentDigest(chunks) {
-  const lanes = [2166136261, 3735928559, 2654435769, 2246822507];
-  const mult = [16777619, 16777621, 16777623, 16777625];
-  for (const chunk of chunks) {
-    for (let i = 0; i < chunk.length; i++) {
-      const b = chunk[i];
-      for (let l = 0; l < 4; l++) {
-        lanes[l] = Math.imul((lanes[l] ^ b) >>> 0, mult[l]) >>> 0;
-      }
-    }
-  }
-  return lanes.map((v) => (v >>> 0).toString(16).padStart(8, "0")).join("");
-}
-async function encryptStrings(value, encrypt) {
-  if (value instanceof PDFString) {
-    return new HexString(bytesToHex(await encrypt(latin1Bytes(value.value))));
-  }
-  if (value instanceof HexString) {
-    return new HexString(bytesToHex(await encrypt(hexToBytes(value.value))));
-  }
-  if (Array.isArray(value)) {
-    const out = [];
-    for (const item of value) out.push(await encryptStrings(item, encrypt));
-    return out;
-  }
-  if (value !== null && typeof value === "object" && !(value instanceof Ref) && !(value instanceof Name)) {
-    const out = {};
-    for (const [k, v] of Object.entries(value)) {
-      if (v !== void 0) out[k] = await encryptStrings(v, encrypt);
-    }
-    return out;
-  }
-  return value;
-}
-var PDFWriter = class {
-  /** Object bodies indexed by object number (index 0 unused — object 0 is the free head). */
-  bodies = [null];
-  /** Allocate an object number without a body yet (for circular references). */
-  reserve() {
-    this.bodies.push(null);
-    return new Ref(this.bodies.length - 1);
-  }
-  /** Provide the body for a previously reserved object. */
-  fill(ref, body) {
-    if (this.bodies[ref.num] != null) {
-      throw new Error(`Object ${ref.num} already written`);
-    }
-    this.bodies[ref.num] = body instanceof Uint8Array ? { kind: "raw", bytes: body } : { kind: "value", value: body };
-  }
-  /** Register a complete object and return its reference. */
-  add(body) {
-    const ref = this.reserve();
-    this.fill(ref, body);
-    return ref;
-  }
-  /** Register a stream object (dict + raw data). The /Length entry is added automatically. */
-  addStream(dict, data) {
-    const ref = this.reserve();
-    this.fillStream(ref, dict, data);
-    return ref;
-  }
-  fillStream(ref, dict, data) {
-    if (this.bodies[ref.num] != null) {
-      throw new Error(`Object ${ref.num} already written`);
-    }
-    this.bodies[ref.num] = { kind: "stream", dict, data };
-  }
-  /** Serialize one object body to its final bytes, applying encryption when active. */
-  async serializeBody(num3, body, enc) {
-    const encryptThis = enc !== void 0 && num3 !== enc.exemptObject;
-    if (body.kind === "raw") return body.bytes;
-    if (body.kind === "value") {
-      const value = encryptThis ? await encryptStrings(body.value, enc.encrypt) : body.value;
-      return latin1Bytes(serialize(value));
-    }
-    const dict = encryptThis ? await encryptStrings(body.dict, enc.encrypt) : body.dict;
-    const data = encryptThis ? await enc.encrypt(body.data) : body.data;
-    const head = latin1Bytes(serialize({ ...dict, Length: data.length }) + "\nstream\n");
-    const tail = latin1Bytes("\nendstream");
-    const out = new Uint8Array(head.length + data.length + tail.length);
-    out.set(head, 0);
-    out.set(data, head.length);
-    out.set(tail, head.length + data.length);
-    return out;
-  }
-  /** Assemble the final PDF file. */
-  async finalize(root, info, enc) {
-    const chunks = [];
-    let offset = 0;
-    const push = (bytes) => {
-      chunks.push(bytes);
-      offset += bytes.length;
-    };
-    push(latin1Bytes("%PDF-1.7\n%\xE2\xE3\xCF\xD3\n"));
-    const offsets = [0];
-    for (let num3 = 1; num3 < this.bodies.length; num3++) {
-      const body = this.bodies[num3];
-      if (body === null || body === void 0) {
-        throw new Error(`Object ${num3} was reserved but never written`);
-      }
-      offsets.push(offset);
-      push(latin1Bytes(`${num3} 0 obj
-`));
-      push(await this.serializeBody(num3, body, enc));
-      push(latin1Bytes("\nendobj\n"));
-    }
-    const xrefOffset = offset;
-    const size = this.bodies.length;
-    let xref = `xref
-0 ${size}
-0000000000 65535 f 
-`;
-    for (let num3 = 1; num3 < size; num3++) {
-      xref += `${String(offsets[num3]).padStart(10, "0")} 00000 n 
-`;
-    }
-    const id = new HexString(contentDigest(chunks));
-    const trailer = {
-      Size: size,
-      Root: root,
-      Info: info,
-      Encrypt: enc !== void 0 ? new Ref(enc.exemptObject) : void 0,
-      ID: [id, id]
-    };
-    xref += `trailer
-${serialize(trailer)}
-startxref
-${xrefOffset}
-%%EOF
-`;
-    push(latin1Bytes(xref));
-    const out = new Uint8Array(offset);
-    let pos = 0;
-    for (const c of chunks) {
-      out.set(c, pos);
-      pos += c.length;
-    }
-    return out;
-  }
-};
 function supportsCompression() {
   return typeof CompressionStream !== "undefined";
 }
@@ -6469,280 +7324,6 @@ async function inflate(data, maxBytes = Infinity) {
   }
   return out;
 }
-function supportsEncryption() {
-  const c = globalThis.crypto;
-  return !!c && !!c.subtle && typeof c.getRandomValues === "function";
-}
-function subtle() {
-  if (!supportsEncryption()) {
-    throw new FastPDFError(
-      "Encryption requires the Web Crypto API, which this runtime does not provide",
-      "ENCRYPTION_UNSUPPORTED"
-    );
-  }
-  return globalThis.crypto.subtle;
-}
-function randomBytes(n) {
-  const b = new Uint8Array(n);
-  globalThis.crypto.getRandomValues(b);
-  return b;
-}
-function concat(...parts) {
-  let len = 0;
-  for (const p of parts) len += p.length;
-  const out = new Uint8Array(len);
-  let o = 0;
-  for (const p of parts) {
-    out.set(p, o);
-    o += p.length;
-  }
-  return out;
-}
-var bs = (u) => u;
-async function sha(bits, data) {
-  return new Uint8Array(await subtle().digest(`SHA-${bits}`, bs(data)));
-}
-async function aesCbcNoPad(key, iv, data) {
-  const ck = await subtle().importKey("raw", bs(key), "AES-CBC", false, ["encrypt"]);
-  const ct = new Uint8Array(await subtle().encrypt({ name: "AES-CBC", iv: bs(iv) }, ck, bs(data)));
-  return ct.subarray(0, data.length);
-}
-async function aesv3(key, data) {
-  const iv = randomBytes(16);
-  const ck = await subtle().importKey("raw", bs(key), "AES-CBC", false, ["encrypt"]);
-  const ct = new Uint8Array(await subtle().encrypt({ name: "AES-CBC", iv: bs(iv) }, ck, bs(data)));
-  return concat(iv, ct);
-}
-var ZERO_IV = new Uint8Array(16);
-var EMPTY = new Uint8Array(0);
-async function hash2B(password, salt, udata) {
-  let k = await sha(256, concat(password, salt, udata));
-  let e = EMPTY;
-  for (let round = 0; round < 64 || e[e.length - 1] > round - 32; round++) {
-    const block = concat(password, k, udata);
-    const k1 = new Uint8Array(block.length * 64);
-    for (let i = 0; i < 64; i++) k1.set(block, i * block.length);
-    e = await aesCbcNoPad(k.subarray(0, 16), k.subarray(16, 32), k1);
-    let sum = 0;
-    for (let i = 0; i < 16; i++) sum += e[i];
-    const mod = sum % 3;
-    k = await sha(mod === 0 ? 256 : mod === 1 ? 384 : 512, e);
-  }
-  return k.subarray(0, 32);
-}
-function passwordBytes(pw) {
-  return new TextEncoder().encode(pw).subarray(0, 127);
-}
-function permissionBits(p) {
-  const on = (v) => v !== false;
-  let bits = 4294963392;
-  if (on(p?.printing)) bits |= 1 << 2;
-  if (on(p?.modifying)) bits |= 1 << 3;
-  if (on(p?.copying)) bits |= 1 << 4;
-  if (on(p?.annotating)) bits |= 1 << 5;
-  if (on(p?.fillingForms)) bits |= 1 << 8;
-  if (on(p?.extractingForAccessibility)) bits |= 1 << 9;
-  if (on(p?.assembling)) bits |= 1 << 10;
-  if (on(p?.highQualityPrinting)) bits |= 1 << 11;
-  return bits | 0;
-}
-async function createSecurityHandler(opts) {
-  subtle();
-  let owner = opts.ownerPassword ?? opts.userPassword ?? "";
-  if ((opts.userPassword ?? "") === "" && owner === "") {
-    if (opts.permissions === void 0) {
-      throw new FastPDFError(
-        "encrypt requires a userPassword, an ownerPassword or permissions",
-        "INVALID_ARGUMENT"
-      );
-    }
-    owner = bytesToHex(randomBytes(32));
-  }
-  const userPw = passwordBytes(opts.userPassword ?? "");
-  const ownerPw = passwordBytes(owner);
-  const fileKey = randomBytes(32);
-  const uvs = randomBytes(8);
-  const uks = randomBytes(8);
-  const U = concat(await hash2B(userPw, uvs, EMPTY), uvs, uks);
-  const UE = await aesCbcNoPad(await hash2B(userPw, uks, EMPTY), ZERO_IV, fileKey);
-  const ovs = randomBytes(8);
-  const oks = randomBytes(8);
-  const O = concat(await hash2B(ownerPw, ovs, U), ovs, oks);
-  const OE = await aesCbcNoPad(await hash2B(ownerPw, oks, U), ZERO_IV, fileKey);
-  const P = permissionBits(opts.permissions);
-  const perms = new Uint8Array(16);
-  perms[0] = P & 255;
-  perms[1] = P >> 8 & 255;
-  perms[2] = P >> 16 & 255;
-  perms[3] = P >> 24 & 255;
-  perms[4] = perms[5] = perms[6] = perms[7] = 255;
-  perms[8] = 84;
-  perms[9] = 97;
-  perms[10] = 100;
-  perms[11] = 98;
-  perms.set(randomBytes(4), 12);
-  const Perms = await aesCbcNoPad(fileKey, ZERO_IV, perms);
-  const dict = {
-    Filter: new Name("Standard"),
-    V: 5,
-    R: 6,
-    Length: 256,
-    CF: { StdCF: { CFM: new Name("AESV3"), AuthEvent: new Name("DocOpen"), Length: 32 } },
-    StmF: new Name("StdCF"),
-    StrF: new Name("StdCF"),
-    U: new HexString(bytesToHex(U)),
-    O: new HexString(bytesToHex(O)),
-    UE: new HexString(bytesToHex(UE)),
-    OE: new HexString(bytesToHex(OE)),
-    P,
-    Perms: new HexString(bytesToHex(Perms))
-  };
-  return { dict, encrypt: (data) => aesv3(fileKey, data) };
-}
-var ContentStream = class {
-  parts = [];
-  n(v) {
-    return fmtNumber(v);
-  }
-  save() {
-    this.parts.push("q");
-    return this;
-  }
-  restore() {
-    this.parts.push("Q");
-    return this;
-  }
-  fillColor(c) {
-    this.parts.push(`${this.n(c.r)} ${this.n(c.g)} ${this.n(c.b)} rg`);
-    return this;
-  }
-  strokeColor(c) {
-    this.parts.push(`${this.n(c.r)} ${this.n(c.g)} ${this.n(c.b)} RG`);
-    return this;
-  }
-  lineWidth(w) {
-    this.parts.push(`${this.n(w)} w`);
-    return this;
-  }
-  moveTo(x, y) {
-    this.parts.push(`${this.n(x)} ${this.n(y)} m`);
-    return this;
-  }
-  lineTo(x, y) {
-    this.parts.push(`${this.n(x)} ${this.n(y)} l`);
-    return this;
-  }
-  rect(x, y, w, h) {
-    this.parts.push(`${this.n(x)} ${this.n(y)} ${this.n(w)} ${this.n(h)} re`);
-    return this;
-  }
-  /** Cubic Bézier curve from the current point. */
-  curveTo(x1, y1, x2, y2, x3, y3) {
-    this.parts.push(
-      `${this.n(x1)} ${this.n(y1)} ${this.n(x2)} ${this.n(y2)} ${this.n(x3)} ${this.n(y3)} c`
-    );
-    return this;
-  }
-  closePath() {
-    this.parts.push("h");
-    return this;
-  }
-  /** Use the current path as a clipping path (non-zero winding), ending it. */
-  clip() {
-    this.parts.push("W n");
-    return this;
-  }
-  /** Activate a named ExtGState resource (e.g. for constant alpha). */
-  setGState(res) {
-    this.parts.push(`/${res} gs`);
-    return this;
-  }
-  /** Concatenate a transformation matrix to the CTM. */
-  transform(a, b, c, d, e, f) {
-    this.parts.push(
-      `${this.n(a)} ${this.n(b)} ${this.n(c)} ${this.n(d)} ${this.n(e)} ${this.n(f)} cm`
-    );
-    return this;
-  }
-  stroke() {
-    this.parts.push("S");
-    return this;
-  }
-  fill() {
-    this.parts.push("f");
-    return this;
-  }
-  fillAndStroke() {
-    this.parts.push("B");
-    return this;
-  }
-  /**
-   * Position the text cursor: `Td` normally, or a full text matrix when the
-   * glyphs have to be sheared (synthetic oblique for a missing italic cut).
-   * @param skew horizontal shear factor, i.e. tan(slant angle)
-   */
-  textPos(x, y, skew) {
-    return skew === 0 ? `${this.n(x)} ${this.n(y)} Td` : `1 0 ${this.n(skew)} 1 ${this.n(x)} ${this.n(y)} Tm`;
-  }
-  /**
-   * Show one line of text.
-   * @param encoded WinAnsi-encoded bytes as a latin1 string (one char = one byte)
-   * @param x,y baseline position in PDF space
-   * @param charSpace extra spacing per character code in points (Tc)
-   * @param skew horizontal shear factor for synthetic oblique (0 = upright)
-   */
-  text(encoded, x, y, fontRes, size, charSpace = 0, skew = 0) {
-    const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
-    const reset = charSpace !== 0 ? " 0 Tc" : "";
-    this.parts.push(
-      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} (${escapeString(encoded)}) Tj${reset} ET`
-    );
-    return this;
-  }
-  /**
-   * Show one line as a TJ array: strings interleaved with position
-   * adjustments in 1/1000 em (positive moves left — pass negative values
-   * to widen gaps, e.g. for justified text).
-   */
-  textTJ(parts, x, y, fontRes, size, charSpace = 0, skew = 0) {
-    const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
-    const reset = charSpace !== 0 ? " 0 Tc" : "";
-    const arr = parts.map((p) => typeof p === "number" ? this.n(p) : `(${escapeString(p)})`).join(" ");
-    this.parts.push(
-      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} [${arr}] TJ${reset} ET`
-    );
-    return this;
-  }
-  /** Draw an image XObject scaled to w×h at (x, y) = bottom-left corner. */
-  image(imageRes, x, y, w, h) {
-    this.parts.push(
-      `q ${this.n(w)} 0 0 ${this.n(h)} ${this.n(x)} ${this.n(y)} cm /${imageRes} Do Q`
-    );
-    return this;
-  }
-  /** Raw operator escape hatch for extensions. */
-  raw(ops) {
-    this.parts.push(ops);
-    return this;
-  }
-  /** Current position in the operator list, for later insertAt(). */
-  mark() {
-    return this.parts.length;
-  }
-  /**
-   * Insert operators at a previously taken mark() — used to paint
-   * backgrounds behind content whose height was unknown when it started.
-   */
-  insertAt(mark, ops) {
-    this.parts.splice(mark, 0, ...ops.parts);
-  }
-  get isEmpty() {
-    return this.parts.length === 0;
-  }
-  toBytes() {
-    return latin1Bytes(this.parts.join("\n"));
-  }
-};
 var TTFFont = class {
   constructor(bytes) {
     this.bytes = bytes;
@@ -7053,6 +7634,14 @@ var EmbeddedFont = class {
   /** glyph ID → first Unicode code point seen (for ToUnicode). */
   usedGlyphs = /* @__PURE__ */ new Map();
   scale;
+  /**
+   * The first code point drawn with this font that it has no glyph for, if
+   * any. Such text is set with glyph 0 (`.notdef`, usually an empty box) —
+   * harmless in an ordinary PDF, a violation in PDF/A.
+   */
+  get missingCodePoint() {
+    return this.usedGlyphs.get(0);
+  }
   get baseFont() {
     return `${this.subsetTag()}+${this.ttf.postScriptName}`;
   }
@@ -7194,7 +7783,429 @@ var EmbeddedFont = class {
   }
 };
 
-// dist/chunk-2P5YS42T.js
+// dist/chunk-E4XAZQCC.js
+function contentDigest(chunks) {
+  const lanes = [2166136261, 3735928559, 2654435769, 2246822507];
+  const mult = [16777619, 16777621, 16777623, 16777625];
+  for (const chunk of chunks) {
+    for (let i = 0; i < chunk.length; i++) {
+      const b = chunk[i];
+      for (let l = 0; l < 4; l++) {
+        lanes[l] = Math.imul((lanes[l] ^ b) >>> 0, mult[l]) >>> 0;
+      }
+    }
+  }
+  return lanes.map((v) => (v >>> 0).toString(16).padStart(8, "0")).join("");
+}
+async function encryptStrings(value, encrypt) {
+  if (value instanceof PDFString) {
+    return new HexString(bytesToHex(await encrypt(latin1Bytes(value.value))));
+  }
+  if (value instanceof HexString) {
+    return new HexString(bytesToHex(await encrypt(hexToBytes(value.value))));
+  }
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const item of value) out.push(await encryptStrings(item, encrypt));
+    return out;
+  }
+  if (value !== null && typeof value === "object" && !(value instanceof Ref) && !(value instanceof Name)) {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) {
+      if (v !== void 0) out[k] = await encryptStrings(v, encrypt);
+    }
+    return out;
+  }
+  return value;
+}
+var PDFWriter = class {
+  /** Object bodies indexed by object number (index 0 unused — object 0 is the free head). */
+  bodies = [null];
+  /** Allocate an object number without a body yet (for circular references). */
+  reserve() {
+    this.bodies.push(null);
+    return new Ref(this.bodies.length - 1);
+  }
+  /** Provide the body for a previously reserved object. */
+  fill(ref, body) {
+    if (this.bodies[ref.num] != null) {
+      throw new Error(`Object ${ref.num} already written`);
+    }
+    this.bodies[ref.num] = body instanceof Uint8Array ? { kind: "raw", bytes: body } : { kind: "value", value: body };
+  }
+  /** Register a complete object and return its reference. */
+  add(body) {
+    const ref = this.reserve();
+    this.fill(ref, body);
+    return ref;
+  }
+  /** Register a stream object (dict + raw data). The /Length entry is added automatically. */
+  addStream(dict, data) {
+    const ref = this.reserve();
+    this.fillStream(ref, dict, data);
+    return ref;
+  }
+  fillStream(ref, dict, data) {
+    if (this.bodies[ref.num] != null) {
+      throw new Error(`Object ${ref.num} already written`);
+    }
+    this.bodies[ref.num] = { kind: "stream", dict, data };
+  }
+  /** Serialize one object body to its final bytes, applying encryption when active. */
+  async serializeBody(num3, body, enc) {
+    const encryptThis = enc !== void 0 && num3 !== enc.exemptObject;
+    if (body.kind === "raw") return body.bytes;
+    if (body.kind === "value") {
+      const value = encryptThis ? await encryptStrings(body.value, enc.encrypt) : body.value;
+      return latin1Bytes(serialize(value));
+    }
+    const dict = encryptThis ? await encryptStrings(body.dict, enc.encrypt) : body.dict;
+    const data = encryptThis ? await enc.encrypt(body.data) : body.data;
+    const head = latin1Bytes(serialize({ ...dict, Length: data.length }) + "\nstream\n");
+    const tail = latin1Bytes("\nendstream");
+    const out = new Uint8Array(head.length + data.length + tail.length);
+    out.set(head, 0);
+    out.set(data, head.length);
+    out.set(tail, head.length + data.length);
+    return out;
+  }
+  /** Assemble the final PDF file. */
+  async finalize(root, info, enc) {
+    const chunks = [];
+    let offset = 0;
+    const push = (bytes) => {
+      chunks.push(bytes);
+      offset += bytes.length;
+    };
+    push(latin1Bytes("%PDF-1.7\n%\xE2\xE3\xCF\xD3\n"));
+    const offsets = [0];
+    for (let num3 = 1; num3 < this.bodies.length; num3++) {
+      const body = this.bodies[num3];
+      if (body === null || body === void 0) {
+        throw new Error(`Object ${num3} was reserved but never written`);
+      }
+      offsets.push(offset);
+      push(latin1Bytes(`${num3} 0 obj
+`));
+      push(await this.serializeBody(num3, body, enc));
+      push(latin1Bytes("\nendobj\n"));
+    }
+    const xrefOffset = offset;
+    const size = this.bodies.length;
+    let xref = `xref
+0 ${size}
+0000000000 65535 f 
+`;
+    for (let num3 = 1; num3 < size; num3++) {
+      xref += `${String(offsets[num3]).padStart(10, "0")} 00000 n 
+`;
+    }
+    const id = new HexString(contentDigest(chunks));
+    const trailer = {
+      Size: size,
+      Root: root,
+      Info: info,
+      Encrypt: enc !== void 0 ? new Ref(enc.exemptObject) : void 0,
+      ID: [id, id]
+    };
+    xref += `trailer
+${serialize(trailer)}
+startxref
+${xrefOffset}
+%%EOF
+`;
+    push(latin1Bytes(xref));
+    const out = new Uint8Array(offset);
+    let pos = 0;
+    for (const c of chunks) {
+      out.set(c, pos);
+      pos += c.length;
+    }
+    return out;
+  }
+};
+function supportsEncryption() {
+  const c = globalThis.crypto;
+  return !!c && !!c.subtle && typeof c.getRandomValues === "function";
+}
+function subtle() {
+  if (!supportsEncryption()) {
+    throw new FastPDFError(
+      "Encryption requires the Web Crypto API, which this runtime does not provide",
+      "ENCRYPTION_UNSUPPORTED"
+    );
+  }
+  return globalThis.crypto.subtle;
+}
+function randomBytes(n) {
+  const b = new Uint8Array(n);
+  globalThis.crypto.getRandomValues(b);
+  return b;
+}
+function concat(...parts) {
+  let len = 0;
+  for (const p of parts) len += p.length;
+  const out = new Uint8Array(len);
+  let o = 0;
+  for (const p of parts) {
+    out.set(p, o);
+    o += p.length;
+  }
+  return out;
+}
+var bs = (u) => u;
+async function sha(bits, data) {
+  return new Uint8Array(await subtle().digest(`SHA-${bits}`, bs(data)));
+}
+async function aesCbcNoPad(key, iv, data) {
+  const ck = await subtle().importKey("raw", bs(key), "AES-CBC", false, ["encrypt"]);
+  const ct = new Uint8Array(await subtle().encrypt({ name: "AES-CBC", iv: bs(iv) }, ck, bs(data)));
+  return ct.subarray(0, data.length);
+}
+async function aesv3(key, data) {
+  const iv = randomBytes(16);
+  const ck = await subtle().importKey("raw", bs(key), "AES-CBC", false, ["encrypt"]);
+  const ct = new Uint8Array(await subtle().encrypt({ name: "AES-CBC", iv: bs(iv) }, ck, bs(data)));
+  return concat(iv, ct);
+}
+var ZERO_IV = new Uint8Array(16);
+var EMPTY = new Uint8Array(0);
+async function hash2B(password, salt, udata) {
+  let k = await sha(256, concat(password, salt, udata));
+  let e = EMPTY;
+  for (let round = 0; round < 64 || e[e.length - 1] > round - 32; round++) {
+    const block = concat(password, k, udata);
+    const k1 = new Uint8Array(block.length * 64);
+    for (let i = 0; i < 64; i++) k1.set(block, i * block.length);
+    e = await aesCbcNoPad(k.subarray(0, 16), k.subarray(16, 32), k1);
+    let sum = 0;
+    for (let i = 0; i < 16; i++) sum += e[i];
+    const mod = sum % 3;
+    k = await sha(mod === 0 ? 256 : mod === 1 ? 384 : 512, e);
+  }
+  return k.subarray(0, 32);
+}
+function passwordBytes(pw) {
+  return new TextEncoder().encode(pw).subarray(0, 127);
+}
+function permissionBits(p) {
+  const on = (v) => v !== false;
+  let bits = 4294963392;
+  if (on(p?.printing)) bits |= 1 << 2;
+  if (on(p?.modifying)) bits |= 1 << 3;
+  if (on(p?.copying)) bits |= 1 << 4;
+  if (on(p?.annotating)) bits |= 1 << 5;
+  if (on(p?.fillingForms)) bits |= 1 << 8;
+  if (on(p?.extractingForAccessibility)) bits |= 1 << 9;
+  if (on(p?.assembling)) bits |= 1 << 10;
+  if (on(p?.highQualityPrinting)) bits |= 1 << 11;
+  return bits | 0;
+}
+async function createSecurityHandler(opts) {
+  subtle();
+  let owner = opts.ownerPassword ?? opts.userPassword ?? "";
+  if ((opts.userPassword ?? "") === "" && owner === "") {
+    if (opts.permissions === void 0) {
+      throw new FastPDFError(
+        "encrypt requires a userPassword, an ownerPassword or permissions",
+        "INVALID_ARGUMENT"
+      );
+    }
+    owner = bytesToHex(randomBytes(32));
+  }
+  const userPw = passwordBytes(opts.userPassword ?? "");
+  const ownerPw = passwordBytes(owner);
+  const fileKey = randomBytes(32);
+  const uvs = randomBytes(8);
+  const uks = randomBytes(8);
+  const U = concat(await hash2B(userPw, uvs, EMPTY), uvs, uks);
+  const UE = await aesCbcNoPad(await hash2B(userPw, uks, EMPTY), ZERO_IV, fileKey);
+  const ovs = randomBytes(8);
+  const oks = randomBytes(8);
+  const O = concat(await hash2B(ownerPw, ovs, U), ovs, oks);
+  const OE = await aesCbcNoPad(await hash2B(ownerPw, oks, U), ZERO_IV, fileKey);
+  const P = permissionBits(opts.permissions);
+  const perms = new Uint8Array(16);
+  perms[0] = P & 255;
+  perms[1] = P >> 8 & 255;
+  perms[2] = P >> 16 & 255;
+  perms[3] = P >> 24 & 255;
+  perms[4] = perms[5] = perms[6] = perms[7] = 255;
+  perms[8] = 84;
+  perms[9] = 97;
+  perms[10] = 100;
+  perms[11] = 98;
+  perms.set(randomBytes(4), 12);
+  const Perms = await aesCbcNoPad(fileKey, ZERO_IV, perms);
+  const dict = {
+    Filter: new Name("Standard"),
+    V: 5,
+    R: 6,
+    Length: 256,
+    CF: { StdCF: { CFM: new Name("AESV3"), AuthEvent: new Name("DocOpen"), Length: 32 } },
+    StmF: new Name("StdCF"),
+    StrF: new Name("StdCF"),
+    U: new HexString(bytesToHex(U)),
+    O: new HexString(bytesToHex(O)),
+    UE: new HexString(bytesToHex(UE)),
+    OE: new HexString(bytesToHex(OE)),
+    P,
+    Perms: new HexString(bytesToHex(Perms))
+  };
+  return { dict, encrypt: (data) => aesv3(fileKey, data) };
+}
+var ContentStream = class {
+  parts = [];
+  n(v) {
+    return fmtNumber(v);
+  }
+  save() {
+    this.parts.push("q");
+    return this;
+  }
+  restore() {
+    this.parts.push("Q");
+    return this;
+  }
+  fillColor(c) {
+    this.parts.push(`${this.n(c.r)} ${this.n(c.g)} ${this.n(c.b)} rg`);
+    return this;
+  }
+  strokeColor(c) {
+    this.parts.push(`${this.n(c.r)} ${this.n(c.g)} ${this.n(c.b)} RG`);
+    return this;
+  }
+  lineWidth(w) {
+    this.parts.push(`${this.n(w)} w`);
+    return this;
+  }
+  moveTo(x, y) {
+    this.parts.push(`${this.n(x)} ${this.n(y)} m`);
+    return this;
+  }
+  lineTo(x, y) {
+    this.parts.push(`${this.n(x)} ${this.n(y)} l`);
+    return this;
+  }
+  rect(x, y, w, h) {
+    this.parts.push(`${this.n(x)} ${this.n(y)} ${this.n(w)} ${this.n(h)} re`);
+    return this;
+  }
+  /** Cubic Bézier curve from the current point. */
+  curveTo(x1, y1, x2, y2, x3, y3) {
+    this.parts.push(
+      `${this.n(x1)} ${this.n(y1)} ${this.n(x2)} ${this.n(y2)} ${this.n(x3)} ${this.n(y3)} c`
+    );
+    return this;
+  }
+  closePath() {
+    this.parts.push("h");
+    return this;
+  }
+  /** Use the current path as a clipping path (non-zero winding), ending it. */
+  clip() {
+    this.parts.push("W n");
+    return this;
+  }
+  /** Activate a named ExtGState resource (e.g. for constant alpha). */
+  setGState(res) {
+    this.parts.push(`/${res} gs`);
+    return this;
+  }
+  /** Concatenate a transformation matrix to the CTM. */
+  transform(a, b, c, d, e, f) {
+    this.parts.push(
+      `${this.n(a)} ${this.n(b)} ${this.n(c)} ${this.n(d)} ${this.n(e)} ${this.n(f)} cm`
+    );
+    return this;
+  }
+  stroke() {
+    this.parts.push("S");
+    return this;
+  }
+  fill() {
+    this.parts.push("f");
+    return this;
+  }
+  fillAndStroke() {
+    this.parts.push("B");
+    return this;
+  }
+  /**
+   * Position the text cursor: `Td` normally, or a full text matrix when the
+   * glyphs have to be sheared (synthetic oblique for a missing italic cut).
+   * @param skew horizontal shear factor, i.e. tan(slant angle)
+   */
+  textPos(x, y, skew) {
+    return skew === 0 ? `${this.n(x)} ${this.n(y)} Td` : `1 0 ${this.n(skew)} 1 ${this.n(x)} ${this.n(y)} Tm`;
+  }
+  /**
+   * Show one line of text.
+   * @param encoded WinAnsi-encoded bytes as a latin1 string (one char = one byte)
+   * @param x,y baseline position in PDF space
+   * @param charSpace extra spacing per character code in points (Tc)
+   * @param skew horizontal shear factor for synthetic oblique (0 = upright)
+   */
+  text(encoded, x, y, fontRes, size, charSpace = 0, skew = 0) {
+    const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
+    const reset = charSpace !== 0 ? " 0 Tc" : "";
+    this.parts.push(
+      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} (${escapeString(encoded)}) Tj${reset} ET`
+    );
+    return this;
+  }
+  /**
+   * Show one line as a TJ array: strings interleaved with position
+   * adjustments in 1/1000 em (positive moves left — pass negative values
+   * to widen gaps, e.g. for justified text).
+   */
+  textTJ(parts, x, y, fontRes, size, charSpace = 0, skew = 0) {
+    const tc = charSpace !== 0 ? `${this.n(charSpace)} Tc ` : "";
+    const reset = charSpace !== 0 ? " 0 Tc" : "";
+    const arr = parts.map((p) => typeof p === "number" ? this.n(p) : `(${escapeString(p)})`).join(" ");
+    this.parts.push(
+      `BT /${fontRes} ${this.n(size)} Tf ${tc}${this.textPos(x, y, skew)} [${arr}] TJ${reset} ET`
+    );
+    return this;
+  }
+  /** Draw an image XObject scaled to w×h at (x, y) = bottom-left corner. */
+  image(imageRes, x, y, w, h) {
+    this.parts.push(
+      `q ${this.n(w)} 0 0 ${this.n(h)} ${this.n(x)} ${this.n(y)} cm /${imageRes} Do Q`
+    );
+    return this;
+  }
+  /** Raw operator escape hatch for extensions. */
+  raw(ops) {
+    this.parts.push(ops);
+    return this;
+  }
+  /** Current position in the operator list, for later insertAt(). */
+  mark() {
+    return this.parts.length;
+  }
+  /**
+   * Insert operators at a previously taken mark() — used to paint
+   * backgrounds behind content whose height was unknown when it started.
+   */
+  insertAt(mark, ops) {
+    this.parts.splice(mark, 0, ...ops.parts);
+  }
+  get isEmpty() {
+    return this.parts.length === 0;
+  }
+  toBytes() {
+    return latin1Bytes(this.parts.join("\n"));
+  }
+};
+
+// dist/chunk-NVHQREUS.js
+var hooks = /* @__PURE__ */ new WeakMap();
+function hookOf(document2) {
+  return hooks.get(document2);
+}
+
+// dist/chunk-R3UZDNMY.js
 var PDFStream = class {
   constructor(dict, raw) {
     this.dict = dict;
@@ -12394,6 +13405,8 @@ var PDFDocument = class {
   sigFieldNames = /* @__PURE__ */ new Set();
   /** Non-null while decorators run: overrides the "current page". */
   activePage = null;
+  /** Family for Markdown code, set per markdown() call (MarkdownOptions.codeFont). */
+  mdCodeFont = "courier";
   /** Pages whose content comes from an appended PDF, resolved at render time. */
   imported = /* @__PURE__ */ new Map();
   constructor(options = {}) {
@@ -13752,6 +14765,7 @@ var PDFDocument = class {
    * fast-pdf's core performs no I/O. Table cells render as plain text.
    */
   markdown(source, options = {}) {
+    this.mdCodeFont = options.codeFont ?? "courier";
     this.renderMarkdown(parseMarkdown(source), options);
     return this;
   }
@@ -13810,7 +14824,7 @@ var PDFDocument = class {
     }
   }
   mdCodeBlock(text, base) {
-    const font = this.resolveFontStyle("courier", false, false);
+    const font = this.resolveFontStyle(this.mdCodeFont, false, false);
     const size = base * 0.9;
     const step = size * 1.35;
     const pad = 8;
@@ -13897,7 +14911,7 @@ var PDFDocument = class {
       }
     };
     for (const run of runs) {
-      const font = run.code ? this.resolveFontStyle("courier", false, false) : this.resolveFontStyle(
+      const font = run.code ? this.resolveFontStyle(this.mdCodeFont, false, false) : this.resolveFontStyle(
         this.defaults.font,
         (opts.bold ?? false) || !!run.bold,
         !!run.italic
@@ -14394,6 +15408,18 @@ var PDFDocument = class {
     this.applyBackground();
     this.applyDecorators();
     const writer = new PDFWriter();
+    const hook = hookOf(this);
+    if (hook !== void 0) {
+      const fonts = /* @__PURE__ */ new Map();
+      for (const page of this.pages) {
+        for (const { font } of page.fontsUsed.values()) fonts.set(font.key, font);
+      }
+      hook.begin({
+        fonts: [...fonts.values()],
+        encrypted: this.encryption !== void 0,
+        imported: this.imported.size > 0
+      });
+    }
     const fontRefs = /* @__PURE__ */ new Map();
     for (const page of this.pages) {
       for (const { font } of page.fontsUsed.values()) {
@@ -14405,6 +15431,7 @@ var PDFDocument = class {
     const imageRefs = /* @__PURE__ */ new Map();
     for (const entry of this.images.values()) {
       const parsed = entry.format === "jpeg" ? parseJpeg(entry.bytes) : entry.format === "png" ? await parsePng(entry.bytes) : entry.format === "gif" ? await parseGif(entry.bytes) : await parseWebp(entry.bytes);
+      hook?.image(parsed);
       let smaskRef;
       if (parsed.smask) {
         smaskRef = writer.addStream(
@@ -14530,6 +15557,7 @@ var PDFDocument = class {
     }
     writer.fill(pagesRef, { Type: new Name("Pages"), Kids: pageRefs, Count: pageRefs.length });
     const outlinesRef = this.buildOutlines(writer, refOf);
+    const date = this.metadata.creationDate ?? (this.deterministic ? void 0 : /* @__PURE__ */ new Date());
     const catalogRef = writer.add({
       Type: new Name("Catalog"),
       Pages: pagesRef,
@@ -14541,9 +15569,10 @@ var PDFDocument = class {
       ViewerPreferences: this.metadata.title !== void 0 ? { DisplayDocTitle: true } : void 0,
       // SigFlags: bit 1 = SignaturesExist. A real signature also sets bit 2
       // (AppendOnly, value 3) so viewers preserve the signed bytes.
-      AcroForm: acroFields.length > 0 ? { Fields: acroFields, SigFlags: signState !== void 0 ? 3 : 1 } : void 0
+      AcroForm: acroFields.length > 0 ? { Fields: acroFields, SigFlags: signState !== void 0 ? 3 : 1 } : void 0,
+      ...hook?.catalog(writer, { metadata: this.metadata, language: this.language, date })
     });
-    const infoRef = writer.add(this.buildInfo());
+    const infoRef = writer.add(this.buildInfo(date));
     if (this.encryption !== void 0 && !supportsEncryption() && this.encryption.onUnsupported === "skip") {
       const plain = await writer.finalize(catalogRef, infoRef);
       return signState !== void 0 ? embedSignature(plain, signState) : plain;
@@ -14797,9 +15826,8 @@ var PDFDocument = class {
     });
     return rootRef;
   }
-  buildInfo() {
+  buildInfo(date) {
     const m = this.metadata;
-    const date = m.creationDate ?? (this.deterministic ? void 0 : /* @__PURE__ */ new Date());
     const stamp = date !== void 0 ? textString(formatDate(date)) : void 0;
     return {
       Title: m.title !== void 0 ? textString(m.title) : void 0,

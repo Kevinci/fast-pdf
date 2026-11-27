@@ -16,7 +16,8 @@ import { describe, expect, it } from "vitest";
  * release. If this test fails and you did not intend to change the public
  * API, the change is wrong, not the list.
  *
- * `fast-pdf/internal` is deliberately absent: it is not covered by SemVer.
+ * `fast-pdf/pdfa` and `fast-pdf/zugferd` joined in 1.1 and are pinned the same
+ * way. `fast-pdf/internal` is deliberately absent: it is not covered by SemVer.
  */
 
 const CORE = [
@@ -100,6 +101,26 @@ const DOM = [
   "tableToRows",
 ];
 
+const PDFA = [
+  "PdfAAttachment",
+  "PdfAConformance",
+  "PdfAHandle",
+  "PdfAOptions",
+  "PdfAOutputProfile",
+  "PdfARelationship",
+  "pdfA",
+];
+
+const ZUGFERD = [
+  "FacturXOptions",
+  "FacturXProfile",
+  "PdfAConformance",
+  "PdfAHandle",
+  "PdfAOutputProfile",
+  "PdfARelationship",
+  "facturX",
+];
+
 /** The public methods of `PDFDocument` — the API most callers ever touch. */
 const DOCUMENT_METHODS = [
   "addPage",
@@ -150,7 +171,12 @@ const DOCUMENT_METHODS = [
 const entry = (relative: string): string =>
   fileURLToPath(new URL(`../src/${relative}`, import.meta.url));
 
-const files = { core: entry("index.ts"), dom: entry("dom/index.ts") };
+const files = {
+  core: entry("index.ts"),
+  dom: entry("dom/index.ts"),
+  pdfa: entry("pdfa/index.ts"),
+  zugferd: entry("zugferd/index.ts"),
+};
 
 const program = ts.createProgram(Object.values(files), {
   target: ts.ScriptTarget.ES2022,
@@ -204,6 +230,14 @@ describe("frozen API surface (values and types)", () => {
 
   it("fast-pdf/dom exports exactly the frozen list", () => {
     expect(exportNames(files.dom)).toEqual([...DOM].sort(byCodePoint));
+  });
+
+  it("fast-pdf/pdfa exports exactly the frozen list", () => {
+    expect(exportNames(files.pdfa)).toEqual([...PDFA].sort(byCodePoint));
+  });
+
+  it("fast-pdf/zugferd exports exactly the frozen list", () => {
+    expect(exportNames(files.zugferd)).toEqual([...ZUGFERD].sort(byCodePoint));
   });
 
   it("PDFDocument keeps every public method it shipped with", () => {

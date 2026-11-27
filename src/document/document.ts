@@ -37,6 +37,7 @@ import { parseXml } from "../svg/parse";
 import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
 import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
+import { hookOf } from "./hooks";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
 import { assertFinite, assertNonNegative, blockedUriScheme } from "../validate";
@@ -328,6 +329,12 @@ export interface MarkdownOptions {
    * resolver, images render as their alt text (fast-pdf's core does no I/O).
    */
   resolveImage?: (src: string) => Uint8Array | ArrayBuffer | undefined;
+  /**
+   * Font family for inline code and code blocks: a standard family or one
+   * registered via registerFont(). Default: "courier". Set this in PDF/A
+   * documents, where the built-in Courier cannot be used.
+   */
+  codeFont?: string;
 }
 
 export interface LineOptions extends OpacityOption {
@@ -667,6 +674,8 @@ export class PDFDocument {
   private readonly sigFieldNames = new Set<string>();
   /** Non-null while decorators run: overrides the "current page". */
   private activePage: Page | null = null;
+  /** Family for Markdown code, set per markdown() call (MarkdownOptions.codeFont). */
+  private mdCodeFont = "courier";
   /** Pages whose content comes from an appended PDF, resolved at render time. */
   private readonly imported = new Map<Page, ImportedPage>();
 
@@ -2246,6 +2255,7 @@ export class PDFDocument {
    * fast-pdf's core performs no I/O. Table cells render as plain text.
    */
   markdown(source: string, options: MarkdownOptions = {}): this {
+    this.mdCodeFont = options.codeFont ?? "courier";
     this.renderMarkdown(parseMarkdown(source), options);
     return this;
   }
@@ -2311,7 +2321,7 @@ export class PDFDocument {
   }
 
   private mdCodeBlock(text: string, base: number): void {
-    const font = this.resolveFontStyle("courier", false, false);
+    const font = this.resolveFontStyle(this.mdCodeFont, false, false);
     const size = base * 0.9;
     const step = size * 1.35;
     const pad = 8;
@@ -2431,7 +2441,7 @@ export class PDFDocument {
     };
     for (const run of runs) {
       const font = run.code
-        ? this.resolveFontStyle("courier", false, false)
+        ? this.resolveFontStyle(this.mdCodeFont, false, false)
         : this.resolveFontStyle(
             this.defaults.font,
             (opts.bold ?? false) || !!run.bold,
@@ -3030,6 +3040,21 @@ export class PDFDocument {
     this.applyDecorators();
     const writer = new PDFWriter();
 
+    // An opt-in mode (fast-pdf/pdfa) gets to refuse the document before a
+    // single object is written, so a violation never yields a half-built file.
+    const hook = hookOf(this);
+    if (hook !== undefined) {
+      const fonts = new Map<string, Font>();
+      for (const page of this.pages) {
+        for (const { font } of page.fontsUsed.values()) fonts.set(font.key, font);
+      }
+      hook.begin({
+        fonts: [...fonts.values()],
+        encrypted: this.encryption !== undefined,
+        imported: this.imported.size > 0,
+      });
+    }
+
     // Fonts: one object set per unique font across all pages. Each font
     // writes its own objects (Type1 dict, or Type0 + subsetted FontFile2).
     const fontRefs = new Map<string, Ref>();
@@ -3052,6 +3077,7 @@ export class PDFDocument {
             : entry.format === "gif"
               ? await parseGif(entry.bytes)
               : await parseWebp(entry.bytes);
+      hook?.image(parsed);
       let smaskRef: Ref | undefined;
       if (parsed.smask) {
         smaskRef = writer.addStream(
@@ -3202,6 +3228,10 @@ export class PDFDocument {
     writer.fill(pagesRef, { Type: new Name("Pages"), Kids: pageRefs, Count: pageRefs.length });
 
     const outlinesRef = this.buildOutlines(writer, refOf);
+    // An explicit creationDate is always honoured. Otherwise a wall-clock date
+    // is embedded — unless the document is deterministic, in which case the
+    // timestamp is omitted so identical content renders to identical bytes.
+    const date = this.metadata.creationDate ?? (this.deterministic ? undefined : new Date());
     const catalogRef = writer.add({
       Type: new Name("Catalog"),
       Pages: pagesRef,
@@ -3217,8 +3247,9 @@ export class PDFDocument {
         acroFields.length > 0
           ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 }
           : undefined,
+      ...hook?.catalog(writer, { metadata: this.metadata, language: this.language, date }),
     });
-    const infoRef = writer.add(this.buildInfo());
+    const infoRef = writer.add(this.buildInfo(date));
 
     if (
       this.encryption !== undefined &&
@@ -3529,12 +3560,8 @@ export class PDFDocument {
     return rootRef;
   }
 
-  private buildInfo(): Record<string, PDFValue | undefined> {
+  private buildInfo(date: Date | undefined): Record<string, PDFValue | undefined> {
     const m = this.metadata;
-    // An explicit creationDate is always honoured. Otherwise a wall-clock date
-    // is embedded — unless the document is deterministic, in which case the
-    // timestamp is omitted so identical content renders to identical bytes.
-    const date = m.creationDate ?? (this.deterministic ? undefined : new Date());
     const stamp = date !== undefined ? textString(formatDate(date)) : undefined;
     return {
       Title: m.title !== undefined ? textString(m.title) : undefined,

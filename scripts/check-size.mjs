@@ -28,9 +28,13 @@ import { build } from "esbuild";
 
 /** min+gzip budgets in bytes, per public entry point. */
 const BUDGETS = {
-  index: 50_500, // fast-pdf           — measured 48,933 B at 1.0.0
+  index: 50_500, // fast-pdf           — measured 48,933 B at 1.0.0, 49,078 B at 1.1.0
   dom: 54_000, // fast-pdf/dom         — measured 52,263 B at 1.0.0
   internal: 7_300, // fast-pdf/internal — measured 6,949 B at 1.0.0
+  // Measured standalone, i.e. including the font code they share with the
+  // core. Next to `fast-pdf` in one bundle they add far less: see README.
+  pdfa: 7_600, // fast-pdf/pdfa       — measured 7,343 B at 1.1.0
+  zugferd: 8_500, // fast-pdf/zugferd — measured 8,246 B at 1.1.0
 };
 
 async function measure(file) {

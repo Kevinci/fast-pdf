@@ -6,6 +6,69 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.1.0] — 2026-11-27
+
+PDF/A-3 and ZUGFeRD / Factur-X. Purely additive: two new entry points, one new error
+code, no change to anything 1.0.0 froze.
+
+### Added
+
+- **PDF/A-3 output — `fast-pdf/pdfa`.** `pdfA(doc)` turns a document into
+  PDF/A-3b (or `-3u` with `{ conformance: "U" }`), the ISO 19005-3 archive
+  format. It writes what the standard requires and fast-pdf otherwise omits —
+  an XMP metadata stream with the PDF/A identification, mirrored from the
+  document's `metadata`, and an output intent with an sRGB ICC profile — and
+  it refuses, at render time and with a message that says what to change,
+  everything that cannot be conforming: the non-embedded built-in fonts, a
+  character the font has no glyph for (`.notdef`), `encrypt`, `append()` and
+  CMYK JPEGs. Signature fields and PAdES signing keep working.
+- **Embedded files.** `pdfA(doc).attach({ filename, data, mimeType,
+relationship?, description?, modDate? })` embeds a file as an associated
+  file of the document (`/EmbeddedFiles` name tree, `/AF`, `/AFRelationship`).
+  This is the only way fast-pdf writes an embedded file, and it is not
+  reachable from the main entry.
+- **ZUGFeRD / Factur-X — `fast-pdf/zugferd`.** `facturX(doc, xml, { profile })`
+  builds the hybrid e-invoice container: PDF/A-3, the XML embedded as
+  `factur-x.xml` (`xrechnung.xml` for XRECHNUNG) with MIME type `text/xml`,
+  `/AFRelationship` from the specification's profile matrix, and the four
+  `fx:` XMP properties with their PDF/A extension schema. All six profiles
+  (MINIMUM, BASIC WL, BASIC, EN 16931, EXTENDED, XRECHNUNG). The XML is
+  yours: fast-pdf checks that it is a CII invoice whose guideline ID matches
+  the profile, and does not create or validate invoice data.
+- **The sRGB profile is bundled** — `sRGB-v2-micro.icc`, 456 bytes, CC0 — as
+  data in the code, not as a file beside it, so PDF/A works in browsers, on
+  edge runtimes and under every bundler.
+- **New error code `PDFA_VIOLATION`**, thrown by `render()` when PDF/A mode is
+  on and the document contains something PDF/A does not allow.
+- **`markdown(source, { codeFont })`** — the family for inline code and code
+  blocks (default `"courier"`). Needed in PDF/A documents, where the built-in
+  Courier cannot be used.
+- **Two independent validators in CI.** veraPDF, the reference PDF/A
+  validator, must report three documents compliant — the example invoice
+  (PDF/A-3b, 146/146 rules), a document using every feature PDF/A mode allows
+  at level U (148/148), and a PAdES-signed PDF/A-3b — and must report an
+  ordinary document as non-compliant, so a misconfigured validator cannot
+  pass for a green one. Mustang, the reference ZUGFeRD implementation, must
+  report the example invoice valid, including its XML.
+- `examples/zugferd.ts` (`npm run zugferd`): a complete Factur-X invoice.
+
+### Changed
+
+- The core grows by 145 bytes min+gzip (`fast-pdf` 49,078 B) for the seam the
+  new entry points attach to. Next to the core, `fast-pdf/pdfa` adds 3.3 KB
+  and `fast-pdf/zugferd` 4.2 KB; a document that imports neither pays nothing
+  more. Both have their own size budget.
+- The security promise is restated for the new entry points (`SECURITY.md`):
+  nothing in the main entry embeds a file; the opt-in entries store exactly
+  the bytes the caller passes.
+
+### Not included
+
+- **No bundled font.** PDF/A needs every font embedded, and fast-pdf ships
+  none: register a TrueType font for all text.
+- **No invoice XML generation or validation.**
+- PDF/A-1, PDF/A-2 and level A (tagged PDF).
+
 ## [1.0.0] — 2026-11-27
 
 The stability release. **No breaking changes against 0.9.0** — code that runs

@@ -682,6 +682,52 @@ ohne ausdrückliche Freigabe tun:
 
 ---
 
+## 6b. Stufe 1.1.0 — PDF/A-3 und ZUGFeRD-Container
+
+### Stand 27.11.2026 — implementiert und extern abgenommen
+
+| Baustein                  | Stand  | Wo                                                                                                                                                                           |
+| ------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Erweiterungspunkt im Kern | fertig | `src/document/hooks.ts` — drei Aufrufstellen in `render()` (vor dem Schreiben, je Bild, am Katalog). Nicht exportiert. Kostet den Kern rund 150 B min+gzip.                  |
+| XMP-Writer                | fertig | `src/pdfa/xmp.ts` — `pdfaid`, `dc`, `pdf`, `xmp`, Extension-Schema-Generator; UTF-8, ungefiltert.                                                                            |
+| OutputIntent + ICC        | fertig | `src/pdfa/icc.ts` — `sRGB-v2-micro.icc` (456 B, CC0) als Base64 im Code; eigenes RGB-Profil per Option.                                                                      |
+| Modus-Schalter + Verbote  | fertig | `src/pdfa/mode.ts` — Standard-14-Fonts, `.notdef`, `encrypt`, `append()`, CMYK-JPEG werfen `PDFA_VIOLATION`.                                                                 |
+| Eingebettete Dateien      | fertig | `pdfA(doc).attach()` — Filespec mit `/F`, `/UF`, `/AFRelationship`, `/Desc`; `/Params` mit `/Size` und `/ModDate`; `/Names → /EmbeddedFiles`; `/AF` am Katalog.              |
+| Factur-X-Aufsatz          | fertig | `src/zugferd/index.ts` — sechs Profile, fester Dateiname, `/AFRelationship`-Matrix (DE), `fx:`-XMP samt Extension-Schema, Plausibilitätsprüfung des XML.                     |
+| Tests                     | fertig | `tests/pdfa.test.ts`; Oberflächen beider Einstiegspunkte in `tests/api-surface.test.ts` festgehalten.                                                                        |
+| **veraPDF**               | grün   | CI-Job `pdfa`, veraPDF 1.30.4: Rechnung 3b **146/146** Regeln; Voll-Dokument 3u **148/148** (und 3b 146/146); signiertes 3b **146/146**; Kontrolldokument korrekt abgelehnt. |
+| **Mustang**               | grün   | CI-Job `zugferd`, Mustang 2.26.0: `examples/zugferd.ts` ist `valid` — Container, XMP und das XML gegen die EN-16931-Regeln.                                                  |
+
+**Die Schätzung „3–8 PT bis veraPDF grün“ ist nicht eingetreten:** der erste
+Lauf war grün, ohne einen einzigen Befund. Zwei offene Fragen der Recherche
+sind damit beantwortet: **D8** (der Subsetter entfernt `cmap` — für
+`CIDFontType2` unkritisch) und **F11** (die PAdES-Signatur genügt `[6.4.3]`).
+
+**Abweichungen vom Plan, bewusst:**
+
+- **Zwei Einstiegspunkte statt einem.** `fast-pdf/pdfa` (PDF/A-3 und Anhänge)
+  und `fast-pdf/zugferd` (Factur-X obendrauf). Archivierung ohne Rechnung ist
+  ein eigener Anwendungsfall und soll nicht hinter einem Rechnungsnamen liegen.
+- **Funktionen statt Methoden:** `pdfA(doc)` / `facturX(doc, xml, opts)` statt
+  `doc.attachFacturX(...)`. Eine Methode an `PDFDocument` läge im Kernbundle
+  und wäre vom Haupteinstieg aus erreichbar — beides widerspricht §3.
+- **„Null Byte im Kern“ ist nicht erreichbar.** Ein Subpath braucht eine
+  Stelle, an der er eingreift.
+- **Stufe 3u ist enthalten** und abgenommen, statt „fast geschenkt“ zu bleiben.
+- **Signieren ist im PDF/A-Modus erlaubt** — nach Abnahme durch veraPDF.
+- **Neu im Kern:** `markdown(src, { codeFont })`, weil Markdown-Code sonst fest
+  in Courier gesetzt wird und im PDF/A-Modus scheitert.
+
+**Weiterhin offen:**
+
+- Die Factur-X-Spezifikation liegt nicht vor (§7.1); die BR-HYBRID-Regeln
+  stammen aus der Sekundärquelle. Mustang bestätigt das Ergebnis, ersetzt aber
+  nicht den Normtext.
+- Abgenommen sind die Dokumente in der CI, nicht jedes denkbare Dokument.
+  WebP-Bilder und 16-Bit-PNGs kommen im Voll-Dokument nicht vor.
+
+---
+
 ## 7. Belegstatus und Beobachtungsposten
 
 Dieses Dokument stützt sich auf `docs/research/`. Drei Einschränkungen, die
@@ -713,6 +759,7 @@ beide Richtungen.
 
 | Datum      | Änderung                                                                                                                                                                                                                                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-11-27 | §6b ergänzt: 1.1.0 (PDF/A-3, ZUGFeRD-Container) implementiert; veraPDF und Mustang in CI grün.                                                                                                                                                                                                                                                                                             |
 | 2026-11-27 | Stand 1.0.0 ergänzt (§6a): alle Restpunkte erledigt, Size-Gate, Typ-Oberflächentest und Release-Workflow hinzugekommen.                                                                                                                                                                                                                                                                    |
 | 2026-10-30 | Erstfassung. Scope 1.0.0 festgelegt, Konflikte A und B aufgelöst, ZUGFeRD auf 1.1 hinter `fast-pdf/zugferd`.                                                                                                                                                                                                                                                                               |
 | 2026-10-30 | **Fünf Entscheidungen des Nutzers festgeschrieben** (§6, E1–E5): API-Schnitt als 0.9.0, Zwischenrelease bestätigt, Bundle-Zahl korrigieren statt `document.ts` aufspalten, ZUGFeRD nur als Container, keine mitgelieferte Schrift. Neuer §6a mit den fünf Arbeitspaketen für 0.9.0. Korrektur zur Coverage-Aussage ergänzt: es sind vier Schwellen, und _lines_ ist die einzige, die hält. |

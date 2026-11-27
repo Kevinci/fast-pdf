@@ -1,6 +1,6 @@
 {
   "name": "fast-pdf",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Fast, dependency-free, direct-to-PDF generation for Node, Bun, Deno, browsers and edge runtimes.",
   "license": "MIT",
   "author": "Kevin Imig <kevinci.coding@gmail.com>",
@@ -41,6 +41,18 @@
       "import": "./dist/internal.js",
       "default": "./dist/internal.js"
     },
+    "./pdfa": {
+      "types": "./dist/pdfa.d.ts",
+      "browser": "./dist/pdfa.browser.js",
+      "import": "./dist/pdfa.js",
+      "default": "./dist/pdfa.js"
+    },
+    "./zugferd": {
+      "types": "./dist/zugferd.d.ts",
+      "browser": "./dist/zugferd.browser.js",
+      "import": "./dist/zugferd.js",
+      "default": "./dist/zugferd.js"
+    },
     "./package.json": "./package.json"
   },
   "bin": {
@@ -69,7 +81,13 @@
     "serverless",
     "edge",
     "invoice",
-    "table"
+    "table",
+    "pdfa",
+    "pdf-a",
+    "zugferd",
+    "factur-x",
+    "e-invoice",
+    "xrechnung"
   ],
   "scripts": {
     "build": "rm -rf dist && tsup",
@@ -90,6 +108,7 @@
     "report": "tsx examples/report.ts",
     "cv": "tsx examples/cv.ts",
     "append": "tsx examples/append.ts",
+    "zugferd": "tsx examples/zugferd.ts",
     "hostile": "node scripts/make-hostile-pdf.mjs",
     "audit": "node scripts/audit-pdf.mjs",
     "docs:demo": "npm run build && tailwindcss -i docs/demo.input.css -o docs/demo.tw.css --minify && node docs/build-demo.mjs"

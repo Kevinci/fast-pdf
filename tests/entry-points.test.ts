@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import * as core from "../src/index";
 import * as dom from "../src/dom/index";
 import * as internal from "../src/internal";
+import * as pdfa from "../src/pdfa/index";
+import * as zugferd from "../src/zugferd/index";
 
 /**
  * The public surface, written down.
@@ -63,6 +65,18 @@ describe("entry points", () => {
   it("fast-pdf/internal exports the engine", () => {
     expect(names(internal)).toEqual(INTERNAL);
     expect(typeof internal.PDFWriter).toBe("function");
+  });
+
+  it("fast-pdf/pdfa and fast-pdf/zugferd each export one function", () => {
+    expect(names(pdfa)).toEqual(["pdfA"]);
+    expect(names(zugferd)).toEqual(["facturX"]);
+  });
+
+  it("nothing that can embed a file is reachable from the main entry", () => {
+    // The security promise: an embedded file needs an explicit opt-in import.
+    expect(names(core)).not.toContain("pdfA");
+    expect(names(core)).not.toContain("facturX");
+    expect(Object.getOwnPropertyNames(core.PDFDocument.prototype)).not.toContain("attach");
   });
 
   it("the main entry no longer carries what moved to a subpath", () => {

@@ -21,6 +21,7 @@ export type FastPDFErrorCode =
   | "UNSUPPORTED_PDF"
   | "DECOMPRESSION_UNSUPPORTED"
   | "NO_TABLE"
+  | "PDFA_VIOLATION"
   | "INTERNAL";
 
 export class FastPDFError extends Error {
