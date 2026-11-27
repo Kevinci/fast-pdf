@@ -275,6 +275,13 @@
     font-size: 12.5px;
     font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
+  /* Tabellen mit Fließtext in der ersten Spalte (Grenzen, SemVer-Zusage). */
+  table.api.prose td:first-child {
+    white-space: normal;
+    min-width: 11em;
+    font-size: inherit;
+    font-family: inherit;
+  }
 </style>
 <style>
   __TW_CSS__
@@ -291,7 +298,7 @@
     <div class="font-mono text-[15px] font-bold tracking-[-0.02em]">
       fast-<span class="text-(--accent)">pdf</span>
     </div>
-    <div class="mb-3 font-mono text-xs text-(--muted)">v0.8.0 · Demo &amp; Guide</div>
+    <div class="mb-3 font-mono text-xs text-(--muted)">v1.0.0 · Demo &amp; Guide</div>
 
     <label class="mb-4 block">
       <span class="sr-only">Language / Sprache / 语言</span>
@@ -307,6 +314,7 @@
 
     <ul data-lang="en" class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
       <li><a class="nav-link" href="#schnellstart">Quick start</a></li>
+      <li><a class="nav-link" href="#stabilitaet">Entry points &amp; stability</a></li>
       <li><a class="nav-link" href="#ausgabe">Output formats</a></li>
       <li><a class="nav-link" href="#seiten">Pages &amp; breaks</a></li>
       <li><a class="nav-link" href="#text">Text &amp; typography</a></li>
@@ -364,6 +372,7 @@
           ></span
         ></a>
       </li>
+      <li><a class="nav-link" href="#limitations">Limitations</a></li>
       <li><a class="nav-link" href="#performance">Performance</a></li>
       <li><a class="nav-link" href="#ergebnis">See it rendered</a></li>
       <li><a class="nav-link" href="#templates">Templates &amp; AI skill</a></li>
@@ -371,6 +380,7 @@
     </ul>
     <ul data-lang="de" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
       <li><a class="nav-link" href="#schnellstart">Schnellstart</a></li>
+      <li><a class="nav-link" href="#stabilitaet">Einstiegspunkte &amp; Stabilität</a></li>
       <li><a class="nav-link" href="#ausgabe">Ausgabeformate</a></li>
       <li><a class="nav-link" href="#seiten">Seiten &amp; Umbrüche</a></li>
       <li><a class="nav-link" href="#text">Text &amp; Typografie</a></li>
@@ -428,6 +438,7 @@
           ></span
         ></a>
       </li>
+      <li><a class="nav-link" href="#limitations">Grenzen</a></li>
       <li><a class="nav-link" href="#performance">Performance</a></li>
       <li><a class="nav-link" href="#ergebnis">So sieht’s aus</a></li>
       <li><a class="nav-link" href="#templates">Templates &amp; AI-Skill</a></li>
@@ -435,6 +446,7 @@
     </ul>
     <ul data-lang="zh" hidden class="m-0 list-none p-0 max-md:flex max-md:flex-wrap max-md:gap-1">
       <li><a class="nav-link" href="#schnellstart">快速开始</a></li>
+      <li><a class="nav-link" href="#stabilitaet">入口点与稳定性</a></li>
       <li><a class="nav-link" href="#ausgabe">输出格式</a></li>
       <li><a class="nav-link" href="#seiten">页面与分页</a></li>
       <li><a class="nav-link" href="#text">文本与排版</a></li>
@@ -492,6 +504,7 @@
           ></span
         ></a>
       </li>
+      <li><a class="nav-link" href="#limitations">局限</a></li>
       <li><a class="nav-link" href="#performance">性能</a></li>
       <li><a class="nav-link" href="#ergebnis">效果展示</a></li>
       <li><a class="nav-link" href="#templates">模板与 AI 技能</a></li>
@@ -552,20 +565,20 @@
       <ul data-lang="en" class="m-0 flex list-none flex-wrap gap-2.5 p-0">
         <li class="stat"><b>0</b>runtime dependencies</li>
         <li class="stat"><b>~1.6&nbsp;ms</b>3-page document</li>
-        <li class="stat"><b>245</b>tests · 94&nbsp;% coverage</li>
-        <li class="stat"><b>~187&nbsp;KB</b>ESM, tree-shakeable</li>
+        <li class="stat"><b>554</b>tests · 94&nbsp;% line coverage</li>
+        <li class="stat"><b>~49&nbsp;KB</b>min+gzip</li>
       </ul>
       <ul data-lang="de" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
         <li class="stat"><b>0</b>Runtime-Dependencies</li>
         <li class="stat"><b>~1,6&nbsp;ms</b>3-Seiten-Dokument</li>
-        <li class="stat"><b>245</b>Tests · 94&nbsp;% Coverage</li>
-        <li class="stat"><b>~187&nbsp;KB</b>ESM, tree-shakeable</li>
+        <li class="stat"><b>554</b>Tests · 94&nbsp;% Lines-Coverage</li>
+        <li class="stat"><b>~49&nbsp;KB</b>min+gzip</li>
       </ul>
       <ul data-lang="zh" hidden class="m-0 flex list-none flex-wrap gap-2.5 p-0">
         <li class="stat"><b>0</b>运行时依赖</li>
         <li class="stat"><b>~1.6&nbsp;ms</b>3 页文档</li>
-        <li class="stat"><b>245</b>项测试 · 94&nbsp;% 覆盖率</li>
-        <li class="stat"><b>~187&nbsp;KB</b>ESM，支持 Tree-Shaking</li>
+        <li class="stat"><b>554</b>项测试 · 94&nbsp;% 行覆盖率</li>
+        <li class="stat"><b>~49&nbsp;KB</b>min+gzip</li>
       </ul>
 
       <p data-lang="en" class="mt-8 mb-1 text-[15px] font-semibold">
@@ -604,13 +617,21 @@
           </tr>
           <tr>
             <td>Tables</td>
-            <td>built-in: repeating headers, spans, JSON → table</td>
+            <td>built-in: repeating headers, col/row spans, JSON → table</td>
             <td>hand-built from flexbox views</td>
             <td>HTML/CSS</td>
           </tr>
           <tr>
+            <td>Existing HTML table</td>
+            <td>
+              <b><code>tableToPDF()</code></b> — reads the DOM incl. computed CSS
+            </td>
+            <td>—</td>
+            <td>re-renders the whole page</td>
+          </tr>
+          <tr>
             <td>Signature form fields</td>
-            <td>✓ AcroForm</td>
+            <td>✓ AcroForm, plus PAdES-B signing</td>
             <td>—</td>
             <td>✗ printed output has no form fields</td>
           </tr>
@@ -622,7 +643,7 @@
           </tr>
           <tr>
             <td>Bundle</td>
-            <td>~187 KB ESM, tree-shakeable</td>
+            <td><b>~49 KB</b> min+gzip (~282 KB ESM)</td>
             <td>several 100 KB + the framework</td>
             <td>n/a</td>
           </tr>
@@ -656,13 +677,21 @@
           </tr>
           <tr>
             <td>Tabellen</td>
-            <td>eingebaut: wiederholende Header, Spans, JSON → Tabelle</td>
+            <td>eingebaut: wiederholende Header, Col-/Row-Spans, JSON → Tabelle</td>
             <td>selbst bauen aus Flexbox-Views</td>
             <td>HTML/CSS</td>
           </tr>
           <tr>
+            <td>Bestehende HTML-Tabelle</td>
+            <td>
+              <b><code>tableToPDF()</code></b> — liest das DOM inkl. berechnetem CSS
+            </td>
+            <td>—</td>
+            <td>rendert die ganze Seite neu</td>
+          </tr>
+          <tr>
             <td>Signatur-Formularfelder</td>
-            <td>✓ AcroForm</td>
+            <td>✓ AcroForm, dazu PAdES-B-Signatur</td>
             <td>—</td>
             <td>✗ Druckausgabe hat keine Formularfelder</td>
           </tr>
@@ -674,7 +703,7 @@
           </tr>
           <tr>
             <td>Bundle</td>
-            <td>~187 KB ESM, tree-shakeable</td>
+            <td><b>~49 KB</b> min+gzip (~282 KB ESM)</td>
             <td>mehrere 100 KB + Framework</td>
             <td>n/a</td>
           </tr>
@@ -713,8 +742,17 @@
             <td>HTML/CSS</td>
           </tr>
           <tr>
+            <td>现有 HTML 表格</td>
+            <td>
+              <b><code>tableToPDF()</code></b
+              >——读取 DOM，包括计算后的 CSS
+            </td>
+            <td>—</td>
+            <td>重新渲染整个页面</td>
+          </tr>
+          <tr>
             <td>签名表单字段</td>
-            <td>✓ AcroForm</td>
+            <td>✓ AcroForm，另支持 PAdES-B 签名</td>
             <td>—</td>
             <td>✗ 打印输出没有表单字段</td>
           </tr>
@@ -726,7 +764,7 @@
           </tr>
           <tr>
             <td>包体积</td>
-            <td>~187 KB ESM，可 Tree-Shaking</td>
+            <td><b>~49 KB</b> min+gzip（~282 KB ESM）</td>
             <td>数百 KB + 框架本身</td>
             <td>n/a</td>
           </tr>
@@ -1087,15 +1125,289 @@ await pdf.save("brief.pdf");</code></pre>
       </figure>
     </section>
 
-    <section id="ausgabe" class="doc-section">
+    <section id="stabilitaet" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">02</span>Output formats
+        <span class="mr-2.5 font-normal text-(--muted)">02</span>Entry points &amp; stability
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">02</span>Ausgabeformate
+        <span class="mr-2.5 font-normal text-(--muted)">02</span>Einstiegspunkte &amp; Stabilität
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">02</span>输出格式
+        <span class="mr-2.5 font-normal text-(--muted)">02</span>入口点与稳定性
+      </h2>
+
+      <p data-lang="en">
+        fast-pdf has four import paths. Which one you pick decides what ends up in your bundle — and
+        what you can rely on across upgrades:
+      </p>
+      <p data-lang="de" hidden>
+        fast-pdf hat vier Importpfade. Welchen du wählst, entscheidet, was in deinem Bundle landet —
+        und worauf du dich über Updates hinweg verlassen kannst:
+      </p>
+      <p data-lang="zh" hidden>
+        fast-pdf
+        有四个导入路径。选择哪一个，决定了哪些代码进入你的打包结果，以及升级时你可以依赖什么：
+      </p>
+
+      <div data-lang="en" class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>Import</th>
+            <th>What it is</th>
+            <th>Stability</th>
+          </tr>
+          <tr>
+            <td><b>fast-pdf</b></td>
+            <td>
+              <code>PDFDocument</code> and everything needed to build a document. This is the
+              package.
+            </td>
+            <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/dom</b></td>
+            <td>
+              <code>tableToPDF()</code> and friends — reads a <code>&lt;table&gt;</code> off the
+              page. <b>Browser only.</b>
+            </td>
+            <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/internal</b></td>
+            <td>
+              The engine below <code>PDFDocument</code>: <code>PDFWriter</code>,
+              <code>ContentStream</code>, <code>Name</code>, <code>serialize</code>, …
+            </td>
+            <td><b>none — may break any release</b></td>
+          </tr>
+          <tr>
+            <td>fast-pdf/browser</td>
+            <td>
+              The main entry, pre-resolved to the browser build, for bundlers that ignore
+              <code>"browser"</code>.
+            </td>
+            <td>SemVer</td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>Import</th>
+            <th>Was es ist</th>
+            <th>Stabilität</th>
+          </tr>
+          <tr>
+            <td><b>fast-pdf</b></td>
+            <td>
+              <code>PDFDocument</code> und alles, was man zum Bauen eines Dokuments braucht. Das ist
+              das Paket.
+            </td>
+            <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/dom</b></td>
+            <td>
+              <code>tableToPDF()</code> und Verwandte — liest eine <code>&lt;table&gt;</code> von
+              der Seite. <b>Nur im Browser.</b>
+            </td>
+            <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/internal</b></td>
+            <td>
+              Die Engine unter <code>PDFDocument</code>: <code>PDFWriter</code>,
+              <code>ContentStream</code>, <code>Name</code>, <code>serialize</code>, …
+            </td>
+            <td><b>keine — kann in jedem Release brechen</b></td>
+          </tr>
+          <tr>
+            <td>fast-pdf/browser</td>
+            <td>
+              Der Haupteinstieg, vorab auf den Browser-Build aufgelöst — für Bundler, die
+              <code>"browser"</code> ignorieren.
+            </td>
+            <td>SemVer</td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden class="overflow-x-auto">
+        <table class="api">
+          <tr>
+            <th>导入路径</th>
+            <th>内容</th>
+            <th>稳定性</th>
+          </tr>
+          <tr>
+            <td><b>fast-pdf</b></td>
+            <td><code>PDFDocument</code> 以及构建文档所需的一切。这就是这个包本身。</td>
+            <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/dom</b></td>
+            <td>
+              <code>tableToPDF()</code> 及相关函数——从页面上读取 <code>&lt;table&gt;</code>。<b
+                >仅限浏览器。</b
+              >
+            </td>
+            <td>SemVer</td>
+          </tr>
+          <tr>
+            <td><b>fast-pdf/internal</b></td>
+            <td>
+              <code>PDFDocument</code>
+              之下的引擎：<code>PDFWriter</code>、<code>ContentStream</code>、<code>Name</code>、<code>serialize</code>……
+            </td>
+            <td><b>无——任何版本都可能不兼容</b></td>
+          </tr>
+          <tr>
+            <td>fast-pdf/browser</td>
+            <td>
+              主入口，预先解析为浏览器构建，供忽略 <code>"browser"</code> 条件的打包工具使用。
+            </td>
+            <td>SemVer</td>
+          </tr>
+        </table>
+      </div>
+
+      <pre class="code-block"><code>import { PDFDocument, pdfInfo, FastPDFError } from "fast-pdf";
+import { tableToPDF, attachTablePdfButton } from "fast-pdf/dom";     // browser only
+import { PDFWriter, ContentStream } from "fast-pdf/internal";        // no SemVer promise</code></pre>
+
+      <h3 data-lang="en" class="doc-h3">What SemVer covers from 1.0.0 on</h3>
+      <h3 data-lang="de" hidden class="doc-h3">Was SemVer ab 1.0.0 abdeckt</h3>
+      <h3 data-lang="zh" hidden class="doc-h3">自 1.0.0 起 SemVer 涵盖的范围</h3>
+
+      <div data-lang="en" class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>Covered</th>
+            <th>Not covered</th>
+          </tr>
+          <tr>
+            <td>
+              Exported names, their signatures and their types in <code>fast-pdf</code>,
+              <code>fast-pdf/dom</code> and <code>fast-pdf/browser</code>. Code that compiles and
+              runs against 1.0.0 keeps doing so on every later 1.x; new exports may arrive in a
+              minor release.
+            </td>
+            <td>
+              <b>The bytes of the generated PDF.</b> Where a line breaks, how a column is measured,
+              how a coordinate is rounded may improve in a minor release — compare rendered
+              documents, not file hashes.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>FastPDFError</code> codes. Callers branch on <code>code</code>, so a code is not
+              renamed or given a new meaning within a major version; a new failure mode gets a new
+              code.
+            </td>
+            <td>
+              <b><code>fast-pdf/internal</code></b> — may change in any release, patch releases
+              included.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>Abgedeckt</th>
+            <th>Nicht abgedeckt</th>
+          </tr>
+          <tr>
+            <td>
+              Exportierte Namen, ihre Signaturen und ihre Typen in <code>fast-pdf</code>,
+              <code>fast-pdf/dom</code> und <code>fast-pdf/browser</code>. Code, der gegen 1.0.0
+              kompiliert und läuft, tut das mit jeder späteren 1.x weiter; neue Exporte können in
+              einem Minor-Release dazukommen.
+            </td>
+            <td>
+              <b>Die Bytes des erzeugten PDFs.</b> Wo eine Zeile umbricht, wie eine Spalte gemessen,
+              wie eine Koordinate gerundet wird, kann sich in einem Minor-Release verbessern —
+              vergleiche gerenderte Dokumente, keine Datei-Hashes.
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>FastPDFError</code>-Codes. Aufrufer verzweigen auf <code>code</code>, also wird
+              ein Code innerhalb einer Major-Version weder umbenannt noch umgedeutet; ein neuer
+              Fehlerfall bekommt einen neuen Code.
+            </td>
+            <td>
+              <b><code>fast-pdf/internal</code></b> — kann sich in jedem Release ändern, auch in
+              Patch-Releases.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>涵盖</th>
+            <th>不涵盖</th>
+          </tr>
+          <tr>
+            <td>
+              <code>fast-pdf</code>、<code>fast-pdf/dom</code> 与
+              <code>fast-pdf/browser</code> 导出的名称、函数签名及类型。基于 1.0.0
+              能编译并运行的代码，在之后所有 1.x 版本中依然可以；次版本可能新增导出。
+            </td>
+            <td>
+              <b>生成的 PDF 的字节内容。</b
+              >换行位置、列宽测量、坐标取整等细节可能在次版本中改进——请比较渲染后的文档，而不是文件哈希。
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <code>FastPDFError</code> 的错误码。调用方依据 <code>code</code>
+              分支处理，因此同一主版本内错误码不会被重命名或赋予新含义；新的失败情形会获得新的错误码。
+            </td>
+            <td>
+              <b><code>fast-pdf/internal</code></b
+              >——任何版本（包括补丁版本）都可能变更。
+            </td>
+          </tr>
+        </table>
+      </div>
+
+      <div data-lang="en" class="hint">
+        <b class="text-(--accent)">About <code>fast-pdf/internal</code>:</b> it exists for one case
+        — writing a PDF construct the document API does not offer (your own dictionary, annotation
+        or content-stream operators) without forking the package. It sits below the guard rails:
+        <code>ContentStream.raw()</code> appends operators verbatim, and
+        <code>serialize()</code> escapes only what you already wrapped in <code>PDFString</code> or
+        <code>Name</code> — so escape everything yourself. If you find yourself needing it, that is
+        worth an issue.
+      </div>
+      <div data-lang="de" hidden class="hint">
+        <b class="text-(--accent)">Zu <code>fast-pdf/internal</code>:</b> es gibt diesen Pfad für
+        genau einen Fall — ein PDF-Konstrukt zu schreiben, das die Dokument-API nicht anbietet
+        (eigenes Dictionary, eigene Annotation, eigene Content-Stream-Operatoren), ohne das Paket zu
+        forken. Er liegt unterhalb der Leitplanken: <code>ContentStream.raw()</code> hängt
+        Operatoren wörtlich an, und <code>serialize()</code> escaped nur, was du schon in
+        <code>PDFString</code> oder <code>Name</code> verpackt hast — escapen musst du selbst. Wer
+        ihn braucht, sollte ein Issue aufmachen.
+      </div>
+      <div data-lang="zh" hidden class="hint">
+        <b class="text-(--accent)">关于 <code>fast-pdf/internal</code>：</b
+        >它只为一种情形而存在——在不 fork 本包的前提下，写出文档 API 未提供的 PDF
+        结构（自定义字典、注释或内容流操作符）。它位于防护栏之下：<code>ContentStream.raw()</code>
+        会原样追加操作符，<code>serialize()</code> 只转义你已用 <code>PDFString</code> 或
+        <code>Name</code> 包装的内容——其余一切都需自行转义。如果你发现自己需要它，欢迎提一个 issue。
+      </div>
+    </section>
+
+    <section id="ausgabe" class="doc-section">
+      <h2 data-lang="en" class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">03</span>Output formats
+      </h2>
+      <h2 data-lang="de" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">03</span>Ausgabeformate
+      </h2>
+      <h2 data-lang="zh" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">03</span>输出格式
       </h2>
 
       <p data-lang="en">
@@ -1151,13 +1463,13 @@ return new Response(pdf.toStream(), {
 
     <section id="seiten" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">03</span>Pages &amp; breaks
+        <span class="mr-2.5 font-normal text-(--muted)">04</span>Pages &amp; breaks
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">03</span>Seiten &amp; Umbrüche
+        <span class="mr-2.5 font-normal text-(--muted)">04</span>Seiten &amp; Umbrüche
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">03</span>页面与分页
+        <span class="mr-2.5 font-normal text-(--muted)">04</span>页面与分页
       </h2>
 
       <p data-lang="en">
@@ -1247,13 +1559,13 @@ console.log(pdf.y);     // …… 或读取光标位置</code></pre>
 
     <section id="text" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">04</span>Text &amp; typography
+        <span class="mr-2.5 font-normal text-(--muted)">05</span>Text &amp; typography
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">04</span>Text &amp; Typografie
+        <span class="mr-2.5 font-normal text-(--muted)">05</span>Text &amp; Typografie
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">04</span>文本与排版
+        <span class="mr-2.5 font-normal text-(--muted)">05</span>文本与排版
       </h2>
 
       <p data-lang="en">
@@ -1352,13 +1664,13 @@ pdf.widthOfText("我有多宽？", { size: 12 });          // 只测量，不绘
 
     <section id="fonts" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">05</span>Custom fonts
+        <span class="mr-2.5 font-normal text-(--muted)">06</span>Custom fonts
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">05</span>Eigene Schriften
+        <span class="mr-2.5 font-normal text-(--muted)">06</span>Eigene Schriften
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">05</span>自定义字体
+        <span class="mr-2.5 font-normal text-(--muted)">06</span>自定义字体
       </h2>
 
       <p data-lang="en">
@@ -1410,30 +1722,42 @@ pdf.text("完整 Unicode — Ελληνικά, кириллица, 中文", { fo
 pdf.text("粗体文字", { font: "noto", bold: true });</code></pre>
 
       <div data-lang="en" class="hint">
-        <b class="text-(--accent)">Fallback rule:</b> If a variant is missing (e.g. italic),
-        fast-pdf falls back to the regular cut. The standard 14 fonts (Helvetica, Times, Courier)
-        need no embedding — zero extra bytes in the PDF.
+        <b class="text-(--accent)">Fallback rule:</b> a missing <b>bold</b> variant falls back to
+        the regular cut; a missing <b>italic</b> variant is slanted synthetically (12° oblique), so
+        italic text is never silently rendered upright. The standard 14 fonts (Helvetica, Times,
+        Courier) are not embedded — zero extra bytes, but not archivable (see
+        <a class="text-(--accent) no-underline hover:underline" href="#limitations">Limitations</a
+        >).
       </div>
       <div data-lang="de" hidden class="hint">
-        <b class="text-(--accent)">Fallback-Regel:</b> Fehlt eine Variante (z.&nbsp;B. kursiv),
-        fällt fast-pdf auf den regulären Schnitt zurück. Die Standard-14-Fonts (Helvetica, Times,
-        Courier) brauchen kein Embedding — null zusätzliche Bytes im PDF.
+        <b class="text-(--accent)">Fallback-Regel:</b> Fehlt die <b>fette</b> Variante, nimmt
+        fast-pdf den regulären Schnitt; fehlt die <b>kursive</b>, wird synthetisch geneigt (12°
+        oblique) — kursiver Text erscheint also nie stillschweigend aufrecht. Die Standard-14-Fonts
+        (Helvetica, Times, Courier) werden nicht eingebettet — null zusätzliche Bytes, aber nicht
+        archivfest (siehe
+        <a class="text-(--accent) no-underline hover:underline" href="#limitations">Grenzen</a>).
       </div>
       <div data-lang="zh" hidden class="hint">
-        <b class="text-(--accent)">回退规则：</b>缺少某个变体（如斜体）时，fast-pdf
-        会回退到常规字重。 标准 14 字体（Helvetica、Times、Courier）无需嵌入——PDF 中零额外字节。
+        <b class="text-(--accent)">回退规则：</b>缺少<b>粗体</b>变体时，fast-pdf
+        回退到常规字重；缺少<b>斜体</b>变体时，会合成倾斜（12°
+        斜体），因此斜体文本绝不会被悄悄渲染成正体。标准 14
+        字体（Helvetica、Times、Courier）不嵌入——PDF 中零额外字节，但不适合长期归档（参见<a
+          class="text-(--accent) no-underline hover:underline"
+          href="#limitations"
+          >局限</a
+        >）。
       </div>
     </section>
 
     <section id="layout" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">06</span>Layout engine
+        <span class="mr-2.5 font-normal text-(--muted)">07</span>Layout engine
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">06</span>Layout-Engine
+        <span class="mr-2.5 font-normal text-(--muted)">07</span>Layout-Engine
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">06</span>布局引擎
+        <span class="mr-2.5 font-normal text-(--muted)">07</span>布局引擎
       </h2>
 
       <p data-lang="en">
@@ -1522,13 +1846,13 @@ pdf.grid(
 
     <section id="tabellen" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">07</span>Tables
+        <span class="mr-2.5 font-normal text-(--muted)">08</span>Tables
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">07</span>Tabellen
+        <span class="mr-2.5 font-normal text-(--muted)">08</span>Tabellen
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">07</span>表格
+        <span class="mr-2.5 font-normal text-(--muted)">08</span>表格
       </h2>
 
       <p data-lang="en">
@@ -1719,18 +2043,18 @@ pdf.objectTable(orders, {           // …… 或完全自定义
 
     <section id="tabelle-pdf" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">08</span>HTML table → PDF<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">09</span>HTML table → PDF<span class="chip"
           >new</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">08</span>HTML-Tabelle → PDF<span
+        <span class="mr-2.5 font-normal text-(--muted)">09</span>HTML-Tabelle → PDF<span
           class="chip"
           >neu</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">08</span>HTML 表格 → PDF<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">09</span>HTML 表格 → PDF<span class="chip"
           >新</span
         >
       </h2>
@@ -1758,6 +2082,33 @@ pdf.objectTable(orders, {           // …… 或完全自定义
         直接读取 <code>&lt;table&gt;</code> 本身——结构<em>和</em>计算后的 CSS——生成真正的 PDF
         文本：可选中、可搜索、只有几 KB，且无需服务器。
       </p>
+
+      <div data-lang="en" class="hint">
+        <b class="text-(--accent)">Import from <code>fast-pdf/dom</code>:</b> since 0.9.0 the table
+        helpers live in their own entry point — they need a DOM, so a server bundle should never
+        carry them. <code>PDFDocument</code> stays in <code>fast-pdf</code>. See
+        <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet">Entry points</a
+        >.
+      </div>
+      <div data-lang="de" hidden class="hint">
+        <b class="text-(--accent)">Import aus <code>fast-pdf/dom</code>:</b> seit 0.9.0 liegen die
+        Tabellen-Helfer in einem eigenen Einstiegspunkt — sie brauchen ein DOM, ein Server-Bundle
+        soll sie nie mitschleppen. <code>PDFDocument</code> bleibt in <code>fast-pdf</code>. Siehe
+        <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet"
+          >Einstiegspunkte</a
+        >.
+      </div>
+      <div data-lang="zh" hidden class="hint">
+        <b class="text-(--accent)">从 <code>fast-pdf/dom</code> 导入：</b>自 0.9.0
+        起，表格辅助函数位于独立的入口点——它们需要 DOM，服务端打包不应包含它们。<code
+          >PDFDocument</code
+        >
+        仍在 <code>fast-pdf</code> 中。参见<a
+          class="text-(--accent) no-underline hover:underline"
+          href="#stabilitaet"
+          >入口点</a
+        >。
+      </div>
 
       <h3 data-lang="en" class="doc-h3">Try it</h3>
       <h3 data-lang="de" hidden class="doc-h3">Ausprobieren</h3>
@@ -1911,7 +2262,7 @@ pdf.objectTable(orders, {           // …… 或完全自定义
           </button>
         </div>
         <pre class="code-block" data-panel="react"><code>import { useRef } from "react";
-import { attachTablePdfButton, downloadTablePDF } from "fast-pdf";
+import { attachTablePdfButton, downloadTablePDF } from "fast-pdf/dom";
 
 export function RevenueTable({ rows }) {
   const table = useRef(null);
@@ -1951,7 +2302,7 @@ export function RevenueTable({ rows }) {
 }</code></pre>
         <pre class="code-block" data-panel="vue" hidden><code>&lt;script setup&gt;
 import { ref } from "vue";
-import { downloadTablePDF } from "fast-pdf";
+import { downloadTablePDF } from "fast-pdf/dom";
 
 const table = ref(null);
 
@@ -1996,7 +2347,7 @@ function download() {
 &lt;/table&gt;
 
 &lt;script type="module"&gt;
-  import { attachTablePdfButton } from "fast-pdf";
+  import { attachTablePdfButton } from "fast-pdf/dom";
 
   // Creates the button, puts it after the table and wires the click.
   attachTablePdfButton("#revenue", {
@@ -2022,7 +2373,7 @@ function download() {
           </button>
         </div>
         <pre class="code-block" data-panel="react"><code>import { useRef } from "react";
-import { attachTablePdfButton, downloadTablePDF } from "fast-pdf";
+import { attachTablePdfButton, downloadTablePDF } from "fast-pdf/dom";
 
 export function RevenueTable({ rows }) {
   const table = useRef(null);
@@ -2062,7 +2413,7 @@ export function RevenueTable({ rows }) {
 }</code></pre>
         <pre class="code-block" data-panel="vue" hidden><code>&lt;script setup&gt;
 import { ref } from "vue";
-import { downloadTablePDF } from "fast-pdf";
+import { downloadTablePDF } from "fast-pdf/dom";
 
 const table = ref(null);
 
@@ -2107,7 +2458,7 @@ function download() {
 &lt;/table&gt;
 
 &lt;script type="module"&gt;
-  import { attachTablePdfButton } from "fast-pdf";
+  import { attachTablePdfButton } from "fast-pdf/dom";
 
   // Creates the button, puts it after the table and wires the click.
   attachTablePdfButton("#revenue", {
@@ -2133,7 +2484,7 @@ function download() {
           </button>
         </div>
         <pre class="code-block" data-panel="react"><code>import { useRef } from "react";
-import { attachTablePdfButton, downloadTablePDF } from "fast-pdf";
+import { attachTablePdfButton, downloadTablePDF } from "fast-pdf/dom";
 
 export function RevenueTable({ rows }) {
   const table = useRef(null);
@@ -2173,7 +2524,7 @@ export function RevenueTable({ rows }) {
 }</code></pre>
         <pre class="code-block" data-panel="vue" hidden><code>&lt;script setup&gt;
 import { ref } from "vue";
-import { downloadTablePDF } from "fast-pdf";
+import { downloadTablePDF } from "fast-pdf/dom";
 
 const table = ref(null);
 
@@ -2218,7 +2569,7 @@ function download() {
 &lt;/table&gt;
 
 &lt;script type="module"&gt;
-  import { attachTablePdfButton } from "fast-pdf";
+  import { attachTablePdfButton } from "fast-pdf/dom";
 
   // Creates the button, puts it after the table and wires the click.
   attachTablePdfButton("#revenue", {
@@ -2259,7 +2610,7 @@ function download() {
         >；较宽的表格会自行转为横向——仅当列确实放不下时，而不是因为布局恰好很宽：
       </p>
 
-      <pre class="code-block"><code>import { tableToPDF } from "fast-pdf";
+      <pre class="code-block"><code>import { tableToPDF } from "fast-pdf/dom";
 
 const pdf = tableToPDF("#revenue", {
   title: "Revenue 2026",
@@ -2641,17 +2992,17 @@ await pdf.save("revenue.pdf");</code></pre>
 
     <section id="bilder" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">09</span>Images<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">10</span>Images<span class="chip"
           >New: GIF &amp; WebP</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">09</span>Bilder<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">10</span>Bilder<span class="chip"
           >Neu: GIF &amp; WebP</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">09</span>图片<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">10</span>图片<span class="chip"
           >新增：GIF 与 WebP</span
         >
       </h2>
@@ -2788,13 +3139,13 @@ pdf.image(stamp, { width: 80, rotate: -15, align: "center" });</code></pre>
 
     <section id="formen" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">10</span>Shapes
+        <span class="mr-2.5 font-normal text-(--muted)">11</span>Shapes
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">10</span>Formen
+        <span class="mr-2.5 font-normal text-(--muted)">11</span>Formen
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">10</span>图形
+        <span class="mr-2.5 font-normal text-(--muted)">11</span>图形
       </h2>
 
       <pre
@@ -2836,17 +3187,17 @@ pdf.ellipse(300, 300, 80, 40, { stroke: "#0f172a", lineWidth: 2 });</code></pre>
 
     <section id="svg" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">11</span>SVG graphics<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">12</span>SVG graphics<span class="chip"
           >New: svg()</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">11</span>SVG-Grafiken<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">12</span>SVG-Grafiken<span class="chip"
           >Neu: svg()</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">11</span>SVG 图形<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">12</span>SVG 图形<span class="chip"
           >新增：svg()</span
         >
       </h2>
@@ -2935,17 +3286,17 @@ pdf.svg(icon, { width: 14, color: "#2e5ce6" });</code></pre>
 
     <section id="markdown" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">12</span>Markdown<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">13</span>Markdown<span class="chip"
           >New: markdown()</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">12</span>Markdown<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">13</span>Markdown<span class="chip"
           >Neu: markdown()</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">12</span>Markdown<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">13</span>Markdown<span class="chip"
           >新增：markdown()</span
         >
       </h2>
@@ -3061,13 +3412,13 @@ Der Umsatz wuchs um **12 %** — Details im [Anhang](#anhang).
 
     <section id="features" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">13</span>Document features
+        <span class="mr-2.5 font-normal text-(--muted)">14</span>Document features
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">13</span>Dokumentfeatures
+        <span class="mr-2.5 font-normal text-(--muted)">14</span>Dokumentfeatures
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">13</span>文档功能
+        <span class="mr-2.5 font-normal text-(--muted)">14</span>文档功能
       </h2>
 
       <p data-lang="en">
@@ -3330,42 +3681,52 @@ pdf.signature({ name: "initials-p1", width: 86, height: 32, line: false });  // 
 
       <div data-lang="en" class="hint">
         <b class="text-(--accent)">Good to know:</b> field names must be unique per document
-        (auto-numbered <code>Signature1</code>, <code>Signature2</code>, … if omitted). fast-pdf
-        creates the <em>fields to be signed by the recipient</em> — it does not cryptographically
-        sign the document itself. A complete, ready-to-sign contract lives in
-        <code>examples/signature.ts</code> (<code>npx tsx examples/signature.ts</code>, then open
-        the PDF in Acrobat and click a field).
+        (auto-numbered <code>Signature1</code>, <code>Signature2</code>, … if omitted). A field like
+        this is empty — it is <em>for the recipient to sign</em>. To sign the document yourself,
+        pass <code>sign</code>: fast-pdf then writes a detached PAdES-B (CAdES) signature over the
+        whole file (one signed field per document, RSA + SHA-256, no RFC&nbsp;3161 timestamp — see
+        <a class="text-(--accent) no-underline hover:underline" href="#security">Security</a>). A
+        complete, ready-to-sign contract lives in <code>examples/signature.ts</code> (<code
+          >npx tsx examples/signature.ts</code
+        >, then open the PDF in Acrobat and click a field).
       </div>
       <div data-lang="de" hidden class="hint">
         <b class="text-(--accent)">Gut zu wissen:</b> Feldnamen müssen pro Dokument eindeutig sein
-        (ohne Angabe automatisch <code>Signature1</code>, <code>Signature2</code>, …). fast-pdf
-        erzeugt die <em>vom Empfänger zu signierenden Felder</em> — das Dokument selbst wird nicht
-        kryptografisch signiert. Ein kompletter, unterschriftsreifer Vertrag liegt in
+        (ohne Angabe automatisch <code>Signature1</code>, <code>Signature2</code>, …). Ein solches
+        Feld ist leer — es ist <em>für den Empfänger zum Signieren</em> gedacht. Wer das Dokument
+        selbst signieren will, übergibt <code>sign</code>: fast-pdf schreibt dann eine
+        Detached-PAdES-B-Signatur (CAdES) über die ganze Datei (ein signiertes Feld pro Dokument,
+        RSA + SHA-256, kein RFC-3161-Zeitstempel — siehe
+        <a class="text-(--accent) no-underline hover:underline" href="#security">Sicherheit</a>).
+        Ein kompletter, unterschriftsreifer Vertrag liegt in
         <code>examples/signature.ts</code> (<code>npx tsx examples/signature.ts</code>, dann das PDF
         in Acrobat öffnen und ein Feld anklicken).
       </div>
       <div data-lang="zh" hidden class="hint">
         <b class="text-(--accent)">值得注意：</b>字段名称在每个文档中必须唯一 （省略时自动编号为
-        <code>Signature1</code>、<code>Signature2</code>……）。fast-pdf 创建的是
-        <em>供接收方签署的字段</em>——它不会对文档本身进行加密签名。
-        一份完整的、可直接签署的合同示例见 <code>examples/signature.ts</code> （运行
+        <code>Signature1</code
+        >、<code>Signature2</code>……）。这样的字段是空的——它是<em>供接收方签署</em>的。若要自己签署文档，传入
+        <code>sign</code> 即可：fast-pdf 会对整个文件写入分离式
+        PAdES-B（CAdES）签名（每个文档仅一个已签名字段，RSA + SHA-256，无 RFC&nbsp;3161
+        时间戳——参见<a class="text-(--accent) no-underline hover:underline" href="#security">安全</a
+        >）。 一份完整的、可直接签署的合同示例见 <code>examples/signature.ts</code> （运行
         <code>npx tsx examples/signature.ts</code>，然后在 Acrobat 中打开 PDF 并点击签名字段）。
       </div>
     </section>
 
     <section id="anhaengen" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">14</span>Appending PDFs<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">15</span>Appending PDFs<span class="chip"
           >New: append()</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">14</span>PDFs anhängen<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">15</span>PDFs anhängen<span class="chip"
           >Neu: append()</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">14</span>追加 PDF<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">15</span>追加 PDF<span class="chip"
           >新增：append()</span
         >
       </h2>
@@ -3725,26 +4086,38 @@ pdf.text("附信");                                    // → 落在新的一页
 
     <section id="fehler" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">15</span>Error handling
+        <span class="mr-2.5 font-normal text-(--muted)">16</span>Error handling
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">15</span>Fehlerbehandlung
+        <span class="mr-2.5 font-normal text-(--muted)">16</span>Fehlerbehandlung
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">15</span>错误处理
+        <span class="mr-2.5 font-normal text-(--muted)">16</span>错误处理
       </h2>
 
       <p data-lang="en">
         All user-facing failures throw <code>FastPDFError</code> with a stable, machine-readable
-        <code>code</code> — messages may be reworded, codes never change:
+        <code>code</code> — messages may be reworded; codes are part of the
+        <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet"
+          >SemVer promise</a
+        >
+        and are not renamed or given a new meaning within a major version:
       </p>
       <p data-lang="de" hidden>
         Alle nutzerseitigen Fehler werfen <code>FastPDFError</code> mit einem stabilen,
-        maschinenlesbaren <code>code</code> — Meldungstexte können sich ändern, Codes nicht:
+        maschinenlesbaren <code>code</code> — Meldungstexte können sich ändern; Codes gehören zur
+        <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet"
+          >SemVer-Zusage</a
+        >
+        und werden innerhalb einer Major-Version weder umbenannt noch umgedeutet:
       </p>
       <p data-lang="zh" hidden>
         所有面向使用者的错误都会抛出带有稳定、机器可读 <code>code</code> 的
-        <code>FastPDFError</code>——错误文案可能调整，错误码永不改变：
+        <code>FastPDFError</code>——错误文案可能调整；错误码属于<a
+          class="text-(--accent) no-underline hover:underline"
+          href="#stabilitaet"
+          >SemVer 承诺</a
+        >的一部分，在同一主版本内不会被重命名或赋予新含义：
       </p>
 
       <pre data-lang="en" class="code-block"><code>import { FastPDFError } from "fast-pdf";
@@ -3781,17 +4154,17 @@ try {
 
     <section id="security" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">16</span>Security<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">17</span>Security<span class="chip"
           >New: encryption &amp; signatures</span
         >
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">16</span>Sicherheit<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">17</span>Sicherheit<span class="chip"
           >Neu: Verschlüsselung &amp; Signaturen</span
         >
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">16</span>安全<span class="chip"
+        <span class="mr-2.5 font-normal text-(--muted)">17</span>安全<span class="chip"
           >新增：加密与签名</span
         >
       </h2>
@@ -4021,30 +4394,346 @@ try {
       <h3 data-lang="zh" hidden class="doc-h3">路线图上</h3>
 
       <div data-lang="en" class="hint">
-        <b class="text-(--accent)">Still toward banks &amp; insurers:</b> PDF/A-1/2/3 archival
-        profiles, tagged/accessible PDF, and signature timestamps (RFC 3161). These are planned, not
-        shipped — tracked in the enterprise roadmap.
+        <b class="text-(--accent)">Still toward banks &amp; insurers:</b> PDF/A is
+        <b>planned for 1.1</b>, as part of ZUGFeRD/Factur-X support behind an opt-in subpath. Tagged
+        PDF and PDF/UA are not supported and have no date. Signatures carry no RFC&nbsp;3161
+        timestamp. The full list is under
+        <a class="text-(--accent) no-underline hover:underline" href="#limitations">Limitations</a>.
       </div>
       <div data-lang="de" hidden class="hint">
-        <b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b>
-        PDF/A-1/2/3-Archivprofile, getaggte/barrierefreie PDFs und Signatur-Zeitstempel (RFC 3161).
-        Das ist geplant, noch nicht ausgeliefert — festgehalten in der Enterprise-Roadmap.
+        <b class="text-(--accent)">Weiterhin Richtung Banken &amp; Versicherungen:</b> PDF/A ist
+        <b>für 1.1 geplant</b>, als Teil der ZUGFeRD-/Factur-X-Unterstützung hinter einem
+        Opt-in-Subpath. Getaggte PDFs und PDF/UA werden nicht unterstützt, ein Termin steht nicht
+        fest. Signaturen tragen keinen RFC-3161-Zeitstempel. Die vollständige Liste steht unter
+        <a class="text-(--accent) no-underline hover:underline" href="#limitations">Grenzen</a>.
       </div>
       <div data-lang="zh" hidden class="hint">
-        <b class="text-(--accent)">仍在面向银行与保险公司：</b>PDF/A-1/2/3 归档规范、带标签的无障碍
-        PDF，以及签名时间戳（RFC 3161）。这些为计划项，尚未发布——记录于企业路线图中。
+        <b class="text-(--accent)">仍在面向银行与保险公司：</b>PDF/A <b>计划于 1.1 推出</b>，作为
+        ZUGFeRD/Factur-X 支持的一部分，通过可选的子路径提供。带标签 PDF 与 PDF/UA
+        目前不支持，也没有排期。签名不带 RFC&nbsp;3161 时间戳。完整列表见<a
+          class="text-(--accent) no-underline hover:underline"
+          href="#limitations"
+          >局限</a
+        >。
+      </div>
+    </section>
+
+    <section id="limitations" class="doc-section">
+      <h2 data-lang="en" class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>Limitations
+      </h2>
+      <h2 data-lang="de" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>Grenzen
+      </h2>
+      <h2 data-lang="zh" hidden class="doc-h2">
+        <span class="mr-2.5 font-normal text-(--muted)">18</span>局限
+      </h2>
+
+      <p data-lang="en">
+        fast-pdf generates documents; it deliberately does not do everything. What it cannot do
+        today, so you can decide before you start:
+      </p>
+      <p data-lang="de" hidden>
+        fast-pdf erzeugt Dokumente; alles kann es bewusst nicht. Was heute nicht geht — damit du
+        vorher entscheiden kannst:
+      </p>
+      <p data-lang="zh" hidden>
+        fast-pdf 用于生成文档，并刻意不包揽一切。以下是它目前做不到的事，方便你在动手前做出判断：
+      </p>
+
+      <div data-lang="en" class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>Not supported</th>
+            <th>Notes</th>
+          </tr>
+          <tr>
+            <td>Editing existing PDFs</td>
+            <td>
+              Pages can be <b>appended</b>, not modified. Text in an imported page cannot be
+              changed; encrypted sources are rejected.
+            </td>
+          </tr>
+          <tr>
+            <td>PDF/A</td>
+            <td>
+              Not supported today. <b>Planned for 1.1</b>, with ZUGFeRD/Factur-X behind an opt-in
+              subpath. Today’s output is not PDF/A: no XMP, no OutputIntent, by default no embedded
+              fonts.
+            </td>
+          </tr>
+          <tr>
+            <td>Tagged PDF (<code>StructTreeRoot</code>)</td>
+            <td>
+              Not supported, no date set. <code>/Lang</code> and <code>/DisplayDocTitle</code> are
+              written — that is all; no <code>/MarkInfo</code>, no structure tree, no reading order.
+            </td>
+          </tr>
+          <tr>
+            <td>PDF/UA</td>
+            <td>
+              Not supported, no date set. No deadline in force names PDF/UA (the BFSG names neither
+              EN&nbsp;301&nbsp;549 nor PDF/UA); to be re-assessed once EN&nbsp;301&nbsp;549 is
+              harmonised.
+            </td>
+          </tr>
+          <tr>
+            <td>XMP metadata</td>
+            <td>
+              Only the classic <code>/Info</code> dictionary. An XMP writer is part of the PDF/A
+              work planned for 1.1.
+            </td>
+          </tr>
+          <tr>
+            <td>Archivable output with the default font</td>
+            <td>
+              Standard-14 fonts are referenced without a <code>FontFile</code>, i.e. not embedded.
+              Long-term output needs <code>registerFont()</code> with a TTF.
+            </td>
+          </tr>
+          <tr>
+            <td>Form fields other than signatures</td>
+            <td>Text fields, checkboxes and dropdowns are not implemented.</td>
+          </tr>
+          <tr>
+            <td>WOFF/WOFF2 fonts</td>
+            <td>Needs Brotli. Convert to <code>.ttf</code> at build time.</td>
+          </tr>
+          <tr>
+            <td>Kerning, ligatures, complex-script shaping</td>
+            <td>
+              Latin sets well; Arabic/Devanagari are <em>not usable</em>, not merely suboptimal.
+            </td>
+          </tr>
+          <tr>
+            <td>Gradients (<code>/Shading</code>), patterns</td>
+            <td>Flat fills and constant alpha only.</td>
+          </tr>
+          <tr>
+            <td>CFF-flavoured OpenType, <code>.ttc</code></td>
+            <td>Rejected with an actionable error.</td>
+          </tr>
+          <tr>
+            <td>Lossy WebP, interlaced PNG</td>
+            <td>Rejected with <code>UNSUPPORTED_IMAGE</code>.</td>
+          </tr>
+          <tr>
+            <td>HTML pages → PDF</td>
+            <td>
+              <code>tableToPDF()</code> reads a <code>&lt;table&gt;</code>, not a whole page. No
+              general HTML/CSS layout engine; web font files cannot be read from CSS.
+            </td>
+          </tr>
+          <tr>
+            <td>Tree-shaking within one entry point</td>
+            <td>
+              Measured at 0.2&nbsp;% — effectively nothing. Code is removed by picking the right
+              <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet"
+                >entry point</a
+              >, not by the bundler.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="de" hidden class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>Nicht unterstützt</th>
+            <th>Anmerkung</th>
+          </tr>
+          <tr>
+            <td>Bestehende PDFs bearbeiten</td>
+            <td>
+              Seiten lassen sich <b>anhängen</b>, nicht verändern. Text einer importierten Seite ist
+              nicht änderbar; verschlüsselte Quellen werden abgewiesen.
+            </td>
+          </tr>
+          <tr>
+            <td>PDF/A</td>
+            <td>
+              Heute nicht unterstützt. <b>Geplant für 1.1</b>, mit ZUGFeRD/Factur-X hinter einem
+              Opt-in-Subpath. Die heutige Ausgabe ist kein PDF/A: kein XMP, kein OutputIntent,
+              standardmäßig keine eingebetteten Schriften.
+            </td>
+          </tr>
+          <tr>
+            <td>Getaggtes PDF (<code>StructTreeRoot</code>)</td>
+            <td>
+              Nicht unterstützt, kein Termin. <code>/Lang</code> und
+              <code>/DisplayDocTitle</code> werden geschrieben — mehr nicht; kein
+              <code>/MarkInfo</code>, kein Strukturbaum, keine Lesereihenfolge.
+            </td>
+          </tr>
+          <tr>
+            <td>PDF/UA</td>
+            <td>
+              Nicht unterstützt, kein Termin. Keine geltende Frist nennt PDF/UA (das BFSG nennt
+              weder EN&nbsp;301&nbsp;549 noch PDF/UA); Neubewertung, sobald EN&nbsp;301&nbsp;549
+              harmonisiert ist.
+            </td>
+          </tr>
+          <tr>
+            <td>XMP-Metadaten</td>
+            <td>
+              Nur das klassische <code>/Info</code>-Dictionary. Ein XMP-Writer ist Teil der für 1.1
+              geplanten PDF/A-Arbeit.
+            </td>
+          </tr>
+          <tr>
+            <td>Archivfeste Ausgabe mit Standardschrift</td>
+            <td>
+              Standard-14-Schriften werden ohne <code>FontFile</code> referenziert, also nicht
+              eingebettet. Langlebige Ausgabe braucht <code>registerFont()</code> mit einer TTF.
+            </td>
+          </tr>
+          <tr>
+            <td>Formularfelder außer Signaturen</td>
+            <td>Textfelder, Checkboxen und Dropdowns sind nicht implementiert.</td>
+          </tr>
+          <tr>
+            <td>WOFF/WOFF2-Schriften</td>
+            <td>Braucht Brotli. Zur Build-Zeit nach <code>.ttf</code> konvertieren.</td>
+          </tr>
+          <tr>
+            <td>Kerning, Ligaturen, komplexe Schriftsysteme</td>
+            <td>
+              Latein setzt gut; Arabisch/Devanagari sind <em>nicht nutzbar</em>, nicht bloß
+              suboptimal.
+            </td>
+          </tr>
+          <tr>
+            <td>Verläufe (<code>/Shading</code>), Muster</td>
+            <td>Nur Flächenfüllungen und konstante Transparenz.</td>
+          </tr>
+          <tr>
+            <td>OpenType mit CFF, <code>.ttc</code></td>
+            <td>Mit einer verwertbaren Fehlermeldung abgewiesen.</td>
+          </tr>
+          <tr>
+            <td>Verlustbehaftetes WebP, Interlaced-PNG</td>
+            <td>Abgewiesen mit <code>UNSUPPORTED_IMAGE</code>.</td>
+          </tr>
+          <tr>
+            <td>HTML-Seiten → PDF</td>
+            <td>
+              <code>tableToPDF()</code> liest eine <code>&lt;table&gt;</code>, keine ganze Seite.
+              Keine allgemeine HTML/CSS-Layout-Engine; Webfont-Dateien lassen sich nicht aus dem CSS
+              lesen.
+            </td>
+          </tr>
+          <tr>
+            <td>Tree-Shaking innerhalb eines Einstiegspunkts</td>
+            <td>
+              Gemessen: 0,2&nbsp;% — praktisch nichts. Code entfernt die Wahl des richtigen
+              <a class="text-(--accent) no-underline hover:underline" href="#stabilitaet"
+                >Einstiegspunkts</a
+              >, nicht der Bundler.
+            </td>
+          </tr>
+        </table>
+      </div>
+      <div data-lang="zh" hidden class="overflow-x-auto">
+        <table class="api prose">
+          <tr>
+            <th>不支持</th>
+            <th>说明</th>
+          </tr>
+          <tr>
+            <td>编辑现有 PDF</td>
+            <td>只能<b>追加</b>页面，不能修改。导入页面中的文本无法更改；加密的源文件会被拒绝。</td>
+          </tr>
+          <tr>
+            <td>PDF/A</td>
+            <td>
+              目前不支持。<b>计划于 1.1 推出</b>，与 ZUGFeRD/Factur-X
+              一起通过可选子路径提供。当前输出不是 PDF/A：没有 XMP、没有
+              OutputIntent，默认也不嵌入字体。
+            </td>
+          </tr>
+          <tr>
+            <td>带标签 PDF（<code>StructTreeRoot</code>）</td>
+            <td>
+              不支持，也没有排期。只写入 <code>/Lang</code> 和
+              <code>/DisplayDocTitle</code>——仅此而已；没有
+              <code>/MarkInfo</code>、没有结构树、没有阅读顺序。
+            </td>
+          </tr>
+          <tr>
+            <td>PDF/UA</td>
+            <td>
+              不支持，也没有排期。目前没有任何生效的截止期限点名 PDF/UA（德国 BFSG 既未提及
+              EN&nbsp;301&nbsp;549，也未提及 PDF/UA）；待 EN&nbsp;301&nbsp;549
+              成为协调标准后再评估。
+            </td>
+          </tr>
+          <tr>
+            <td>XMP 元数据</td>
+            <td>
+              只写入传统的 <code>/Info</code> 字典。XMP 写入器属于计划在 1.1 进行的 PDF/A 工作。
+            </td>
+          </tr>
+          <tr>
+            <td>使用默认字体的可归档输出</td>
+            <td>
+              标准 14 字体以不含 <code>FontFile</code> 的方式引用，即不嵌入。需要长期保存的输出须用
+              <code>registerFont()</code> 注册 TTF 字体。
+            </td>
+          </tr>
+          <tr>
+            <td>签名以外的表单字段</td>
+            <td>未实现文本框、复选框和下拉列表。</td>
+          </tr>
+          <tr>
+            <td>WOFF/WOFF2 字体</td>
+            <td>需要 Brotli。请在构建时转换为 <code>.ttf</code>。</td>
+          </tr>
+          <tr>
+            <td>字距调整、连字、复杂文字塑形</td>
+            <td>拉丁文字排版良好；阿拉伯文/天城文<em>无法使用</em>，而不只是效果欠佳。</td>
+          </tr>
+          <tr>
+            <td>渐变（<code>/Shading</code>）、图案</td>
+            <td>仅支持纯色填充和恒定透明度。</td>
+          </tr>
+          <tr>
+            <td>CFF 风格的 OpenType、<code>.ttc</code></td>
+            <td>会被拒绝，并给出可据以处理的错误信息。</td>
+          </tr>
+          <tr>
+            <td>有损 WebP、隔行扫描 PNG</td>
+            <td>以 <code>UNSUPPORTED_IMAGE</code> 拒绝。</td>
+          </tr>
+          <tr>
+            <td>HTML 页面 → PDF</td>
+            <td>
+              <code>tableToPDF()</code> 读取的是
+              <code>&lt;table&gt;</code>，而不是整个页面。没有通用的 HTML/CSS 布局引擎；无法从 CSS
+              读取 Web 字体文件。
+            </td>
+          </tr>
+          <tr>
+            <td>单个入口点内的 Tree-Shaking</td>
+            <td>
+              实测仅 0.2&nbsp;%——几乎没有效果。真正减少代码的是选择合适的<a
+                class="text-(--accent) no-underline hover:underline"
+                href="#stabilitaet"
+                >入口点</a
+              >，而不是打包工具。
+            </td>
+          </tr>
+        </table>
       </div>
     </section>
 
     <section id="performance" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">17</span>Performance
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>Performance
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">17</span>Performance
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>Performance
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">17</span>性能
+        <span class="mr-2.5 font-normal text-(--muted)">19</span>性能
       </h2>
 
       <p data-lang="en">
@@ -4187,13 +4876,13 @@ try {
 
     <section id="ergebnis" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>See it rendered
+        <span class="mr-2.5 font-normal text-(--muted)">20</span>See it rendered
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>So sieht’s aus
+        <span class="mr-2.5 font-normal text-(--muted)">20</span>So sieht’s aus
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">18</span>效果展示
+        <span class="mr-2.5 font-normal text-(--muted)">20</span>效果展示
       </h2>
 
       <p data-lang="en">
@@ -4262,13 +4951,13 @@ try {
 
     <section id="templates" class="doc-section">
       <h2 data-lang="en" class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">19</span>Templates &amp; AI skill
+        <span class="mr-2.5 font-normal text-(--muted)">21</span>Templates &amp; AI skill
       </h2>
       <h2 data-lang="de" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">19</span>Templates &amp; AI-Skill
+        <span class="mr-2.5 font-normal text-(--muted)">21</span>Templates &amp; AI-Skill
       </h2>
       <h2 data-lang="zh" hidden class="doc-h2">
-        <span class="mr-2.5 font-normal text-(--muted)">19</span>模板与 AI 技能
+        <span class="mr-2.5 font-normal text-(--muted)">21</span>模板与 AI 技能
       </h2>
 
       <p data-lang="en">
@@ -4416,7 +5105,7 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
     <!-- Changelog: bewusst nur auf Englisch — Release-Notes werden nicht übersetzt,
      damit sie 1:1 der CHANGELOG.md des Repos entsprechen. -->
     <section id="changelog" class="doc-section">
-      <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">20</span>Changelog</h2>
+      <h2 class="doc-h2"><span class="mr-2.5 font-normal text-(--muted)">22</span>Changelog</h2>
 
       <p class="text-(--muted)">
         Release notes, newest first — kept in English so they match <code>CHANGELOG.md</code> in the
@@ -4429,6 +5118,232 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
       </p>
 
       <details class="fold" open>
+        <summary>
+          <span class="fold-head"
+            ><b class="text-[13px] text-(--ink)">1.0.0</b
+            ><span class="ml-auto tabular-nums">2026-11-27</span></span
+          ><span class="fold-peek"
+            ><span class="fold-peek-text"
+              >The stability release: no breaking changes against 0.9.0 — the public API is now
+              frozen under SemVer, and the project’s claims are re-measured by CI.</span
+            ></span
+          >
+        </summary>
+        <div class="cl-body">
+          <p class="cl-note">
+            <b>No breaking changes against 0.9.0</b> — code that runs on 0.9.0 runs on 1.0.0
+            unchanged. Coming from 0.8.x? The one breaking change was made in 0.9.0, deliberately
+            <em>before</em> the promise: an import-path change and nothing else (see below).
+          </p>
+          <p class="cl-h">The 1.0 promise</p>
+          <ul class="cl-list">
+            <li>
+              <b
+                ><code>fast-pdf</code>, <code>fast-pdf/dom</code> and
+                <code>fast-pdf/browser</code> are stable.</b
+              >
+              No export is removed, renamed or changed incompatibly without a major release. This
+              covers exported names, signatures, types, and the <code>code</code> values of
+              <code>FastPDFError</code>.
+            </li>
+            <li>
+              <b>Not covered: the bytes of the generated PDF.</b> Layout and rendering may improve
+              in a minor release; compare rendered documents, not file hashes.
+            </li>
+            <li>
+              <b>Not covered: <code>fast-pdf/internal</code>.</b> It may change in any release.
+            </li>
+          </ul>
+          <p class="cl-h">Added</p>
+          <ul class="cl-list">
+            <li>
+              <b>The frozen surface is pinned by a test, types included.</b>
+              <code>tests/api-surface.test.ts</code> asks the TypeScript compiler for the complete
+              export list of <code>fast-pdf</code> and <code>fast-pdf/dom</code> — 66 and 9 names,
+              values <em>and</em> types — and for the public methods of <code>PDFDocument</code>,
+              and compares them with an explicit list. Removing or renaming any of them now fails
+              CI.
+            </li>
+            <li>
+              <b>Bundle-size budget as a CI gate.</b> <code>npm run size</code> measures min+gzip
+              per entry point and fails when an entry outgrows its budget (about 3&nbsp;% above
+              today’s value). The README once claimed 13&nbsp;KB when the truth was 52&nbsp;KB,
+              because nothing re-measured the number; now something does.
+            </li>
+            <li>
+              <b>Release workflow with npm provenance.</b> Pushing a <code>v*.*.*</code> tag builds
+              the tagged commit on a clean runner, checks that tag, <code>package.json</code> and
+              changelog agree, runs the full gate plus <code>qpdf --check</code> over the example
+              documents, and publishes with <code>--provenance</code>. Verify with
+              <code>npm audit signatures</code>.
+            </li>
+          </ul>
+          <p class="cl-h">Fixed</p>
+          <ul class="cl-list">
+            <li>
+              Link annotations now carry <code>/F 4</code> (the “Print” flag), like the signature
+              widgets already did. PDF/A requires it on every annotation that is not a
+              <code>/Popup</code>, so every document with a link, a button, a table of contents or
+              an outline jump used to fail validation. The flag is a constant, so
+              <code>deterministic</code> output stays byte-identical. Annotations copied from an
+              appended PDF are left exactly as they were found.
+            </li>
+          </ul>
+          <p class="cl-h">Changed</p>
+          <ul class="cl-list">
+            <li>
+              Bundle figures re-measured: <code>fast-pdf</code> <b>48,933&nbsp;B</b> min+gzip,
+              <code>fast-pdf/dom</code> 52,263&nbsp;B, <code>fast-pdf/internal</code> 6,949&nbsp;B.
+            </li>
+            <li>
+              The README’s coverage thresholds now state what <code>vitest.config.ts</code> enforces
+              (92&nbsp;% statements, 93&nbsp;% lines, 95&nbsp;% functions, 83&nbsp;% branches).
+            </li>
+            <li>
+              Dev dependencies updated; <code>npm audit</code> reports no known vulnerabilities.
+              fast-pdf itself still has <b>zero</b> runtime dependencies.
+            </li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>
+          <span class="fold-head"
+            ><b class="text-[13px] text-(--ink)">0.9.0</b
+            ><span class="ml-auto tabular-nums">2026-10-31</span></span
+          ><span class="fold-peek"
+            ><span class="fold-peek-text"
+              >One breaking change, mechanical: the table helpers move to fast-pdf/dom, the engine
+              to fast-pdf/internal. Plus documentation that finally tells the truth.</span
+            ></span
+          >
+        </summary>
+        <div class="cl-body">
+          <p class="cl-h">Breaking changes</p>
+          <ul class="cl-list">
+            <li>
+              <b>Sixteen names moved out of the main entry</b>, without a deprecated re-export —
+              change the import, nothing else changes. To <code>fast-pdf/dom</code>:
+              <code>tableToPDF</code>, <code>tableToRows</code>, <code>downloadTablePDF</code>,
+              <code>attachTablePdfButton</code> and the types <code>TableSource</code>,
+              <code>TablePDFOptions</code>, <code>TablePdfButtonOptions</code>,
+              <code>TablePdfButtonHandle</code>, <code>StyleReader</code>. To
+              <code>fast-pdf/internal</code>: <code>PDFWriter</code>, <code>ContentStream</code>,
+              <code>Ref</code>, <code>Name</code>, <code>PDFString</code>, <code>serialize</code>,
+              <code>PDFValue</code>, <code>deflate</code>, <code>inflate</code>,
+              <code>createSecurityHandler</code>, <code>EmbeddedFont</code>, <code>TTFFont</code>.
+            </li>
+            <li>
+              <b>Unchanged</b> — and this is most codebases: <code>PDFDocument</code> and all its
+              option and result types, <code>FastPDFError</code>/<code>FastPDFErrorCode</code>, the
+              table types, <code>Font</code>, <code>PAGE_FORMATS</code>, <code>parseColor</code>,
+              <code>parseCssColor</code>, <code>pdfInfo</code>/<code>PDFInfo</code>,
+              <code>supportsCompression</code>, <code>supportsEncryption</code>,
+              <code>EncryptionOptions</code>, <code>DocumentPermissions</code>,
+              <code>SigningOptions</code>. <code>fast-pdf/browser</code> is unchanged too.
+            </li>
+            <li>
+              <b><code>fast-pdf/internal</code> is not covered by SemVer.</b> Its names, signatures
+              and behaviour may change in any release, including a patch, and it writes PDF syntax
+              verbatim — the escaping that protects <code>text()</code> and <code>table()</code>
+              lives above it.
+            </li>
+          </ul>
+          <p class="cl-h">Added</p>
+          <ul class="cl-list">
+            <li>
+              <b>fast-pdf/dom</b> and <b>fast-pdf/internal</b> as subpath exports, each with its own
+              <code>.d.ts</code> and its own <code>browser</code> condition — a client bundle must
+              never see <code>node:fs/promises</code>.
+            </li>
+            <li>
+              <code>dist/</code> is built with ESM code splitting: the shared core lives in one
+              chunk. <b>The layout changed</b> — nothing outside the <code>exports</code> map should
+              be imported directly.
+            </li>
+          </ul>
+          <p class="cl-h">Changed</p>
+          <ul class="cl-list">
+            <li>
+              Dropping the DOM reader makes the main entry smaller: <code>fast-pdf</code>
+              <b>48,907&nbsp;B</b> min+gzip (was 52,152&nbsp;B),
+              <code>fast-pdf/dom</code> 52,231&nbsp;B, <code>fast-pdf/internal</code> 6,972&nbsp;B.
+            </li>
+          </ul>
+          <p class="cl-h">Documentation</p>
+          <ul class="cl-list">
+            <li>
+              <b>PAdES-B signing is documented for the first time.</b>
+              <code>signature({ sign })</code> has produced a detached PAdES-B (CAdES) signature
+              since 0.8.0, but the README claimed the opposite. Now documented with its real limits:
+              one signed field per document, no RFC&nbsp;3161 timestamp, RSASSA-PKCS1-v1_5 + SHA-256
+              only.
+            </li>
+            <li>
+              <b>“No forms” is gone.</b> Signature fields are form fields: fast-pdf writes an
+              <code>/AcroForm</code> with <code>/Widget</code> entries when
+              <code>signature()</code> is called.
+            </li>
+            <li>
+              The “no embedded files” promise is now a property of the generated document: fast-pdf
+              embeds a file only when the caller explicitly asks, and an imported third-party PDF
+              never contributes one.
+            </li>
+            <li>
+              <b>Corrected bundle figures.</b> The headline said ~13&nbsp;KB min+gzip and
+              ~94&nbsp;KB ESM; measured values were 52,152&nbsp;B min+gzip and 300,575&nbsp;B ESM.
+              “Tree-shakeable” is now qualified honestly.
+            </li>
+            <li>
+              Corrected the coverage thresholds and documented the Node requirement for contributors
+              (≥&nbsp;20) versus consumers (≥&nbsp;18).
+            </li>
+          </ul>
+          <p class="cl-h">Tests</p>
+          <ul class="cl-list">
+            <li>
+              <code>tests/security.test.ts</code> pins the passive-document invariant: a broad
+              document is rendered and scanned for <code>/EmbeddedFiles</code>,
+              <code>/FileAttachment</code>, <code>/JavaScript</code>, <code>/JS</code>,
+              <code>/Launch</code>, <code>/AA</code>, <code>/OpenAction</code> and friends, with a
+              second test proving the scan catches each of them.
+            </li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="fold">
+        <summary>
+          <span class="fold-head"
+            ><b class="text-[13px] text-(--ink)">0.8.1</b
+            ><span class="ml-auto tabular-nums">2026-10-22</span></span
+          ><span class="fold-peek"
+            ><span class="fold-peek-text"
+              >Maintenance: development dependencies updated, npm audit clean.</span
+            ></span
+          >
+        </summary>
+        <div class="cl-body">
+          <p class="cl-h">Security</p>
+          <ul class="cl-list">
+            <li>Updated development dependencies to address known security vulnerabilities.</li>
+            <li>Resolved dependency audit issues.</li>
+          </ul>
+          <p class="cl-h">Maintenance</p>
+          <ul class="cl-list">
+            <li>Updated Vitest and related testing dependencies.</li>
+            <li>Improved TypeScript configuration and compatibility.</li>
+            <li>
+              Verified the release with the full test suite, linting, formatting, and production
+              build checks.
+            </li>
+            <li><code>npm audit</code> reports zero vulnerabilities.</li>
+          </ul>
+        </div>
+      </details>
+
+      <details class="fold">
         <summary>
           <span class="fold-head"
             ><b class="text-[13px] text-(--ink)">0.8.0</b
@@ -5288,7 +6203,7 @@ npx fast-pdf-skill     // 将技能复制到 ./.claude/skills/fast-pdf-designer/
   function showCode(used) {
     if (!codeBlock) return;
     var lines = [
-      'import { attachTablePdfButton } from "fast-pdf";',
+      'import { attachTablePdfButton } from "fast-pdf/dom";',
       "",
       'attachTablePdfButton("#invoice", {',
     ];

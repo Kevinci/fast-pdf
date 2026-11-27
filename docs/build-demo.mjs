@@ -3,12 +3,13 @@
  *  - docs/demo-src.html   (Markup mit Tailwind-Klassen + Design-Tokens)
  *  - docs/demo.tw.css     (generiertes Tailwind-CSS — via `npm run docs:demo`)
  *  - docs/assets/demo-*.png (Screenshots, als data-URIs eingebettet)
- *  - dist/index.browser.js  (die Bibliothek selbst, damit der
+ *  - dist/dom.browser.js    (fast-pdf/dom samt Kern, damit der
  *    "PDF herunterladen"-Knopf der Beispieltabelle wirklich läuft)
  */
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { build } from "esbuild";
 
 const docs = dirname(fileURLToPath(import.meta.url));
 const read = (name) => readFileSync(join(docs, name));
@@ -17,20 +18,68 @@ const read = (name) => readFileSync(join(docs, name));
  * Die Seite bleibt eine einzige Datei — also wandert auch die Bibliothek
  * hinein. Ohne sie wäre die Beispieltabelle nur ein Screenshot; mit ihr
  * erzeugt der Knopf im Browser des Lesers ein echtes PDF.
+ *
+ * Seit 0.9.0 baut tsup mit Code-Splitting: `dist/dom.browser.js` importiert
+ * den Kern aus `./chunk-*.js`, und ein Inline-Skript kann keine relativen
+ * Dateien nachladen. esbuild bündelt deshalb alles zu einem ESM-String.
+ *
+ * Das Bundle läuft in einer eigenen Funktion statt auf Modulebene: das
+ * Inline-Skript deklariert selbst `options`, `render`, `lang` …, und ein
+ * gleichnamiger Top-Level-Name im Bundle würde still überschrieben (`var`)
+ * oder das ganze Modul zum SyntaxError machen (`let`/`const`). Heraus
+ * kommen nur die Exporte von fast-pdf/dom, unter ihren öffentlichen Namen.
  */
-function library() {
-  const path = join(docs, "..", "dist", "index.browser.js");
-  if (!existsSync(path)) {
+async function library() {
+  const entry = join(docs, "..", "dist", "dom.browser.js");
+  if (!existsSync(entry)) {
     throw new Error(
-      "dist/index.browser.js fehlt — bitte zuerst `npm run build`, " +
+      "dist/dom.browser.js fehlt — bitte zuerst `npm run build`, " +
         "sonst hätte die Demo-Tabelle keinen funktionierenden Download-Knopf.",
     );
   }
-  // Die Source-Map liegt nicht neben der HTML-Datei; der Verweis würde in
+  const result = await build({
+    entryPoints: [entry],
+    bundle: true,
+    format: "esm",
+    platform: "neutral",
+    write: false,
+    logLevel: "silent",
+  });
+  // Die Source-Map liegt nicht neben der HTML-Datei; ein Verweis würde in
   // den DevTools nur einen 404 erzeugen.
-  return readFileSync(path, "utf8").replace(/^\/\/# sourceMappingURL=.*$/gm, "");
+  let code = result.outputFiles[0].text.replace(/^\/\/# sourceMappingURL=.*$/gm, "");
+
+  // esbuild schließt ein ESM-Bundle mit genau einem `export { … };` ab.
+  const tail = code.match(/\nexport\s*\{([^}]*)\};?\s*$/);
+  if (!tail) throw new Error("build-demo: kein abschließendes `export { … }` im Bundle gefunden");
+  code = code.slice(0, tail.index);
+  if (/^\s*(?:import|export)\b/m.test(code)) {
+    throw new Error("build-demo: das Bundle enthält noch import/export — inline nicht lauffähig");
+  }
+  const names = tail[1]
+    .split(",")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .map((part) => {
+      const [local, exported = local] = part.split(/\s+as\s+/);
+      return { local, exported };
+    });
+  if (!names.some((n) => n.exported === "attachTablePdfButton")) {
+    throw new Error("build-demo: fast-pdf/dom exportiert kein attachTablePdfButton mehr");
+  }
+
+  const wrapped =
+    `const { ${names.map((n) => n.exported).join(", ")} } = (() => {\n${code}\n` +
+    `return { ${names.map((n) => `${n.exported}: ${n.local}`).join(", ")} };\n})()`;
+
+  // Im <script>-Element beendet `</script` das Element mitten im Code, und
+  // `<!--` schaltet den HTML-Parser in einen Escape-Modus. Beides kommt nur
+  // in Strings, Regex-Literalen oder Kommentaren vor, wo `\x3C` dasselbe
+  // Zeichen ist.
+  return wrapped.replace(/<(?=\/script|!--)/gi, String.raw`\x3C`);
 }
 
+const libraryCode = await library();
 let html = read("demo-src.html").toString("utf8");
 const css = read("demo.tw.css").toString("utf8");
 
@@ -43,7 +92,7 @@ html = html
   .replace("__QUICKSTART_B64__", () => read("assets/demo-quickstart.png").toString("base64"))
   .replace("__COVER_B64__", () => read("assets/demo-cover.png").toString("base64"))
   .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"))
-  .replace("__FASTPDF_JS__", () => library());
+  .replace("__FASTPDF_JS__", () => libraryCode);
 
 // Favicon: weißes Blatt mit Eselsohr und Akzent-Blitz auf der Akzentfarbe.
 // Drei Formen, mehr überlebt 16 px nicht; der Blitz bleibt vollständig
