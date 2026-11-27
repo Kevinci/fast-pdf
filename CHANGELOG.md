@@ -6,7 +6,9 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Planned as **1.1.0**. Purely additive: two new entry points, one new error
+## [1.1.0] — 2026-11-27
+
+PDF/A-3 and ZUGFeRD / Factur-X. Purely additive: two new entry points, one new error
 code, no change to anything 1.0.0 froze.
 
 ### Added
