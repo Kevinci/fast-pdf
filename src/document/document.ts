@@ -3052,7 +3052,6 @@ export class PDFDocument {
         fonts: [...fonts.values()],
         encrypted: this.encryption !== undefined,
         imported: this.imported.size > 0,
-        signed: this.pages.some((page) => page.sigFields.some((f) => f.sign !== undefined)),
       });
     }
 

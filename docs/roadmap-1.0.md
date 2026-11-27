@@ -684,20 +684,24 @@ ohne ausdrückliche Freigabe tun:
 
 ## 6b. Stufe 1.1.0 — PDF/A-3 und ZUGFeRD-Container
 
-### Stand 27.11.2026 — implementiert, **veraPDF-Abnahme steht aus**
+### Stand 27.11.2026 — implementiert und extern abgenommen
 
-| Baustein                        | Stand     | Wo                                                                                                                                                                                                                                                               |
-| ------------------------------- | --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Erweiterungspunkt im Kern       | fertig    | `src/document/hooks.ts` — drei Aufrufstellen in `render()` (vor dem Schreiben, je Bild, am Katalog). Nicht exportiert. Kostet den Kern 145 B min+gzip.                                                                                                           |
-| XMP-Writer                      | fertig    | `src/pdfa/xmp.ts` — `pdfaid`, `dc`, `pdf`, `xmp`, Extension-Schema-Generator; UTF-8, ungefiltert.                                                                                                                                                                |
-| OutputIntent + ICC              | fertig    | `src/pdfa/icc.ts` — `sRGB-v2-micro.icc` (456 B, CC0) als Base64 im Code; eigenes RGB-Profil per Option.                                                                                                                                                          |
-| Modus-Schalter + Verbote        | fertig    | `src/pdfa/mode.ts` — Standard-14-Fonts, `.notdef`, `encrypt`, `append()`, CMYK-JPEG, `signature({ sign })` werfen `PDFA_VIOLATION`.                                                                                                                              |
-| Eingebettete Dateien            | fertig    | `pdfA(doc).attach()` — Filespec mit `/F`, `/UF`, `/AFRelationship`, `/Desc`; `/Params` mit `/Size` und `/ModDate`; `/Names → /EmbeddedFiles`; `/AF` am Katalog.                                                                                                  |
-| Factur-X-Aufsatz                | fertig    | `src/zugferd/index.ts` — sechs Profile, fester Dateiname, `/AFRelationship`-Matrix (DE), `fx:`-XMP samt Extension-Schema, Plausibilitätsprüfung des XML.                                                                                                         |
-| Tests                           | fertig    | `tests/pdfa.test.ts` (50 Tests); Oberflächen beider Einstiegspunkte in `tests/api-surface.test.ts` festgehalten.                                                                                                                                                 |
-| **veraPDF grün**                | **offen** | Der CI-Job `pdfa` ist geschrieben, aber **noch nie gelaufen**. Lokal konnte veraPDF nicht ausgeführt werden (Ausführung heruntergeladener Java-Werkzeuge nicht freigegeben). Lokal belegt ist nur: `qpdf --check` sauber, XMP wohlgeformt, Anhänge extrahierbar. |
-| Mustang-Validierung (ZUGFeRD)   | offen     | Prüft zusätzlich `fx:`-XMP und das XML gegen die EN-16931-Regeln. Nicht in CI.                                                                                                                                                                                   |
-| Spezifikation beschaffen (§7.1) | offen     | Die BR-HYBRID-Regeln stammen weiter aus der Sekundärquelle.                                                                                                                                                                                                      |
+| Baustein                  | Stand  | Wo                                                                                                                                                                           |
+| ------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Erweiterungspunkt im Kern | fertig | `src/document/hooks.ts` — drei Aufrufstellen in `render()` (vor dem Schreiben, je Bild, am Katalog). Nicht exportiert. Kostet den Kern rund 150 B min+gzip.                  |
+| XMP-Writer                | fertig | `src/pdfa/xmp.ts` — `pdfaid`, `dc`, `pdf`, `xmp`, Extension-Schema-Generator; UTF-8, ungefiltert.                                                                            |
+| OutputIntent + ICC        | fertig | `src/pdfa/icc.ts` — `sRGB-v2-micro.icc` (456 B, CC0) als Base64 im Code; eigenes RGB-Profil per Option.                                                                      |
+| Modus-Schalter + Verbote  | fertig | `src/pdfa/mode.ts` — Standard-14-Fonts, `.notdef`, `encrypt`, `append()`, CMYK-JPEG werfen `PDFA_VIOLATION`.                                                                 |
+| Eingebettete Dateien      | fertig | `pdfA(doc).attach()` — Filespec mit `/F`, `/UF`, `/AFRelationship`, `/Desc`; `/Params` mit `/Size` und `/ModDate`; `/Names → /EmbeddedFiles`; `/AF` am Katalog.              |
+| Factur-X-Aufsatz          | fertig | `src/zugferd/index.ts` — sechs Profile, fester Dateiname, `/AFRelationship`-Matrix (DE), `fx:`-XMP samt Extension-Schema, Plausibilitätsprüfung des XML.                     |
+| Tests                     | fertig | `tests/pdfa.test.ts`; Oberflächen beider Einstiegspunkte in `tests/api-surface.test.ts` festgehalten.                                                                        |
+| **veraPDF**               | grün   | CI-Job `pdfa`, veraPDF 1.30.4: Rechnung 3b **146/146** Regeln; Voll-Dokument 3u **148/148** (und 3b 146/146); signiertes 3b **146/146**; Kontrolldokument korrekt abgelehnt. |
+| **Mustang**               | grün   | CI-Job `zugferd`, Mustang 2.26.0: `examples/zugferd.ts` ist `valid` — Container, XMP und das XML gegen die EN-16931-Regeln.                                                  |
+
+**Die Schätzung „3–8 PT bis veraPDF grün“ ist nicht eingetreten:** der erste
+Lauf war grün, ohne einen einzigen Befund. Zwei offene Fragen der Recherche
+sind damit beantwortet: **D8** (der Subsetter entfernt `cmap` — für
+`CIDFontType2` unkritisch) und **F11** (die PAdES-Signatur genügt `[6.4.3]`).
 
 **Abweichungen vom Plan, bewusst:**
 
@@ -707,16 +711,20 @@ ohne ausdrückliche Freigabe tun:
 - **Funktionen statt Methoden:** `pdfA(doc)` / `facturX(doc, xml, opts)` statt
   `doc.attachFacturX(...)`. Eine Methode an `PDFDocument` läge im Kernbundle
   und wäre vom Haupteinstieg aus erreichbar — beides widerspricht §3.
-- **„Null Byte im Kern“ ist nicht erreichbar**, 145 B sind es. Ein Subpath
-  braucht eine Stelle, an der er eingreift.
-- **Signieren ist im PDF/A-Modus gesperrt**, bis `[6.4.3]` gegen veraPDF
-  geprüft ist. Lieber eine Sperre als eine ungeprüfte Konformitätsbehauptung.
-- **Stufe 3u** ist als Option enthalten (`conformance: "U"`), aber ebenfalls
-  nicht gegen veraPDF geprüft.
+- **„Null Byte im Kern“ ist nicht erreichbar.** Ein Subpath braucht eine
+  Stelle, an der er eingreift.
+- **Stufe 3u ist enthalten** und abgenommen, statt „fast geschenkt“ zu bleiben.
+- **Signieren ist im PDF/A-Modus erlaubt** — nach Abnahme durch veraPDF.
+- **Neu im Kern:** `markdown(src, { codeFont })`, weil Markdown-Code sonst fest
+  in Courier gesetzt wird und im PDF/A-Modus scheitert.
 
-**Vor einem Release 1.1.0 zwingend:** den CI-Job `pdfa` einmal laufen lassen
-und jeden veraPDF-Befund abarbeiten. Die Recherche schätzt dafür 3–8 PT und
-nennt es „den Teil, den man nicht planen kann“ — das gilt unverändert.
+**Weiterhin offen:**
+
+- Die Factur-X-Spezifikation liegt nicht vor (§7.1); die BR-HYBRID-Regeln
+  stammen aus der Sekundärquelle. Mustang bestätigt das Ergebnis, ersetzt aber
+  nicht den Normtext.
+- Abgenommen sind die Dokumente in der CI, nicht jedes denkbare Dokument.
+  WebP-Bilder und 16-Bit-PNGs kommen im Voll-Dokument nicht vor.
 
 ---
 
@@ -751,7 +759,7 @@ beide Richtungen.
 
 | Datum      | Änderung                                                                                                                                                                                                                                                                                                                                                                                   |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| 2026-11-27 | §6b ergänzt: 1.1.0 (PDF/A-3, ZUGFeRD-Container) implementiert, veraPDF-Abnahme offen.                                                                                                                                                                                                                                                                                                      |
+| 2026-11-27 | §6b ergänzt: 1.1.0 (PDF/A-3, ZUGFeRD-Container) implementiert; veraPDF und Mustang in CI grün.                                                                                                                                                                                                                                                                                             |
 | 2026-11-27 | Stand 1.0.0 ergänzt (§6a): alle Restpunkte erledigt, Size-Gate, Typ-Oberflächentest und Release-Workflow hinzugekommen.                                                                                                                                                                                                                                                                    |
 | 2026-10-30 | Erstfassung. Scope 1.0.0 festgelegt, Konflikte A und B aufgelöst, ZUGFeRD auf 1.1 hinter `fast-pdf/zugferd`.                                                                                                                                                                                                                                                                               |
 | 2026-10-30 | **Fünf Entscheidungen des Nutzers festgeschrieben** (§6, E1–E5): API-Schnitt als 0.9.0, Zwischenrelease bestätigt, Bundle-Zahl korrigieren statt `document.ts` aufspalten, ZUGFeRD nur als Container, keine mitgelieferte Schrift. Neuer §6a mit den fünf Arbeitspaketen für 0.9.0. Korrektur zur Coverage-Aussage ergänzt: es sind vier Schwellen, und _lines_ ist die einzige, die hält. |

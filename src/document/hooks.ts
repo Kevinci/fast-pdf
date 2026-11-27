@@ -33,8 +33,6 @@ export interface RenderState {
   encrypted: boolean;
   /** At least one page comes from `append()`. */
   imported: boolean;
-  /** A signature field carries `sign` — the document will be PAdES-signed. */
-  signed: boolean;
 }
 
 export interface CatalogContext {

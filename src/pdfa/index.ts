@@ -38,9 +38,11 @@ export type {
  *
  * - text set in a built-in font (`helvetica`, `times`, `courier`) — PDF/A
  *   needs every font embedded, so register a TrueType font and use it for
- *   all text;
+ *   all text (for Markdown code: `markdown(source, { codeFont })`);
  * - a character the font has no glyph for;
- * - the `encrypt` option, `append()`, CMYK JPEGs, and `signature({ sign })`.
+ * - the `encrypt` option, `append()` and CMYK JPEGs.
+ *
+ * Signature fields and PAdES signing (`signature({ sign })`) keep working.
  *
  * Call it at any point before rendering; calling it again returns the same
  * handle. The checks run at render time, so the order of calls does not

@@ -18,8 +18,8 @@ code, no change to anything 1.0.0 froze.
   document's `metadata`, and an output intent with an sRGB ICC profile — and
   it refuses, at render time and with a message that says what to change,
   everything that cannot be conforming: the non-embedded built-in fonts, a
-  character the font has no glyph for (`.notdef`), `encrypt`, `append()`, CMYK
-  JPEGs and `signature({ sign })`.
+  character the font has no glyph for (`.notdef`), `encrypt`, `append()` and
+  CMYK JPEGs. Signature fields and PAdES signing keep working.
 - **Embedded files.** `pdfA(doc).attach({ filename, data, mimeType,
 relationship?, description?, modDate? })` embeds a file as an associated
   file of the document (`/EmbeddedFiles` name tree, `/AF`, `/AFRelationship`).
@@ -38,10 +38,16 @@ relationship?, description?, modDate? })` embeds a file as an associated
   edge runtimes and under every bundler.
 - **New error code `PDFA_VIOLATION`**, thrown by `render()` when PDF/A mode is
   on and the document contains something PDF/A does not allow.
-- **veraPDF in CI.** A new job renders `examples/zugferd.ts` and requires the
-  reference validator to report it PDF/A-3b compliant — and to report an
+- **`markdown(source, { codeFont })`** — the family for inline code and code
+  blocks (default `"courier"`). Needed in PDF/A documents, where the built-in
+  Courier cannot be used.
+- **Two independent validators in CI.** veraPDF, the reference PDF/A
+  validator, must report three documents compliant — the example invoice
+  (PDF/A-3b, 146/146 rules), a document using every feature PDF/A mode allows
+  at level U (148/148), and a PAdES-signed PDF/A-3b — and must report an
   ordinary document as non-compliant, so a misconfigured validator cannot
-  pass for a green one.
+  pass for a green one. Mustang, the reference ZUGFeRD implementation, must
+  report the example invoice valid, including its XML.
 - `examples/zugferd.ts` (`npm run zugferd`): a complete Factur-X invoice.
 
 ### Changed

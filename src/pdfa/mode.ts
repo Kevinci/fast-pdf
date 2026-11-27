@@ -23,6 +23,8 @@ import { buildXmp, type XmpExtensionSchema } from "./xmp";
  *   text the font has no glyph for, encryption, CMYK JPEGs, appended
  *   third-party pages.
  *
+ * Signing stays available: a PAdES-signed PDF/A-3b passes veraPDF ([6.4.3]).
+ *
  * Clause numbers refer to ISO 19005-3:2012 as implemented by the veraPDF
  * profile PDFA-3B; see docs/research/pdfa3b-anforderungen.md.
  */

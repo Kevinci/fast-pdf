@@ -772,14 +772,13 @@ bundled, CC0) — and from then on `render()` **refuses** what cannot be
 conforming, with a `FastPDFError` of code `"PDFA_VIOLATION"` that says what to
 change:
 
-| Refused in PDF/A mode                     | Why, and what to do                                                                                                                    |
-| ----------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Text in `helvetica` / `times` / `courier` | The built-in fonts are not embedded. Register a TTF and make it the document `font`. Markdown code spans use Courier and are affected. |
-| A character the font has no glyph for     | It would be drawn as `.notdef`. The error names the character and the font.                                                            |
-| `encrypt`                                 | PDF/A forbids encryption — an archive must stay readable without a key.                                                                |
-| `append()`                                | Imported pages bring fonts and colour spaces fast-pdf did not write and cannot vouch for.                                              |
-| CMYK JPEGs                                | The output intent is RGB, and a document has only one. Convert to RGB.                                                                 |
-| `signature({ sign })`                     | PAdES signing together with PDF/A is not validated yet. Unsigned signature fields work.                                                |
+| Refused in PDF/A mode                     | Why, and what to do                                                                                                                         |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| Text in `helvetica` / `times` / `courier` | The built-in fonts are not embedded. Register a TTF and make it the document `font`. For Markdown code, pass `markdown(src, { codeFont })`. |
+| A character the font has no glyph for     | It would be drawn as `.notdef`. The error names the character and the font.                                                                 |
+| `encrypt`                                 | PDF/A forbids encryption — an archive must stay readable without a key.                                                                     |
+| `append()`                                | Imported pages bring fonts and colour spaces fast-pdf did not write and cannot vouch for.                                                   |
+| CMYK JPEGs                                | The output intent is RGB, and a document has only one. Convert to RGB.                                                                      |
 
 | Option          | Meaning                                                                                                                      |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------- |
@@ -788,15 +787,25 @@ change:
 
 The checks run at render time, so it does not matter whether `pdfA()` is
 called before or after the content is drawn. Transparency, links, outlines,
-images (PNG, GIF, WebP, RGB/gray JPEG), SVG and tables all work unchanged.
+images (PNG, GIF, WebP, RGB/gray JPEG), SVG, tables, signature fields and
+PAdES signing all work unchanged.
 
-**How this is verified.** CI renders [`examples/zugferd.ts`](examples/zugferd.ts)
-and hands the result to [veraPDF](https://verapdf.org/), the reference
-validator, which must report it PDF/A-3b compliant — and must report an
-ordinary fast-pdf document as _not_ compliant, so that a misconfigured
-validator cannot pass for a green one. veraPDF validates that one document,
-not every document you can build; if a file of yours fails validation, that is
-a bug worth reporting.
+**How this is verified.** Not by our own tests alone — two independent
+validators run in CI on every change:
+
+- [veraPDF](https://verapdf.org/), the reference PDF/A validator, must report
+  three documents compliant: the invoice from
+  [`examples/zugferd.ts`](examples/zugferd.ts) (PDF/A-3b, 146 of 146 rules), a
+  document that uses every feature PDF/A mode allows — images with soft
+  masks, transparency, SVG, links, outlines, Markdown, a signature field —
+  at level U (148 of 148), and a PAdES-signed PDF/A-3b.
+- It must also report an ordinary fast-pdf document as **not** compliant, so
+  a misconfigured validator cannot pass for a green one.
+- [Mustang](https://www.mustangproject.org/), the reference ZUGFeRD
+  implementation, must report the invoice valid — container, XMP and XML.
+
+That validates those documents, not every document you can build. If a file
+of yours fails validation, that is a bug worth reporting.
 
 ### ZUGFeRD / Factur-X — e-invoices
 
@@ -888,7 +897,7 @@ cannot do today, so you can decide before you start:
 | Not supported                              | Notes                                                                                                                                                                                                                                                                                                                                                                           |
 | ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Editing existing PDFs                      | Pages can be **appended** (see above), not modified. Text in an imported page cannot be changed, and encrypted sources are rejected.                                                                                                                                                                                                                                            |
-| PDF/A-1, PDF/A-2, PDF/A-3a                 | **PDF/A-3b and -3u are supported** through [`fast-pdf/pdfa`](#pdfa-3--archivable-pdfs). Parts 1 and 2 are not (part 3 is what e-invoicing needs), and level A needs tagged PDF. PDF/A cannot be combined with encryption, `append()`, CMYK JPEGs or PAdES signing.                                                                                                              |
+| PDF/A-1, PDF/A-2, PDF/A-3a                 | **PDF/A-3b and -3u are supported** through [`fast-pdf/pdfa`](#pdfa-3--archivable-pdfs). Parts 1 and 2 are not (part 3 is what e-invoicing needs), and level A needs tagged PDF. PDF/A cannot be combined with encryption, `append()` or CMYK JPEGs.                                                                                                                             |
 | Tagged PDF (`StructTreeRoot`)              | Not supported, and no date is set. `/Lang` and `ViewerPreferences /DisplayDocTitle` are written — that is the whole of it. There is no `/MarkInfo`, no structure tree and no reading order.                                                                                                                                                                                     |
 | PDF/UA                                     | Not supported, and no date is set. **No deadline in force names PDF/UA**: the German BFSG has applied since 2025-06-28 but names neither EN 301 549 nor PDF/UA, and EN 301 549 V4.1.1 mentions PDF/UA only in an informative note and is not cited in the EU Official Journal under the Accessibility Directive (EU) 2019/882. To be re-assessed once EN 301 549 is harmonised. |
 | XMP metadata outside PDF/A                 | An ordinary document carries only the classic `/Info` dictionary. XMP is written in PDF/A mode, where it is mandatory.                                                                                                                                                                                                                                                          |
