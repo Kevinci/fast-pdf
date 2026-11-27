@@ -92,6 +92,7 @@ html = html
   .replace("__QUICKSTART_B64__", () => read("assets/demo-quickstart.png").toString("base64"))
   .replace("__COVER_B64__", () => read("assets/demo-cover.png").toString("base64"))
   .replace("__DASHBOARD_B64__", () => read("assets/demo-dashboard.png").toString("base64"))
+  .replace("__FORM_B64__", () => read("assets/demo-form.png").toString("base64"))
   .replace("__FASTPDF_JS__", () => libraryCode);
 
 // Favicon: weißes Blatt mit Eselsohr und Akzent-Blitz auf der Akzentfarbe.
