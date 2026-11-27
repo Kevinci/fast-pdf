@@ -6,6 +6,34 @@ and the project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Kerning.** Embedded fonts are now kerned: pair adjustments are read from
+  `GPOS` (feature `kern`; pair lookups format 1 and 2, directly or through an
+  extension lookup) and from the legacy `kern` table when a font has no `GPOS`
+  kerning. Applied to every text fast-pdf draws — `text()`, tables, Markdown,
+  headers and footers, the table of contents, SVG text — and to every
+  measurement, so `widthOfText()` and `measureText()` agree with the page.
+- **Ligatures.** The font's standard ligatures (`GSUB` feature `liga`: fi, fl,
+  ffi …) are formed. The ToUnicode map records every character a ligature
+  replaced, so copy, search and PDF/A-3u keep working.
+- **`registerFont(data, { kerning, ligatures })`** switches either off per
+  font. Both default to `true`.
+- **`hyphenate` document option** — a function from a word to its syllables.
+  fast-pdf marks the break points and its line breaker does the rest, in
+  `text()`, `measureText()` and table cells. No patterns are bundled: plug in
+  a hyphenation library for your language.
+
+### Changed
+
+- **Text set in an embedded font can be narrower than in 1.1**, because
+  kerning tightens pairs like "AV" and "To". Line breaks and page breaks can
+  therefore move. This is the kind of change the stability promise excludes
+  from SemVer ("layout may improve in a minor release"); pass
+  `{ kerning: false, ligatures: false }` to `registerFont()` for the old
+  metrics. Documents using only the built-in fonts are unaffected.
+- Letter-spaced text keeps kerning but forms no ligatures.
+
 ## [1.1.0] — 2026-11-27
 
 PDF/A-3 and ZUGFeRD / Factur-X. Purely additive: two new entry points, one new error

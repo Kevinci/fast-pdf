@@ -5,11 +5,28 @@ import { TTFFont } from "./ttf";
 import { subsetTTF, closeGlyphSet } from "./subset";
 import type { Font } from "./font";
 
+/** Typographic features of an embedded font; both are on by default. */
+export interface FontFeatures {
+  /** Apply the font's pair kerning (GPOS `kern`, or the legacy `kern` table). */
+  kerning?: boolean;
+  /** Form the font's standard ligatures (GSUB `liga`): fi, fl, ffi … */
+  ligatures?: boolean;
+}
+
+interface Shaped {
+  glyphs: number[];
+  /** The source text each glyph stands for. */
+  sources: string[];
+  /** Kerning after each glyph but the last, in font units. */
+  kerns: number[];
+}
+
 /**
  * An embedded TrueType font, written as a composite (Type0) font with
  * Identity-H encoding: content streams carry 2-byte glyph IDs, so the
- * full Unicode range of the font is available (no shaping — ligatures
- * and Arabic/Indic scripts are not reordered).
+ * full Unicode range of the font is available. Pair kerning and standard
+ * ligatures are applied; there is no contextual shaping, so Arabic and Indic
+ * scripts are not joined or reordered.
  *
  * The font tracks which glyphs the document actually uses; at render
  * time only those outlines are embedded (see subset.ts) plus a
@@ -17,16 +34,21 @@ import type { Font } from "./font";
  */
 export class EmbeddedFont implements Font {
   readonly ttf: TTFFont;
-  /** glyph ID → first Unicode code point seen (for ToUnicode). */
-  private readonly usedGlyphs = new Map<number, number>();
+  /** glyph ID → the text it first stood for (one character, or a ligature's several). */
+  private readonly usedGlyphs = new Map<number, string>();
   private readonly scale: number;
+  private readonly kerning: boolean;
+  private readonly ligatures: boolean;
 
   constructor(
     readonly key: string,
     data: Uint8Array,
+    features: FontFeatures = {},
   ) {
     this.ttf = new TTFFont(data);
     this.scale = 1000 / this.ttf.unitsPerEm;
+    this.kerning = features.kerning ?? true;
+    this.ligatures = features.ligatures ?? true;
   }
 
   /**
@@ -35,7 +57,7 @@ export class EmbeddedFont implements Font {
    * harmless in an ordinary PDF, a violation in PDF/A.
    */
   get missingCodePoint(): number | undefined {
-    return this.usedGlyphs.get(0);
+    return this.usedGlyphs.get(0)?.codePointAt(0);
   }
 
   get baseFont(): string {
@@ -58,22 +80,80 @@ export class EmbeddedFont implements Font {
     return this.ttf.lineGap * this.scale;
   }
 
+  /**
+   * Turn text into the glyph run that is actually set: characters mapped to
+   * glyphs, standard ligatures formed, and the kerning after each glyph
+   * looked up. Drawing and measuring both go through here, which is what
+   * keeps a measured line and a drawn line identical.
+   */
+  private shape(text: string, tracked: boolean): Shaped {
+    const glyphs: number[] = [];
+    const sources: string[] = [];
+    for (const ch of text) {
+      glyphs.push(this.ttf.glyphFor(ch.codePointAt(0)!));
+      sources.push(ch);
+    }
+
+    const features = this.ttf.features;
+    if (this.ligatures && !tracked && features.ligatures.size > 0) {
+      for (let i = 0; i < glyphs.length; i++) {
+        const candidates = features.ligatures.get(glyphs[i]!);
+        if (candidates === undefined) continue;
+        for (const { rest, glyph } of candidates) {
+          if (i + rest.length >= glyphs.length) continue;
+          if (rest.some((component, k) => glyphs[i + 1 + k] !== component)) continue;
+          glyphs.splice(i, rest.length + 1, glyph);
+          sources.splice(i, rest.length + 1, sources.slice(i, i + rest.length + 1).join(""));
+          break;
+        }
+      }
+    }
+
+    const kerns: number[] = [];
+    if (this.kerning) {
+      for (let i = 0; i + 1 < glyphs.length; i++) {
+        kerns.push(features.kern(glyphs[i]!, glyphs[i + 1]!));
+      }
+    }
+    return { glyphs, sources, kerns };
+  }
+
+  private use(gid: number, source: string): string {
+    if (!this.usedGlyphs.has(gid)) this.usedGlyphs.set(gid, source);
+    return String.fromCharCode(gid >> 8) + String.fromCharCode(gid & 0xff);
+  }
+
+  /** One glyph per character, no ligatures, no kerning. */
   encode(text: string): string {
     let out = "";
-    for (const ch of text) {
-      const cp = ch.codePointAt(0)!;
-      const gid = this.ttf.glyphFor(cp);
-      if (!this.usedGlyphs.has(gid)) this.usedGlyphs.set(gid, cp);
-      out += String.fromCharCode(gid >> 8) + String.fromCharCode(gid & 0xff);
-    }
+    for (const ch of text) out += this.use(this.ttf.glyphFor(ch.codePointAt(0)!), ch);
     return out;
   }
 
-  widthOf(text: string, size: number): number {
-    let units = 0;
-    for (const ch of text) {
-      units += this.ttf.advanceOf(this.ttf.glyphFor(ch.codePointAt(0)!));
+  layout(text: string, tracked = false, afterSpace = 0): (string | number)[] {
+    const { glyphs, sources, kerns } = this.shape(text, tracked);
+    const parts: (string | number)[] = [];
+    let run = "";
+    for (let i = 0; i < glyphs.length; i++) {
+      run += this.use(glyphs[i]!, sources[i]!);
+      // TJ adjustments are subtracted from the pen position, so a kerning
+      // value (negative = tighter) changes sign on its way into the array.
+      let adjust = -(kerns[i] ?? 0) * this.scale;
+      if (afterSpace !== 0 && sources[i] === " " && i < glyphs.length - 1) adjust += afterSpace;
+      if (adjust !== 0) {
+        parts.push(run, adjust);
+        run = "";
+      }
     }
+    if (run !== "") parts.push(run);
+    return parts;
+  }
+
+  widthOf(text: string, size: number, tracked = false): number {
+    const { glyphs, kerns } = this.shape(text, tracked);
+    let units = 0;
+    for (const gid of glyphs) units += this.ttf.advanceOf(gid);
+    for (const kern of kerns) units += kern;
     return (units * this.scale * size) / 1000;
   }
 
@@ -180,7 +260,13 @@ export class EmbeddedFont implements Font {
     for (let i = 0; i < entries.length; i += 100) {
       const block = entries.slice(i, i + 100);
       body += `${block.length} beginbfchar\n`;
-      for (const [gid, cp] of block) body += `<${hex4(gid)}> <${utf16(cp)}>\n`;
+      for (const [gid, source] of block) {
+        // A ligature maps to all the characters it replaced, so search and
+        // copy still find "fi" where the page shows a single glyph.
+        let text = "";
+        for (const ch of source) text += utf16(ch.codePointAt(0)!);
+        body += `<${hex4(gid)}> <${text}>\n`;
+      }
       body += "endbfchar\n";
     }
     const cmap =

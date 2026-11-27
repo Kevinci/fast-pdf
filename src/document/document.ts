@@ -151,6 +151,18 @@ export interface PDFDocumentOptions extends PageOptions {
   /** Compress content streams (FlateDecode). Default: true. */
   compress?: boolean;
   /**
+   * Hyphenate words that do not fit a line. Called with one word (five or
+   * more letters) and returns its syllables, e.g. `"Silbentrennung"` →
+   * `["Sil", "ben", "tren", "nung"]`; a line may then break between two of
+   * them, with a hyphen. Return the word unsplit to leave it alone.
+   *
+   * fast-pdf ships no hyphenation patterns — they are language-specific and
+   * several kilobytes each. Plug in a hyphenation library of your choice;
+   * soft hyphens (U+00AD) already in the text keep working without this.
+   * Applies to `text()`, `measureText()`/`measureBlock()` and table cells.
+   */
+  hyphenate?: (word: string) => string[];
+  /**
    * Produce byte-identical output for identical input. When `true`, the
    * document embeds no wall-clock timestamp (unless `metadata.creationDate`
    * is set explicitly), so the same content always renders to the same bytes
@@ -639,6 +651,7 @@ export class PDFDocument {
   private readonly pageDefaults: Required<PageOptions>;
   private readonly compress: boolean;
   private readonly deterministic: boolean;
+  private readonly hyphenate?: (word: string) => string[];
   private readonly encryption?: EncryptionOptions;
   private readonly language?: string;
   private readonly metadata: DocumentMetadata;
@@ -699,6 +712,7 @@ export class PDFDocument {
     };
     this.compress = options.compress ?? true;
     this.deterministic = options.deterministic ?? false;
+    this.hyphenate = options.hyphenate;
     this.encryption = options.encrypt;
     this.language = options.language;
     this.metadata = options.metadata ?? {};
@@ -951,7 +965,9 @@ export class PDFDocument {
       options.italic ?? this.defaults.italic,
     );
     const width = this.textWidthFor(options);
-    const lines = wrapLines(content, font, size, width, letterSpacing).map((l) => l.text);
+    const lines = wrapLines(this.hyphenated(content), font, size, width, letterSpacing).map(
+      (l) => l.text,
+    );
     const step = size * lineHeight;
     let widest = 0;
     for (const line of lines) {
@@ -1544,7 +1560,15 @@ export class PDFDocument {
    */
   registerFont(
     data: Uint8Array | ArrayBuffer,
-    options: { family: string; bold?: boolean; italic?: boolean },
+    options: {
+      family: string;
+      bold?: boolean;
+      italic?: boolean;
+      /** Apply the font's pair kerning. Default: true. */
+      kerning?: boolean;
+      /** Form the font's standard ligatures (fi, fl, …). Default: true. */
+      ligatures?: boolean;
+    },
   ): this {
     const family = options.family.toLowerCase();
     if (isStandardFamily(family)) {
@@ -1560,7 +1584,10 @@ export class PDFDocument {
       this.customFonts.set(family, variants);
     }
     try {
-      variants[slot] = new EmbeddedFont(`emb:${family}:${slot}`, toBytes(data));
+      variants[slot] = new EmbeddedFont(`emb:${family}:${slot}`, toBytes(data), {
+        kerning: options.kerning,
+        ligatures: options.ligatures,
+      });
     } catch (e) {
       if (e instanceof FastPDFError) throw e;
       // Out-of-bounds reads on corrupt files surface as RangeError etc. —
@@ -1569,6 +1596,23 @@ export class PDFDocument {
       throw new FastPDFError(`Invalid font file: ${msg}`, "INVALID_FONT_FILE");
     }
     return this;
+  }
+
+  /**
+   * Mark the break points the `hyphenate` option finds, as soft hyphens. The
+   * line breaker already knows what to do with those, so hyphenation needs no
+   * second code path — and a callback that returns something other than the
+   * word it was given is ignored rather than allowed to change the text.
+   */
+  private hyphenated(text: string): string {
+    const hyphenate = this.hyphenate;
+    if (hyphenate === undefined) return text;
+    return text.replace(/\p{L}{5,}/gu, (word) => {
+      const parts = hyphenate(word);
+      return Array.isArray(parts) && parts.length > 1 && parts.join("") === word
+        ? parts.join("\u00AD")
+        : word;
+    });
   }
 
   private resolveFontStyle(family: string, bold: boolean, italic: boolean): Font {
@@ -1627,7 +1671,13 @@ export class PDFDocument {
       // Absolute positioning: draw where told, leave the flow cursor alone.
       const x = options.x ?? this.page.margins.left;
       const width = options.width ?? this.page.size.width - this.page.margins.right - x;
-      const lines = wrapLines(content, font, style.size, width, style.letterSpacing);
+      const lines = wrapLines(
+        this.hyphenated(content),
+        font,
+        style.size,
+        width,
+        style.letterSpacing,
+      );
       this.paintRotated(rotate, x, options.y, () => {
         let y = options.y!;
         for (const line of lines) {
@@ -1652,7 +1702,7 @@ export class PDFDocument {
     this.applySpacingBefore(options.spacingBefore);
     const x = this.flowX + (options.x ?? 0);
     const width = options.width ?? this.flowX + this.flowWidth - x;
-    const lines = wrapLines(content, font, style.size, width, style.letterSpacing);
+    const lines = wrapLines(this.hyphenated(content), font, style.size, width, style.letterSpacing);
     const blockHeight = lines.length * lineStep;
 
     if (rotate !== 0) {
@@ -1786,19 +1836,13 @@ export class PDFDocument {
       if (justify) {
         // Distribute the leftover width over the gaps via TJ adjustments
         // (works for WinAnsi and Identity-H alike, unlike the Tw operator).
-        const words = line.text.split(" ");
-        const gaps = words.length - 1;
+        const gaps = line.text.split(" ").length - 1;
         const extra = (boxWidth - naturalWidth) / gaps;
         const adj = -(extra * 1000) / size;
-        const parts: (string | number)[] = [];
-        words.forEach((word, i) => {
-          parts.push(font.encode(i < gaps ? word + " " : word));
-          if (i < gaps) parts.push(adj);
-        });
-        content.textTJ(parts, x, baseline, fontRes, size, spacing, skew);
+        content.show(font, line.text, x, baseline, fontRes, size, spacing, skew, adj);
         drawnWidth = boxWidth;
       } else {
-        content.text(font.encode(line.text), x + offset, baseline, fontRes, size, spacing, skew);
+        content.show(font, line.text, x + offset, baseline, fontRes, size, spacing, skew);
       }
 
       if (style.underline || style.strikethrough) {
@@ -1856,6 +1900,7 @@ export class PDFDocument {
       resolveFont: resolve,
       aligns: options.aligns,
       valign: options.valign,
+      prepareText: (text) => this.hyphenated(text),
       // Custom cells are measured with the same double pass as measureBlock().
       // The probe box starts at the dry run's own cursor, so a callback that
       // reports its height by advancing `doc.y` measures correctly.
@@ -1951,8 +1996,9 @@ export class PDFDocument {
             const baseline = this.page.ty(lineY + (font.ascent * mc.fontSize) / 1000);
             this.page.content
               .fillColor(color)
-              .text(
-                font.encode(line),
+              .show(
+                font,
+                line,
                 x + mc.padX + offset,
                 baseline,
                 this.page.fontRes(font),
@@ -2218,7 +2264,7 @@ export class PDFDocument {
           const shift = anchor === "middle" ? -w / 2 : anchor === "end" ? -w : 0;
           this.page.content
             .fillColor(fill)
-            .text(font.encode(str), px + shift, py, this.page.fontRes(font), size);
+            .show(font, str, px + shift, py, this.page.fontRes(font), size);
         },
       };
       renderSvg(svg, base, ctx);
@@ -2338,7 +2384,7 @@ export class PDFDocument {
       const baseline = this.page.ty(y + (font.ascent * size) / 1000);
       this.page.content
         .fillColor(MD_CODE_COLOR)
-        .text(font.encode(line), this.flowX + pad, baseline, this.page.fontRes(font), size);
+        .show(font, line, this.flowX + pad, baseline, this.page.fontRes(font), size);
       y += step;
     }
     this.cursorY = top + height + base * 0.5;
@@ -2384,7 +2430,7 @@ export class PDFDocument {
       const baseline = this.page.ty(this.cursorY + (font.ascent * base) / 1000);
       this.page.content
         .fillColor(this.defaults.color)
-        .text(font.encode(marker), outerX, baseline, this.page.fontRes(font), base);
+        .show(font, marker, outerX, baseline, this.page.fontRes(font), base);
       this.frame = {
         x: outerX + indent,
         width: prevFrame
@@ -2486,7 +2532,7 @@ export class PDFDocument {
         const baseline = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000);
         this.page.content
           .fillColor(seg.color)
-          .text(seg.font.encode(seg.text), x, baseline, this.page.fontRes(seg.font), size);
+          .show(seg.font, seg.text, x, baseline, this.page.fontRes(seg.font), size);
         if (seg.underline) {
           const uy = this.page.ty(this.cursorY + (seg.font.ascent * size) / 1000 + size * 0.1);
           this.page.content
@@ -2740,7 +2786,7 @@ export class PDFDocument {
           options.color !== undefined ? parseColor(options.color) : { r: 0.5, g: 0.5, b: 0.55 },
         )
         .transform(cos, sin, -sin, cos, cx - cos * cx + sin * cyPdf, cyPdf - sin * cx - cos * cyPdf)
-        .text(font.encode(text), cx - width / 2, cyPdf - size * 0.35, page.fontRes(font), size)
+        .show(font, text, cx - width / 2, cyPdf - size * 0.35, page.fontRes(font), size)
         .restore();
     });
   }
@@ -2929,7 +2975,7 @@ export class PDFDocument {
         const baseline = page.ty(yTop + height + labelGap + (font.ascent * labelSize) / 1000);
         page.content
           .fillColor({ r: 0.45, g: 0.45, b: 0.5 })
-          .text(font.encode(options.label), x, baseline, page.fontRes(font), labelSize);
+          .show(font, options.label, x, baseline, page.fontRes(font), labelSize);
       }
       page.sigFields.push({ name: name!, x, y: yTop, width, height, sign: options.sign });
     };
@@ -3014,8 +3060,8 @@ export class PDFDocument {
       const baseline = this.page.ty(yTop + (font.ascent * entrySize) / 1000);
       this.page.content
         .fillColor(this.defaults.color)
-        .text(font.encode(label), x, baseline, this.page.fontRes(font), entrySize)
-        .text(font.encode(num), rightX, baseline, this.page.fontRes(font), entrySize);
+        .show(font, label, x, baseline, this.page.fontRes(font), entrySize)
+        .show(font, num, rightX, baseline, this.page.fontRes(font), entrySize);
       this.page.links.push({
         x: this.flowX,
         y: yTop,

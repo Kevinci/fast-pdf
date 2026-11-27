@@ -27,8 +27,20 @@ export interface Font {
   readonly lineGap: number;
   /** Encode text for a content stream (latin1 string, one char = one byte). */
   encode(text: string): string;
-  /** Width of the given text at the given size, in points. */
-  widthOf(text: string, size: number): number;
+  /**
+   * Width of the given text at the given size, in points.
+   * @param tracked the text is set with letter spacing: ligatures are then
+   *   left unformed, as a ligature cannot be spaced apart
+   */
+  widthOf(text: string, size: number, tracked?: boolean): number;
+  /**
+   * The text as the operand of a `TJ` operator: encoded strings interleaved
+   * with position adjustments in 1/1000 em (positive moves left). Present on
+   * fonts that kern or form ligatures; a font without it is shown with
+   * `encode()`. Always agrees with `widthOf()` for the same arguments.
+   * @param afterSpace extra adjustment inserted after every space (justification)
+   */
+  layout?(text: string, tracked?: boolean, afterSpace?: number): (string | number)[];
   /** Write this font's PDF objects and return the font dictionary ref. */
   embed(writer: PDFWriter): Ref | Promise<Ref>;
 }

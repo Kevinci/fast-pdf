@@ -7,6 +7,8 @@
  * collections and WOFF are rejected with actionable errors.
  */
 
+import { readLayoutFeatures, type LayoutFeatures } from "./opentype";
+
 export interface TableSlice {
   offset: number;
   length: number;
@@ -32,6 +34,7 @@ export class TTFFont {
   private readonly view: DataView;
   private readonly numberOfHMetrics: number;
   private readonly cmapLookup: (codePoint: number) => number;
+  private layoutFeatures?: LayoutFeatures;
 
   constructor(readonly bytes: Uint8Array) {
     this.view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -99,6 +102,11 @@ export class TTFFont {
     const t = this.tables.get(tag);
     if (!t) throw new Error(`Font is missing required table "${tag}"`);
     return t;
+  }
+
+  /** Kerning and ligatures (GPOS/kern, GSUB), read on first use. */
+  get features(): LayoutFeatures {
+    return (this.layoutFeatures ??= readLayoutFeatures(this.view, this.tables));
   }
 
   /** Advance width for a glyph, in font units. */

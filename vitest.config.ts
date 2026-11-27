@@ -2,6 +2,10 @@ import { defineConfig } from "vitest/config";
 
 export default defineConfig({
   test: {
+    // Only this checkout's tests. Agent worktrees live under .claude/ and
+    // carry their own copy of the suite, which must not be run from here.
+    include: ["tests/**/*.test.ts"],
+    exclude: ["**/node_modules/**", "**/.claude/**"],
     coverage: {
       include: ["src/**/*.ts"],
       // Thresholds sit one to two points below the measured value, not flush

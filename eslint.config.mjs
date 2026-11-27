@@ -5,7 +5,13 @@ import eslintConfigPrettier from "eslint-config-prettier";
 
 export default tseslint.config(
   {
-    ignores: ["dist/**", "coverage/**", "node_modules/**", "docs/demo.tw.css"],
+    ignores: [
+      "dist/**",
+      "coverage/**",
+      "node_modules/**",
+      "docs/demo.tw.css",
+      ".claude/worktrees/**",
+    ],
   },
 
   js.configs.recommended,

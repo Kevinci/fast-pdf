@@ -142,7 +142,9 @@ export function wrapLines(
  */
 export function measureLine(text: string, font: Font, size: number, letterSpacing = 0): number {
   const chars = [...text].length;
-  return font.widthOf(text, size) + (chars > 1 ? (chars - 1) * letterSpacing : 0);
+  return (
+    font.widthOf(text, size, letterSpacing !== 0) + (chars > 1 ? (chars - 1) * letterSpacing : 0)
+  );
 }
 
 /** Break at the last soft hyphen whose "head-" still fits `available`. */

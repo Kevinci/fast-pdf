@@ -178,6 +178,8 @@ export interface MeasureTableOptions {
   valign?: VerticalAlign;
   /** Height of a `render` cell's content, measured by the document layer. */
   measureRender?: (cell: TableCell, innerWidth: number) => number;
+  /** Applied to a cell's text before wrapping (hyphenation marks its break points). */
+  prepareText?: (text: string) => string;
 }
 
 /**
@@ -221,7 +223,10 @@ export function measureTable(
       const padX = typeof pad === "number" ? pad : pad.x;
       const padY = typeof pad === "number" ? pad : pad.y;
       const innerWidth = Math.max(1, width - 2 * padX);
-      const lines = cell.render ? [] : wrapText(cell.text ?? "", font, fontSize, innerWidth);
+      const text = cell.text ?? "";
+      const lines = cell.render
+        ? []
+        : wrapText(opts.prepareText?.(text) ?? text, font, fontSize, innerWidth);
       const contentHeight = cell.render
         ? (cell.height ?? opts.measureRender?.(cell, innerWidth) ?? 0)
         : lines.length * fontSize * opts.lineHeight;
