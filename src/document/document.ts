@@ -329,6 +329,12 @@ export interface MarkdownOptions {
    * resolver, images render as their alt text (fast-pdf's core does no I/O).
    */
   resolveImage?: (src: string) => Uint8Array | ArrayBuffer | undefined;
+  /**
+   * Font family for inline code and code blocks: a standard family or one
+   * registered via registerFont(). Default: "courier". Set this in PDF/A
+   * documents, where the built-in Courier cannot be used.
+   */
+  codeFont?: string;
 }
 
 export interface LineOptions extends OpacityOption {
@@ -668,6 +674,8 @@ export class PDFDocument {
   private readonly sigFieldNames = new Set<string>();
   /** Non-null while decorators run: overrides the "current page". */
   private activePage: Page | null = null;
+  /** Family for Markdown code, set per markdown() call (MarkdownOptions.codeFont). */
+  private mdCodeFont = "courier";
   /** Pages whose content comes from an appended PDF, resolved at render time. */
   private readonly imported = new Map<Page, ImportedPage>();
 
@@ -2247,6 +2255,7 @@ export class PDFDocument {
    * fast-pdf's core performs no I/O. Table cells render as plain text.
    */
   markdown(source: string, options: MarkdownOptions = {}): this {
+    this.mdCodeFont = options.codeFont ?? "courier";
     this.renderMarkdown(parseMarkdown(source), options);
     return this;
   }
@@ -2312,7 +2321,7 @@ export class PDFDocument {
   }
 
   private mdCodeBlock(text: string, base: number): void {
-    const font = this.resolveFontStyle("courier", false, false);
+    const font = this.resolveFontStyle(this.mdCodeFont, false, false);
     const size = base * 0.9;
     const step = size * 1.35;
     const pad = 8;
@@ -2432,7 +2441,7 @@ export class PDFDocument {
     };
     for (const run of runs) {
       const font = run.code
-        ? this.resolveFontStyle("courier", false, false)
+        ? this.resolveFontStyle(this.mdCodeFont, false, false)
         : this.resolveFontStyle(
             this.defaults.font,
             (opts.bold ?? false) || !!run.bold,

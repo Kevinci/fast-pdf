@@ -5,7 +5,7 @@ import { buildXmp, escapeXml } from "../src/pdfa/xmp";
 import { srgbProfile } from "../src/pdfa/icc";
 import { facturX, type FacturXProfile } from "../src/zugferd/index";
 import { latin1String } from "../src/pdf/objects";
-import { makeJpeg, makeRawPdf, makeTTF } from "./helpers";
+import { makeJpeg, makeRawPdf, makeSigner, makeTTF } from "./helpers";
 
 /**
  * The synthetic test font has exactly three glyphs — A, B and C — so every
@@ -262,7 +262,7 @@ describe("pdfA(): what the mode refuses", () => {
     await expect(rgb.render()).resolves.toBeInstanceOf(Uint8Array);
   });
 
-  it("refuses a signed field but allows an unsigned one", async () => {
+  it("allows signature fields, signed or not", async () => {
     const unsigned = archivable();
     pdfA(unsigned);
     unsigned.text("ABC");
@@ -271,13 +271,11 @@ describe("pdfA(): what the mode refuses", () => {
 
     const signed = archivable();
     pdfA(signed);
-    signed.signature({
-      name: "sig",
-      width: 100,
-      height: 30,
-      sign: { certificate: new Uint8Array(1), sign: async () => new Uint8Array(1) } as never,
-    });
-    expect((await violation(signed)).message).toContain("signing");
+    signed.text("ABC");
+    signed.signature({ name: "sig", width: 100, height: 30, sign: await makeSigner() });
+    const pdf = latin1String(await signed.render());
+    expect(pdf).toContain("/SubFilter /ETSI.CAdES.detached");
+    expect(pdf).toContain("<pdfaid:part>3</pdfaid:part>");
   });
 
   it("checks at render time, so the order of calls does not matter", async () => {
@@ -512,6 +510,20 @@ describe("facturX()", () => {
     facturX(doc, cii(EN16931), { profile: "EN 16931" });
     doc.text("Rechnung");
     await violation(doc);
+  });
+});
+
+describe("markdown codeFont", () => {
+  it("lets Markdown code be set in an embedded font, which PDF/A needs", async () => {
+    const withDefault = archivable();
+    pdfA(withDefault);
+    withDefault.markdown("ABC `AB`");
+    expect((await violation(withDefault)).message).toContain("codeFont");
+
+    const withFont = archivable();
+    pdfA(withFont);
+    withFont.markdown("ABC `AB`\n\n```\nABC\n```", { codeFont: "test" });
+    await expect(withFont.render()).resolves.toBeInstanceOf(Uint8Array);
   });
 });
 

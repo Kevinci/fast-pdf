@@ -174,12 +174,6 @@ function begin(state: RenderState): void {
         "bring fonts and colour spaces whose conformance fast-pdf cannot guarantee.",
     );
   }
-  if (state.signed) {
-    throw violation(
-      "signing (signature({ sign })) is not supported together with PDF/A yet. " +
-        "Unsigned signature fields are fine.",
-    );
-  }
   for (const font of state.fonts) {
     // [6.2.11.4.1-1] The font programs for all fonts used for rendering shall
     // be embedded. The standard 14 are referenced by name only.
@@ -187,7 +181,7 @@ function begin(state: RenderState): void {
       throw violation(
         `the built-in font "${font.baseFont}" is not embedded. Register a TrueType font ` +
           'with registerFont() and use it for all text — e.g. new PDFDocument({ font: "myfont" }). ' +
-          "Markdown code spans use the built-in Courier and are affected too.",
+          "For Markdown code, pass markdown(source, { codeFont }).",
       );
     }
     // [6.2.11.8-1] A document shall not contain a reference to the .notdef glyph.

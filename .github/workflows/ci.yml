@@ -1,12 +1,13 @@
 # fast-pdf — Continuous Integration
 #
-# Five independent jobs, deliberately not chained with `needs:` so that one run
+# Six independent jobs, deliberately not chained with `needs:` so that one run
 # shows every problem at once instead of hiding the later ones behind the first
 # failure:
 #
 #   quality        the toolchain (format, lint, types, tests, build, size budget)
 #   pdf-structure  the external gate: qpdf inspects the PDFs we actually produce
-#   pdfa           the second external gate: veraPDF validates the PDF/A-3b output
+#   pdfa           the second external gate: veraPDF validates the PDF/A-3 output
+#   zugferd        the third: Mustang validates the Factur-X invoice and its XML
 #   engines        does the shipped bundle still run on the oldest supported Node?
 #   runtimes       Bun and Deno, non-blocking
 #
@@ -245,57 +246,150 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends fonts-dejavu-core
 
-      - name: Render the ZUGFeRD example and a non-PDF/A control
+      # Three documents under test and one control:
+      #
+      #   zugferd.pdf         the realistic invoice (PDF/A-3b)
+      #   pdfa-full-3u.pdf    every feature PDF/A mode allows, at level U —
+      #                       images with soft masks, transparency, SVG, links,
+      #                       outlines, Markdown, an empty signature field
+      #   pdfa-signed-3b.pdf  a PAdES-signed PDF/A-3b
+      #   invoice.pdf         the control: an ordinary document, NOT PDF/A
+      #
+      # veraPDF judges what a file contains, so a feature that never appears
+      # in a validated file has not been validated. The fixtures exist to put
+      # every feature in front of it.
+      - name: Render the documents under test and a non-PDF/A control
         run: |
           mkdir -p examples/output
           npx --no-install tsx examples/zugferd.ts
           npx --no-install tsx examples/invoice.ts
+          npx --no-install tsx .github/scripts/pdfa-fixtures.ts examples/output
 
-      # Two assertions, and the second matters as much as the first:
-      #
-      #   zugferd.pdf  must be reported compliant with PDF/A-3b;
-      #   invoice.pdf  — an ordinary document with a built-in font and no XMP —
-      #                must be reported NOT compliant.
-      #
-      # Without the control, a validator that is misconfigured, checks the
-      # wrong flavour or prints nothing at all would look exactly like success.
       # The verdict is read from the report itself (`isCompliant="…"`), not
-      # from the exit code alone.
-      - name: veraPDF — PDF/A-3b
+      # from the exit code alone, and every document is checked before the
+      # step fails, so one run lists every problem.
+      #
+      # The control matters as much as the positives: it must be reported NOT
+      # compliant. Without it, a validator that is misconfigured, checks the
+      # wrong flavour or prints nothing at all would look exactly like success.
+      - name: veraPDF
         shell: bash
         run: |
           verapdf() {
             docker run --rm -v "$PWD/examples/output:/data:ro" verapdf/cli:latest \
-              --flavour 3b "/data/$1" || true
+              --flavour "$1" "/data/$2" || true
           }
 
-          report="$(verapdf zugferd.pdf)"
-          echo "::group::veraPDF report for zugferd.pdf"
-          echo "$report"
-          echo "::endgroup::"
-          if ! grep -q 'isCompliant="true"' <<<"$report"; then
-            echo "::error file=examples/zugferd.ts::veraPDF does not report zugferd.pdf as PDF/A-3b compliant"
-            exit 1
-          fi
+          failed=0
+          expect_compliant() {
+            local report
+            report="$(verapdf "$1" "$2")"
+            echo "::group::veraPDF report for $2 (PDF/A-$1)"
+            echo "$report"
+            echo "::endgroup::"
+            if grep -q 'isCompliant="true"' <<<"$report"; then
+              echo "OK       $2 is PDF/A-$1 compliant"
+            else
+              echo "::error::veraPDF does not report $2 as PDF/A-$1 compliant"
+              failed=1
+            fi
+          }
 
-          control="$(verapdf invoice.pdf)"
-          if ! grep -q 'isCompliant="false"' <<<"$control"; then
+          expect_compliant 3b zugferd.pdf
+          expect_compliant 3u pdfa-full-3u.pdf
+          expect_compliant 3b pdfa-full-3u.pdf
+          expect_compliant 3b pdfa-signed-3b.pdf
+
+          control="$(verapdf 3b invoice.pdf)"
+          if grep -q 'isCompliant="false"' <<<"$control"; then
+            echo "OK       control (invoice.pdf) correctly rejected"
+          else
             echo "::group::veraPDF report for the control (invoice.pdf)"
             echo "$control"
             echo "::endgroup::"
             echo "::error::The control document was not reported as non-compliant — the gate proves nothing"
-            exit 1
+            failed=1
           fi
-          echo "zugferd.pdf: PDF/A-3b compliant · control: correctly rejected"
 
-      - name: Upload the rendered PDF
+          exit "$failed"
+
+      - name: Upload the rendered PDFs
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: zugferd-pdf
-          path: examples/output/zugferd.pdf
+          name: pdfa-pdfs
+          path: |
+            examples/output/zugferd.pdf
+            examples/output/pdfa-*.pdf
           if-no-files-found: warn
           retention-days: 14
+
+  zugferd:
+    name: ZUGFeRD (Mustang)
+    runs-on: ubuntu-24.04
+
+    # veraPDF answers "is this PDF/A-3?". It does not look at what makes the
+    # file an invoice: the Factur-X XMP properties, the name and relationship
+    # of the embedded XML, and the XML itself. Mustang — the reference
+    # implementation of the ZUGFeRD project — validates all three, the XML
+    # against the EN 16931 schema and business rules.
+    #
+    # The XML in examples/zugferd.ts is written by hand as an illustration, so
+    # this job also keeps that illustration honest: an example that fails its
+    # own standard would teach the wrong thing.
+
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install a TrueType font
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+
+      - name: Render the ZUGFeRD example
+        run: |
+          mkdir -p examples/output
+          npx --no-install tsx examples/zugferd.ts
+
+      # A pinned release, fetched from the project's own GitHub releases. Java
+      # is pre-installed on the runner image.
+      - name: Download Mustang
+        env:
+          GH_TOKEN: ${{ github.token }}
+          MUSTANG_VERSION: "2.26.0"
+        run: |
+          gh release download "core-$MUSTANG_VERSION" \
+            --repo ZUGFeRD/mustangproject \
+            --pattern "Mustang-CLI-$MUSTANG_VERSION.jar" \
+            --output mustang.jar
+          java -version
+
+      # Mustang prints an XML report; `<summary status="valid"/>` is the
+      # verdict for the file as a whole.
+      - name: Mustang — validate
+        shell: bash
+        run: |
+          report="$(java -Xmx1G -Dfile.encoding=UTF-8 -jar mustang.jar \
+            --no-notices --action validate --source examples/output/zugferd.pdf 2>&1 || true)"
+          echo "::group::Mustang report"
+          echo "$report"
+          echo "::endgroup::"
+          if grep -Eq '<summary status="valid"' <<<"$report"; then
+            echo "zugferd.pdf: valid ZUGFeRD/Factur-X"
+          else
+            echo "::error file=examples/zugferd.ts::Mustang does not report zugferd.pdf as valid"
+            exit 1
+          fi
 
   engines:
     name: engines — Node 18 runs the shipped bundle
