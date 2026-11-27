@@ -176,6 +176,15 @@ function begin(state: RenderState): void {
         "bring fonts and colour spaces whose conformance fast-pdf cannot guarantee.",
     );
   }
+  // [6.2.11.4.1-1] again: field values are set in the non-embedded Helvetica,
+  // in the appearance streams and in whatever a viewer regenerates from /DA.
+  if (state.forms) {
+    throw violation(
+      "form fields are not supported in PDF/A mode yet — their text is set in the " +
+        "non-embedded Helvetica. Remove textField(), checkbox(), radioGroup() and dropdown(); " +
+        "signature fields are fine.",
+    );
+  }
   for (const font of state.fonts) {
     // [6.2.11.4.1-1] The font programs for all fonts used for rendering shall
     // be embedded. The standard 14 are referenced by name only.

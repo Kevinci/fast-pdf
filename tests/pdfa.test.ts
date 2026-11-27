@@ -262,6 +262,24 @@ describe("pdfA(): what the mode refuses", () => {
     await expect(rgb.render()).resolves.toBeInstanceOf(Uint8Array);
   });
 
+  it("refuses interactive form fields of every kind", async () => {
+    const fields: ((doc: PDFDocument) => void)[] = [
+      (doc) => doc.textField({ name: "f" }),
+      (doc) => doc.checkbox({ name: "f" }),
+      (doc) => doc.radioGroup({ name: "f", options: ["A", "B"] }),
+      (doc) => doc.dropdown({ name: "f", options: ["A"] }),
+    ];
+    for (const add of fields) {
+      const doc = archivable();
+      pdfA(doc);
+      doc.text("ABC");
+      add(doc);
+      expect((await violation(doc)).message).toContain(
+        "form fields are not supported in PDF/A mode yet",
+      );
+    }
+  });
+
   it("allows signature fields, signed or not", async () => {
     const unsigned = archivable();
     pdfA(unsigned);

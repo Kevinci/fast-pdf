@@ -38,6 +38,16 @@ import { renderSvg, viewport, type Mat, type SvgContext } from "../svg/render";
 import { parseMarkdown, type MdBlock, type MdRun } from "../markdown/parse";
 import { Page, type ImageEntry, type PendingLink } from "./page";
 import { hookOf } from "./hooks";
+import {
+  FF_COMBO,
+  FF_EDIT,
+  FF_MULTILINE,
+  FF_PASSWORD,
+  baseFlags,
+  claimFieldName,
+  fieldOptions,
+  writeFormField,
+} from "./forms";
 import { saveFile } from "../adapters/save";
 import { FastPDFError } from "../errors";
 import { assertFinite, assertNonNegative, blockedUriScheme } from "../validate";
@@ -541,6 +551,86 @@ export interface SignatureOptions {
    * detached PAdES-B (CAdES) signature. At most one signed field per document.
    */
   sign?: SigningOptions;
+}
+
+/** Placement and behaviour shared by every interactive form field. */
+interface FormFieldOptions {
+  /**
+   * AcroForm field name — required, unique within the document (signature
+   * fields included), no periods. This is the key the filled-in value is
+   * exported under.
+   */
+  name: string;
+  /** Absolute x position, or a left offset within the flow area. */
+  x?: number;
+  /** Providing `y` switches to absolute positioning (no cursor movement). */
+  y?: number;
+  /** The recipient cannot change the value. Default: false. */
+  readOnly?: boolean;
+  /** The field must be filled in before the form is submitted. Default: false. */
+  required?: boolean;
+  spacingAfter?: number;
+}
+
+export interface TextFieldOptions extends FormFieldOptions {
+  /**
+   * Pre-filled value. Ignored for `password` fields — fast-pdf never writes
+   * a password field's value into the file.
+   */
+  value?: string;
+  /** Small caption above the field (page content, not part of the field). */
+  label?: string;
+  /** Field width in points. Default: 200. */
+  width?: number;
+  /** Field height in points. Default: 22, or 60 when `multiline`. */
+  height?: number;
+  /** Accept line breaks and wrap the text. Default: false. */
+  multiline?: boolean;
+  /** Mask the input. The value is never written into the file. Default: false. */
+  password?: boolean;
+  /** Maximum number of characters (/MaxLen). */
+  maxLength?: number;
+  /** Text size in points. Default: 10. */
+  fontSize?: number;
+  /** Text alignment inside the field. Default: "left". */
+  align?: "left" | "center" | "right";
+}
+
+export interface CheckboxOptions extends FormFieldOptions {
+  /** Initially ticked. Default: false. */
+  checked?: boolean;
+  /** Text right of the box (page content, not part of the field). */
+  label?: string;
+  /** Box edge length in points. Default: 12. */
+  size?: number;
+}
+
+export interface RadioGroupOptions extends FormFieldOptions {
+  /** One radio button per option; a string is both export value and label. */
+  options: (string | { value: string; label?: string })[];
+  /** Export value of the initially selected option. Default: none selected. */
+  value?: string;
+  /** Circle diameter in points. Default: 12. */
+  size?: number;
+  /** Stack the options ("vertical") or set them in a row ("horizontal"). Default: "vertical". */
+  direction?: "vertical" | "horizontal";
+}
+
+export interface DropdownOptions extends FormFieldOptions {
+  /** The list entries; a string is both export value and label. */
+  options: (string | { value: string; label?: string })[];
+  /** Export value of the initially selected entry (any text when `editable`). */
+  value?: string;
+  /** Small caption above the field (page content, not part of the field). */
+  label?: string;
+  /** Field width in points. Default: 200. */
+  width?: number;
+  /** Field height in points. Default: 22. */
+  height?: number;
+  /** Allow typing a value that is not in the list. Default: false. */
+  editable?: boolean;
+  /** Text size in points. Default: 10. */
+  fontSize?: number;
 }
 
 export interface ButtonOptions {
@@ -2947,6 +3037,259 @@ export class PDFDocument {
     return this;
   }
 
+  // ── Form fields ──────────────────────────────────────────────────────
+
+  /**
+   * A fillable text field (AcroForm /Tx), optionally with a caption above.
+   *
+   * ```ts
+   * pdf.textField({ name: "email", label: "E-mail", width: 240, required: true });
+   * ```
+   *
+   * Like `signature()`, it flows with the cursor (breaking the page when it
+   * no longer fits) unless `y` is given. The field carries its own
+   * appearance, so the pre-filled value shows in every viewer and in print.
+   * A `password` field's value is never written into the file.
+   */
+  textField(options: TextFieldOptions): this {
+    const multiline = options.multiline === true;
+    const password = options.password === true;
+    const width = options.width ?? 200;
+    const height = options.height ?? (multiline ? 60 : 22);
+    const fontSize = options.fontSize ?? 10;
+    const { value, maxLength } = options;
+    this.checkFieldBox(options, width, height, fontSize);
+    if (maxLength !== undefined && !Number.isInteger(assertNonNegative(maxLength, "maxLength"))) {
+      throw new FastPDFError(`maxLength must be an integer (got ${maxLength})`, "INVALID_NUMBER");
+    }
+    if (value !== undefined && typeof value !== "string") {
+      throw new FastPDFError("textField value must be a string", "INVALID_ARGUMENT");
+    }
+    if (value !== undefined && maxLength !== undefined && value.length > maxLength) {
+      throw new FastPDFError(
+        `textField value is longer than maxLength (${maxLength})`,
+        "INVALID_ARGUMENT",
+      );
+    }
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags =
+      baseFlags(options) | (multiline ? FF_MULTILINE : 0) | (password ? FF_PASSWORD : 0);
+    const quadding = options.align === "center" ? 1 : options.align === "right" ? 2 : 0;
+    return this.boxedField(options, width, height, (x, y) =>
+      this.page.formFields.push({
+        kind: "text",
+        name: options.name,
+        x,
+        y,
+        width,
+        height,
+        flags,
+        value: password ? undefined : value,
+        fontSize,
+        quadding,
+        maxLength,
+      }),
+    );
+  }
+
+  /**
+   * A checkbox (AcroForm /Btn) with an optional label to its right. Ticked,
+   * it exports the value "Yes"; unticked, "Off".
+   */
+  checkbox(options: CheckboxOptions): this {
+    const size = options.size ?? 12;
+    this.checkFieldBox(options, size, size);
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags = baseFlags(options);
+    return this.optionField(options, size, [options.label], false, (boxes) =>
+      this.page.formFields.push({
+        kind: "check",
+        name: options.name,
+        ...boxes[0]!,
+        width: size,
+        height: size,
+        flags,
+        checked: options.checked === true,
+      }),
+    );
+  }
+
+  /**
+   * A group of radio buttons (AcroForm /Btn, radio) of which exactly one can
+   * be selected; the field exports the selected option's value.
+   *
+   * ```ts
+   * pdf.radioGroup({ name: "plan", options: ["Basic", "Pro"], value: "Pro" });
+   * ```
+   *
+   * The whole group moves to the next page if it does not fit below the
+   * cursor — keep it shorter than a page.
+   */
+  radioGroup(options: RadioGroupOptions): this {
+    const size = options.size ?? 12;
+    this.checkFieldBox(options, size, size);
+    const choices = fieldOptions(options.options, options.value, false);
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags = baseFlags(options);
+    const selected = choices.findIndex((c) => c.value === options.value);
+    return this.optionField(
+      options,
+      size,
+      choices.map((c) => c.label),
+      options.direction === "horizontal",
+      (boxes) =>
+        this.page.formFields.push({
+          kind: "radio",
+          name: options.name,
+          ...boxes[0]!,
+          width: size,
+          height: size,
+          flags,
+          options: choices,
+          selected,
+          boxes,
+        }),
+    );
+  }
+
+  /**
+   * A dropdown list (AcroForm /Ch, combo box), optionally `editable` so the
+   * recipient may also type a value of their own.
+   */
+  dropdown(options: DropdownOptions): this {
+    const width = options.width ?? 200;
+    const height = options.height ?? 22;
+    const fontSize = options.fontSize ?? 10;
+    this.checkFieldBox(options, width, height, fontSize);
+    const editable = options.editable === true;
+    const choices = fieldOptions(options.options, options.value, editable);
+    claimFieldName(this.sigFieldNames, options.name);
+    const flags = baseFlags(options) | FF_COMBO | (editable ? FF_EDIT : 0);
+    return this.boxedField(options, width, height, (x, y) =>
+      this.page.formFields.push({
+        kind: "choice",
+        name: options.name,
+        x,
+        y,
+        width,
+        height,
+        flags,
+        options: choices,
+        value: options.value,
+        fontSize,
+      }),
+    );
+  }
+
+  /** Validate the numbers every form field takes. */
+  private checkFieldBox(
+    options: { x?: number; y?: number; spacingAfter?: number },
+    width: number,
+    height: number,
+    fontSize = 1,
+  ): void {
+    if (options.x !== undefined) assertFinite(options.x, "field x");
+    if (options.y !== undefined) assertFinite(options.y, "field y");
+    if (options.spacingAfter !== undefined) assertFinite(options.spacingAfter, "spacingAfter");
+    assertNonNegative(width, "field width");
+    assertNonNegative(height, "field height");
+    if (!(assertFinite(fontSize, "fontSize") > 0)) {
+      throw new FastPDFError(`fontSize must be positive (got ${fontSize})`, "INVALID_NUMBER");
+    }
+  }
+
+  /**
+   * Place a block of `height` the way signature() does: absolutely at x/y,
+   * or at the cursor after a page break if it no longer fits.
+   */
+  private placeField(
+    options: { x?: number; y?: number; spacingAfter?: number },
+    height: number,
+    draw: (x: number, yTop: number) => void,
+  ): this {
+    if (options.y !== undefined) {
+      draw(options.x ?? this.page.margins.left, options.y);
+    } else {
+      this.breakPageIfNeeded(height);
+      draw(this.flowX + (options.x ?? 0), this.cursorY);
+      this.cursorY += height + (options.spacingAfter ?? 0);
+    }
+    this.lastBlock = height;
+    return this;
+  }
+
+  /** A text or dropdown field with an optional small caption above it. */
+  private boxedField(
+    options: TextFieldOptions | DropdownOptions,
+    width: number,
+    height: number,
+    push: (x: number, y: number) => void,
+  ): this {
+    const { label } = options;
+    const size = this.defaults.size * 0.8;
+    const caption = label !== undefined && label !== "";
+    const labelHeight = caption ? this.measureText(label, { size, width }).height + 3 : 0;
+    return this.placeField(options, labelHeight + height, (x, yTop) => {
+      if (caption) this.text(label, { x, y: yTop, width, size, color: "#73737f" });
+      push(x, yTop + labelHeight);
+    });
+  }
+
+  /**
+   * Checkbox or radio buttons: one box per entry with its label to the
+   * right, stacked or in rows that wrap at the flow width. `push` receives
+   * the top-left corner of every box.
+   */
+  private optionField(
+    options: FormFieldOptions,
+    size: number,
+    labels: (string | undefined)[],
+    horizontal: boolean,
+    push: (boxes: { x: number; y: number }[]) => void,
+  ): this {
+    const available =
+      options.y !== undefined
+        ? this.page.size.width - this.page.margins.right - (options.x ?? this.page.margins.left)
+        : this.flowWidth - (options.x ?? 0);
+    const gap = size / 2;
+    // Centre the box on the cap height of the label's first line.
+    const m = this.fontMetrics();
+    const shift = size / 2 - (m.baseline - m.capHeight / 2);
+    const boxDy = Math.max(0, -shift);
+    const textDy = Math.max(0, shift);
+    const items: { dx: number; dy: number; label?: string }[] = [];
+    let dx = 0;
+    let dy = 0;
+    let rowHeight = 0;
+    for (const label of labels) {
+      const text =
+        label !== undefined && label !== ""
+          ? this.measureText(label, { width: Math.max(0, available - size - gap) })
+          : undefined;
+      const w = size + (text !== undefined ? gap + text.width : 0);
+      if (dx > 0 && (!horizontal || dx + w > available)) {
+        dx = 0;
+        dy += rowHeight + gap;
+        rowHeight = 0;
+      }
+      items.push({ dx, dy, label: text !== undefined ? label : undefined });
+      rowHeight = Math.max(rowHeight, boxDy + size, text !== undefined ? textDy + text.height : 0);
+      dx += w + 2 * size;
+    }
+    return this.placeField(options, dy + rowHeight, (x, yTop) => {
+      for (const item of items) {
+        if (item.label !== undefined) {
+          this.text(item.label, {
+            x: x + item.dx + size + gap,
+            y: yTop + item.dy + textDy,
+            width: Math.max(0, available - item.dx - size - gap),
+          });
+        }
+      }
+      push(items.map((item) => ({ x: x + item.dx, y: yTop + item.dy + boxDy })));
+    });
+  }
+
   /**
    * Insert a table of contents built from outline entries. Call this
    * after all content (and outline() calls) — the TOC pages are created
@@ -3052,6 +3395,7 @@ export class PDFDocument {
         fonts: [...fonts.values()],
         encrypted: this.encryption !== undefined,
         imported: this.imported.size > 0,
+        forms: this.pages.some((page) => page.formFields.length > 0),
       });
     }
 
@@ -3131,8 +3475,21 @@ export class PDFDocument {
     // page we are about to write rather than at a second copy of it.
     const imports = await this.buildImports(writer, refOf, fontRefs, imageRefs, gsRefs);
 
-    // Signature field widgets, collected for the document-level /AcroForm.
+    // Form fields (signature widgets, radio parents, all other fields),
+    // collected for the document-level /AcroForm.
     const acroFields: Ref[] = [];
+    let signatureFields = false;
+    // Helvetica for field text, shared with page content that already uses it,
+    // so the font object is written exactly once.
+    let helvetica: Ref | undefined;
+    const fieldFont = (): Ref => {
+      if (helvetica === undefined) {
+        const font = resolveFont("helvetica", false, false);
+        helvetica = fontRefs.get(font.key) ?? font.embed(writer);
+        fontRefs.set(font.key, helvetica);
+      }
+      return helvetica;
+    };
     // Signing options of the (at most one) cryptographically signed field.
     let signState: SigningOptions | undefined;
 
@@ -3193,6 +3550,18 @@ export class PDFDocument {
         });
         acroFields.push(widgetRef);
         annots.push(widgetRef);
+        signatureFields = true;
+      }
+      for (const formField of page.formFields) {
+        const { field, widgets } = writeFormField(writer, formField, {
+          page: pageRefs[i]!,
+          pageHeight: page.size.height,
+          transform: annotTransform,
+          annotFlags: ANNOT_PRINT,
+          helvetica: fieldFont,
+        });
+        acroFields.push(field);
+        annots.push(...widgets);
       }
       if (parts !== undefined) annots.push(...parts.annots);
 
@@ -3243,9 +3612,16 @@ export class PDFDocument {
       ViewerPreferences: this.metadata.title !== undefined ? { DisplayDocTitle: true } : undefined,
       // SigFlags: bit 1 = SignaturesExist. A real signature also sets bit 2
       // (AppendOnly, value 3) so viewers preserve the signed bytes.
+      // /DR and /DA: the default resources and appearance text and dropdown
+      // fields refer to (§12.7.2) — only when there are such fields.
       AcroForm:
         acroFields.length > 0
-          ? { Fields: acroFields, SigFlags: signState !== undefined ? 3 : 1 }
+          ? {
+              Fields: acroFields,
+              SigFlags: signState !== undefined ? 3 : signatureFields ? 1 : undefined,
+              DR: helvetica !== undefined ? { Font: { Helv: helvetica } } : undefined,
+              DA: helvetica !== undefined ? new PDFString("/Helv 0 Tf 0 g") : undefined,
+            }
           : undefined,
       ...hook?.catalog(writer, { metadata: this.metadata, language: this.language, date }),
     });

@@ -33,6 +33,11 @@ export interface RenderState {
   encrypted: boolean;
   /** At least one page comes from `append()`. */
   imported: boolean;
+  /**
+   * The document has interactive form fields — text fields, checkboxes,
+   * radio groups or dropdowns. Signature fields do not count.
+   */
+  forms: boolean;
 }
 
 export interface CatalogContext {

@@ -28,8 +28,11 @@ import { build } from "esbuild";
 
 /** min+gzip budgets in bytes, per public entry point. */
 const BUDGETS = {
-  index: 50_500, // fast-pdf           — measured 48,933 B at 1.0.0, 49,078 B at 1.1.0
-  dom: 54_000, // fast-pdf/dom         — measured 52,263 B at 1.0.0
+  // Raised for the AcroForm fields (textField/checkbox/radioGroup/dropdown with
+  // their appearance streams): +2,923 B on the core, which cannot move to a
+  // subpath because the methods belong on PDFDocument.
+  index: 53_500, // fast-pdf           — measured 48,933 B at 1.0.0, 49,078 B at 1.1.0, 51,992 B with forms
+  dom: 57_000, // fast-pdf/dom         — measured 52,263 B at 1.0.0, 55,332 B with forms
   internal: 7_300, // fast-pdf/internal — measured 6,949 B at 1.0.0
   // Measured standalone, i.e. including the font code they share with the
   // core. Next to `fast-pdf` in one bundle they add far less: see README.
